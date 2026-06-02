@@ -1,10 +1,11 @@
 import os
+import tempfile
 
 APP_NAME = "FastPaste"
 MAX_HISTORY = 500
 
-# Caminhos dos arquivos baseados no padrão XDG
-DATA_DIR = os.path.expanduser("~/.local/share/fast-paste")
+# Caminhos dos arquivos baseados em uma pasta temporária padrão multiplataforma
+DATA_DIR = os.path.join(tempfile.gettempdir(), "fast-paste")
 DB_FILE = os.path.join(DATA_DIR, "history.db")
 IMAGES_DIR = os.path.join(DATA_DIR, "images")
 LOG_FILE = os.path.join(DATA_DIR, "daemon.log")

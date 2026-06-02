@@ -46,6 +46,7 @@ def start_daemon():
         # Redirect output
         sys.stdout.flush()
         sys.stderr.flush()
+        os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
         log = open(LOG_FILE, 'a')
         os.dup2(log.fileno(), sys.stdout.fileno())
         os.dup2(log.fileno(), sys.stderr.fileno())

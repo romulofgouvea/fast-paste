@@ -554,6 +554,23 @@ class FastPastePopup(QWidget):
     def refresh_list(self):
         self.on_search_changed(self.search_entry.text())
 
+    def showEvent(self, event):
+        # Clear search filter and reset search entry
+        self.search_entry.blockSignals(True)
+        self.search_entry.clear()
+        self.search_entry.blockSignals(False)
+        
+        # Load fresh history
+        self.full_history = history.load_history()
+        self.filtered_history = list(self.full_history)
+        self.populate_list()
+        
+        # Always open at page 0 (search and list) instead of settings
+        self.stacked_widget.setCurrentIndex(0)
+        self.search_entry.setFocus()
+        
+        super().showEvent(event)
+
     def changeEvent(self, event):
         # Fechar a janela quando ela perder o foco completamente
         if event.type() == QEvent.Type.ActivationChange:

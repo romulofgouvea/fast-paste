@@ -4,8 +4,9 @@ from PyQt6.QtGui import QIcon, QAction
 import history
 
 class FastPasteTray:
-    def __init__(self, on_show_callback, on_exit_callback):
+    def __init__(self, on_show_callback, on_settings_callback, on_exit_callback):
         self.on_show_callback = on_show_callback
+        self.on_settings_callback = on_settings_callback
         self.on_exit_callback = on_exit_callback
         self.tray_icon = None
 
@@ -43,6 +44,10 @@ class FastPasteTray:
         show_action = QAction(make_icon("view-fullscreen-symbolic"), "Mostrar FastPaste", self.menu)
         show_action.triggered.connect(self.on_show_callback)
         self.menu.addAction(show_action)
+        
+        settings_action = QAction(make_icon("preferences-system-symbolic"), "Configurações...", self.menu)
+        settings_action.triggered.connect(self.on_settings_callback)
+        self.menu.addAction(settings_action)
         
         clear_action = QAction(make_icon("edit-clear-all-symbolic"), "Limpar Histórico", self.menu)
         clear_action.triggered.connect(self._clear_history)

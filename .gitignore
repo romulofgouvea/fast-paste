@@ -9,3 +9,6 @@ ENV/
 *.pid
 *.sock
 *.log
+
+dist/*
+build/*

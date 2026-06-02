@@ -24,7 +24,9 @@ def get_tinted_icon(icon_name, color_hex):
         return None
         
     pixmap = icon.pixmap(16, 16)
-    
+    if pixmap.isNull() or pixmap.width() == 0 or pixmap.height() == 0:
+        return None
+        
     # Tint symbolic icons so they are visible on dark themes
     if "-symbolic" in icon_name or "-symbolic" not in icon_name:
         tinted = QPixmap(pixmap.size())

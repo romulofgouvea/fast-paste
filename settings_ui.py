@@ -1,11 +1,76 @@
 import sys
 import os
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QSpinBox, QLineEdit, QPushButton, QFileDialog, QMessageBox)
-from PyQt6.QtCore import Qt, pyqtSignal
+                             QSpinBox, QLineEdit, QPushButton, QFileDialog, QMessageBox, QCheckBox,
+                             QAbstractButton, QSizePolicy)
+from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPropertyAnimation, pyqtProperty, QEasingCurve
+from PyQt6.QtGui import QPainter, QColor, QBrush
 
 from settings_manager import settings
 from config import DATA_DIR, MAX_HISTORY
+
+class SwitchButton(QAbstractButton):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setCheckable(True)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self._offset = 4
+        self._anim = QPropertyAnimation(self, b"offset", self)
+        self._anim.setDuration(120)
+        self._anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        
+    @pyqtProperty(int)
+    def offset(self):
+        return self._offset
+        
+    @offset.setter
+    def offset(self, value):
+        self._offset = value
+        self.update()
+        
+    def sizeHint(self):
+        return QSize(46, 24)
+        
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # Track parameters
+        track_color = QColor("#e95420") if self.isChecked() else QColor("#444444")
+        painter.setBrush(QBrush(track_color))
+        painter.setPen(Qt.PenStyle.NoPen)
+        
+        # Draw track
+        painter.drawRoundedRect(0, 0, self.width(), self.height(), self.height() / 2, self.height() / 2)
+        
+        # Draw thumb (knob)
+        painter.setBrush(QBrush(QColor("#ffffff")))
+        thumb_size = self.height() - 8
+        painter.drawEllipse(self._offset, 4, thumb_size, thumb_size)
+        
+    def nextCheckState(self):
+        super().nextCheckState()
+        self.animate(self.isChecked())
+        
+    def animate(self, checked):
+        start_val = self._offset
+        end_val = (self.width() - self.height() + 4) if checked else 4
+        
+        self._anim.setStartValue(start_val)
+        self._anim.setEndValue(end_val)
+        self._anim.start()
+        
+    def setChecked(self, checked):
+        super().setChecked(checked)
+        end = self.width() - self.height() + 4
+        self._offset = end if checked else 4
+        self.update()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        end = self.width() - self.height() + 4
+        self._offset = end if self.isChecked() else 4
 
 class SettingsWidget(QWidget):
     settings_closed = pyqtSignal(bool)
@@ -46,6 +111,10 @@ class SettingsWidget(QWidget):
             }
             QPushButton#saveButton:hover {
                 background-color: #ff6b36;
+            }
+            QCheckBox {
+                color: #ffffff;
+                font-size: 13px;
             }
         """)
 
@@ -98,6 +167,25 @@ class SettingsWidget(QWidget):
         db_layout.addWidget(db_label)
         db_layout.addLayout(db_input_layout)
         layout.addLayout(db_layout)
+
+        # 4. Iniciar com o sistema (Autostart)
+        autostart_layout = QHBoxLayout()
+        autostart_label = QLabel("Iniciar automaticamente com o sistema")
+        autostart_label.setToolTip("Inicia o monitor de clipboard automaticamente ao fazer login no sistema.")
+        
+        self.autostart_switch = SwitchButton()
+        self.autostart_switch.setToolTip("Inicia o monitor de clipboard automaticamente ao fazer login no sistema.")
+        
+        try:
+            import autostart
+            self.autostart_switch.setChecked(autostart.is_autostart_enabled())
+        except Exception as e:
+            print(f"[Settings] Error checking autostart state: {e}")
+            
+        autostart_layout.addWidget(autostart_label)
+        autostart_layout.addStretch(1)
+        autostart_layout.addWidget(self.autostart_switch)
+        layout.addLayout(autostart_layout)
         
         # Info text
         info = QLabel("Dica: Itens fixados (★) nunca são excluídos automaticamente.")
@@ -156,5 +244,15 @@ class SettingsWidget(QWidget):
         # No linux (wayland) não tentamos salvar o hotkey do campo read-only
         if not (sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY')):
             settings.set('hotkey', self.hotkey_input.text())
+
+        # Configurar Autostart (Iniciar com o sistema)
+        try:
+            import autostart
+            if self.autostart_switch.isChecked():
+                autostart.enable_autostart()
+            else:
+                autostart.disable_autostart()
+        except Exception as e:
+            print(f"[Settings] Error saving autostart setting: {e}")
             
         self.settings_closed.emit(True)

@@ -27,6 +27,23 @@ def start_daemon():
         print("✅ FastPaste Monitor is already running.")
         return
 
+    if sys.platform.startswith("linux"):
+        import subprocess
+        service_file = os.path.expanduser("~/.config/systemd/user/fast-paste.service")
+        if os.path.exists(service_file):
+            try:
+                print("🚀 Starting FastPaste via systemd...")
+                subprocess.run(["systemctl", "--user", "start", "fast-paste.service"], check=True)
+                for _ in range(5):
+                    if check_status():
+                        print("✅ Monitor started successfully via systemd.")
+                        return
+                    time.sleep(0.2)
+                print("⚠ Started service, but status check timed out.")
+                return
+            except Exception as e:
+                print(f"[Daemon] Error starting via systemd: {e}. Falling back to fork...")
+
     print("🚀 Starting background monitor...")
     
     # Forking before Qt init on Linux/Mac
@@ -59,6 +76,20 @@ def start_daemon():
         run_foreground()
 
 def stop_daemon():
+    if sys.platform.startswith("linux"):
+        import subprocess
+        service_file = os.path.expanduser("~/.config/systemd/user/fast-paste.service")
+        if os.path.exists(service_file):
+            try:
+                res = subprocess.run(["systemctl", "--user", "is-active", "fast-paste.service"], capture_output=True, text=True)
+                if res.stdout.strip() == "active":
+                    print("🛑 Stopping FastPaste via systemd...")
+                    subprocess.run(["systemctl", "--user", "stop", "fast-paste.service"], check=True)
+                    print("🛑 Monitor stopped via systemd.")
+                    return
+            except Exception as e:
+                print(f"[Daemon] Error stopping via systemd: {e}. Falling back to socket stop...")
+
     if not check_status():
         print("Monitor is not running.")
         return
@@ -80,10 +111,8 @@ def show_popup():
             socket.waitForBytesWritten(1000)
             socket.disconnectFromServer()
             return
-            
-    # Fallback if server is not running
-    import popup
-    popup.show(standalone=True)
+    else:
+        print("❌ FastPaste Monitor is NOT running. Run 'python3 fast_paste.py start' to start it.")
 
 
 popup_instance = None
@@ -145,6 +174,15 @@ def run_foreground():
         popup_instance.activateWindow()
         popup_instance.raise_()
 
+    def show_settings_cb():
+        global popup_instance
+        if not popup_instance:
+            popup_instance = popup.FastPastePopup(standalone=False)
+        popup_instance.open_settings()
+        popup_instance.show()
+        popup_instance.activateWindow()
+        popup_instance.raise_()
+
     def exit_cb():
         QApplication.quit()
 
@@ -159,7 +197,7 @@ def run_foreground():
     if sys.platform.startswith('linux') and is_wayland:
         print("[FastPaste] Wayland detectado: Desativando System Tray para evitar bugs na dock.")
     else:
-        tray_icon = tray.FastPasteTray(on_show_callback=show_popup_cb, on_exit_callback=exit_cb)
+        tray_icon = tray.FastPasteTray(on_show_callback=show_popup_cb, on_settings_callback=show_settings_cb, on_exit_callback=exit_cb)
         tray_icon.setup()
 
     # 4. Setup Global Hotkeys (Windows/Mac)
@@ -198,10 +236,18 @@ def print_usage():
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print_usage()
-        sys.exit(0)
+        if sys.platform.startswith("win") or sys.platform.startswith("darwin"):
+            if check_status():
+                show_popup()
+            else:
+                run_foreground()
+            sys.exit(0)
+        else:
+            print_usage()
+            sys.exit(0)
 
-    cmd = sys.argv[1].lower()
+    else:
+        cmd = sys.argv[1].lower()
 
     if cmd == "start":
         start_daemon()

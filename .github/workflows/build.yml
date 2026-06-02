@@ -1,9 +1,7 @@
-name: Build FastPaste Ubuntu
+name: Build FastPaste Releases
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
   workflow_dispatch:
@@ -14,30 +12,31 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ruby rubygems ruby-dev
+          sudo apt-get install -y ruby rubygems ruby-dev libqt6gui6 libqt6widgets6
           sudo gem install fpm
+          pip install -r requirements.txt
+          pip install pyinstaller
           
-      - name: Package into native .deb
+      - name: Build binary with PyInstaller
+        run: |
+          pyinstaller --onefile --windowed --name fast-paste fast_paste.py
+          
+      - name: Package into .deb
         run: |
           # Create deb structure
-          mkdir -p build_deb/opt/fast-paste
           mkdir -p build_deb/usr/bin
           mkdir -p build_deb/usr/share/applications
           
-          # Copy source files
-          cp -r *.py build_deb/opt/fast-paste/
-          cp requirements.txt build_deb/opt/fast-paste/
-          chmod +x build_deb/opt/fast-paste/fast_paste.py
-          
-          # Create symlink wrapper
-          cat <<EOF > build_deb/usr/bin/fast-paste
-          #!/bin/bash
-          cd /opt/fast-paste
-          exec python3 fast_paste.py "\$@"
-          EOF
+          # Copy binary
+          cp dist/fast-paste build_deb/usr/bin/
           chmod +x build_deb/usr/bin/fast-paste
           
           # Create .desktop file
@@ -50,23 +49,70 @@ jobs:
           Categories=Utility;
           EOF
           
-          # Use FPM to build Debian package with dependencies!
+          # Format version tag
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ -z "$VERSION" ]; then VERSION="1.0.0"; fi
+          
           fpm -s dir -t deb \
             -n fast-paste \
-            -v 1.0.0 \
-            --architecture all \
+            -v $VERSION \
+            --architecture amd64 \
             --maintainer "FastPaste Team" \
-            --description "A GTK3 Wayland Clipboard Manager" \
-            -d "python3" \
-            -d "python3-gi" \
-            -d "python3-gi-cairo" \
-            -d "gir1.2-gtk-3.0" \
-            -d "xclip" \
+            --description "Cross-platform clipboard manager" \
             -C build_deb \
-            opt usr
+            usr
             
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+      - name: Upload .deb to Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: fast-paste-ubuntu-deb
-          path: fast-paste_1.0.0_all.deb
+          files: fast-paste_*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+      - name: Build binary
+        run: pyinstaller --onefile --windowed --name fast_paste fast_paste.py
+      - name: Upload .exe to Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/fast_paste.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+      - name: Build binary
+        run: |
+          pyinstaller --windowed --name fast_paste fast_paste.py
+          cd dist
+          zip -r fast_paste_macos.zip fast_paste.app
+      - name: Upload .app to Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/fast_paste_macos.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

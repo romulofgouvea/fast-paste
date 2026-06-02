@@ -1,456 +1,538 @@
-import gi
 import os
-import subprocess
-import shutil
+import sys
 import datetime
-
-gi.require_version('Gtk', '3.0')
-gi.require_version('Gdk', '3.0')
-from gi.repository import Gtk, Gdk, GLib, Pango, GdkPixbuf
+from PyQt6.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
+    QLineEdit, QListWidget, QListWidgetItem, QLabel, 
+    QMenu, QGraphicsDropShadowEffect, QFrame
+)
+from PyQt6.QtCore import Qt, QSize, QEvent, QTimer
+from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut
 
 import history
 from config import UI_COLORS, APP_NAME
+from platform_handler import InputSimulator
 
-class FastPastePopup(Gtk.Window):
+def get_tinted_icon(icon_name, color_hex):
+    from PyQt6.QtGui import QPainter
+    
+    icon = QIcon.fromTheme(icon_name)
+    if icon.isNull():
+        icon = QIcon.fromTheme(icon_name.replace("-symbolic", ""))
+        
+    if icon.isNull():
+        return None
+        
+    pixmap = icon.pixmap(16, 16)
+    
+    # Tint symbolic icons so they are visible on dark themes
+    if "-symbolic" in icon_name or "-symbolic" not in icon_name:
+        tinted = QPixmap(pixmap.size())
+        tinted.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(tinted)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+        painter.fillRect(tinted.rect(), QColor(color_hex))
+        painter.end()
+        return tinted
+        
+    return pixmap
+
+class FastPastePopup(QWidget):
     def __init__(self, standalone=True):
-        super().__init__(title=APP_NAME)
+        super().__init__()
         self.standalone = standalone
+        self.input_sim = InputSimulator()
 
         # Configurações da Janela
-        self.set_default_size(380, 550)
-        self.set_position(Gtk.WindowPosition.CENTER)
-        self.set_decorated(False)
-        self.set_keep_above(True)
-        self.set_skip_taskbar_hint(True)
-
-        # Habilita transparência total na janela
-        screen = self.get_screen()
-        visual = screen.get_rgba_visual()
-        if visual and screen.is_composited():
-            self.set_visual(visual)
-        self.set_app_paintable(True)
-
-        # Carrega Histórico Inicial do SQLite
+        self.setWindowTitle(APP_NAME)
+        self.resize(600, 550)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        
         self.full_history = history.load_history()
         self.filtered_history = list(self.full_history)
 
-        self._apply_css()
-
-        # Container Principal (Box Central com glassmorphism css)
-        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        main_box.get_style_context().add_class("main-box")
-        self.add(main_box)
-
-        # Card 1: Barra de Busca (Glassy Pill)
-        search_card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        search_card.get_style_context().add_class("search-card")
+        self.init_ui()
+        self.apply_styles()
         
-        search_icon = Gtk.Image.new_from_icon_name("system-search-symbolic", Gtk.IconSize.MENU)
-        search_icon.get_style_context().add_class("search-icon")
-        search_card.pack_start(search_icon, False, False, 5)
-
-        self.search_entry = Gtk.Entry()
-        self.search_entry.set_placeholder_text("Search clips or dates...")
-        self.search_entry.get_style_context().add_class("search-entry-inner")
-        self.search_entry.set_has_frame(False)
-        self.search_entry.connect("changed", self.on_search_changed)
-        search_card.pack_start(self.search_entry, True, True, 0)
-
-        main_box.pack_start(search_card, False, False, 10)
-
-        # Card 2: Lista de Itens (Glassy Box)
-        list_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        list_card.get_style_context().add_class("list-card")
-
-        scrolled = Gtk.ScrolledWindow()
-        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        list_card.pack_start(scrolled, True, True, 0)
-
-        self.listbox = Gtk.ListBox()
-        self.listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        self.listbox.connect("row-activated", self.on_row_activated)
-        self.listbox.get_style_context().add_class("item-list")
-        scrolled.add(self.listbox)
-
-        main_box.pack_start(list_card, True, True, 0)
-
-        self._populate_list()
+        # Shortcuts
+        QShortcut(QKeySequence("Esc"), self, self.close_app)
+        QShortcut(QKeySequence("Del"), self, self.delete_selected)
+        QShortcut(QKeySequence("Ctrl+F"), self, self.search_entry.setFocus)
+        QShortcut(QKeySequence("Ctrl+P"), self, self.toggle_pin_selected)
         
-        self.connect("key-press-event", self.on_key_press)
-        self.connect("focus-out-event", lambda w, e: self.close_app())
+        for i in range(1, 10):
+            QShortcut(QKeySequence(f"Ctrl+{i}"), self, lambda checked=False, idx=i-1: self.paste_by_index(idx))
 
-    def _apply_css(self):
+        self.populate_list()
+
+    def init_ui(self):
+        # Aumentar o delay e estilo da tooltip globalmente
+        QApplication.instance().setStyleSheet("QToolTip { color: #ffffff; background-color: #2a2a2a; border: 1px solid #4a4a4a; border-radius: 4px; padding: 4px; font-size: 13px; }")
+        # Layout Principal da Janela
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(15, 15, 15, 15)
+        main_layout.setSpacing(0)
+
+        # Main Container (Substitui o main_box do GTK3)
+        self.container = QFrame()
+        self.container.setObjectName("MainContainer")
+        container_layout = QVBoxLayout(self.container)
+        container_layout.setContentsMargins(15, 15, 15, 15)
+        container_layout.setSpacing(10)
+        main_layout.addWidget(self.container)
+
+        # Sombra idêntica ao GTK3
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(30)
+        shadow.setColor(QColor(0, 0, 0, 80))
+        shadow.setOffset(0, 10)
+        self.container.setGraphicsEffect(shadow)
+
+        # Search Card
+        self.search_card = QFrame()
+        self.search_card.setObjectName("SearchCard")
+        search_layout = QHBoxLayout(self.search_card)
+        search_layout.setContentsMargins(12, 6, 12, 6)
+        search_layout.setSpacing(10)
+        
+        search_icon = QLabel()
+        pixmap = get_tinted_icon("system-search-symbolic", UI_COLORS['fg_dim'])
+        
+        if pixmap:
+            search_icon.setPixmap(pixmap)
+        else:
+            search_icon.setText("🔍")
+            search_icon.setStyleSheet(f"color: {UI_COLORS['fg_dim']}; font-size: 16px; background: transparent;")
+        
+        search_layout.addWidget(search_icon)
+
+        self.search_entry = QLineEdit()
+        self.search_entry.setPlaceholderText("Search clips or dates...")
+        self.search_entry.setObjectName("SearchEntry")
+        self.search_entry.textChanged.connect(self.on_search_changed)
+        search_layout.addWidget(self.search_entry)
+        
+        container_layout.addWidget(self.search_card)
+
+        # List Card
+        self.list_card = QFrame()
+        self.list_card.setObjectName("ListCard")
+        list_layout = QVBoxLayout(self.list_card)
+        list_layout.setContentsMargins(0, 4, 0, 4)
+
+        self.list_widget = QListWidget()
+        self.list_widget.setObjectName("ListWidget")
+        self.list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list_widget.itemActivated.connect(self.on_item_activated)
+        self.list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.list_widget.customContextMenuRequested.connect(self.show_context_menu)
+        
+        list_layout.addWidget(self.list_widget)
+        container_layout.addWidget(self.list_card)
+
+    def apply_styles(self):
         css = f"""
-        window {{
-            background-color: transparent;
-        }}
-        .main-box {{
-            background-color: {UI_COLORS['card_bg']};
-            border-radius: 16px;
-            border: 1px solid {UI_COLORS['card_border']};
-            box-shadow: 0 10px 30px {UI_COLORS['shadow']};
-            padding: 15px;
-        }}
-        .search-card {{
-            background-color: rgba(45, 45, 45, 0.6);
-            border-radius: 10px;
-            border: 1px solid rgba(80, 80, 80, 0.4);
-            padding: 6px 12px;
-            margin-bottom: 8px;
-        }}
-        .search-icon {{
-            color: {UI_COLORS['fg_dim']};
-        }}
-        .search-entry-inner {{
-            background-color: transparent;
-            color: {UI_COLORS['fg']};
-            caret-color: {UI_COLORS['fg']};
-            font-size: 14px;
-        }}
-        .search-entry-inner:focus {{
-            box-shadow: none;
-            outline: none;
-        }}
-        .list-card {{
-            background-color: rgba(28, 28, 28, 0.4);
-            border-radius: 10px;
-            border: 1px solid rgba(60, 60, 60, 0.3);
-            padding: 4px 0;
-        }}
-        .item-list {{
-            background-color: transparent;
-        }}
-        row {{
-            background-color: transparent !important;
-            border: none !important;
-            padding: 6px !important;
-            margin: 0 !important;
-            outline: none !important;
-            box-shadow: none !important;
-        }}
-        row:hover, row:selected {{
-            background-color: transparent !important;
-            border: none !important;
-            outline: none !important;
-            box-shadow: none !important;
-        }}
-        .card-item {{
-            border-radius: 8px;
-            padding: 8px 12px;
-            background-color: transparent;
-            transition: all 0.15s ease;
-        }}
-        row:hover .card-item {{
-            background-color: {UI_COLORS['hover']} !important;
-        }}
-        row:selected .card-item {{
-            background-color: {UI_COLORS['selected']} !important;
-        }}
-        .item-label {{
-            font-size: 13.5px;
-            font-weight: 500;
-            color: {UI_COLORS['fg']};
-        }}
-        .item-label-dim {{
-            font-size: 13.5px;
-            font-weight: 500;
-            color: {UI_COLORS['fg_dim']};
-        }}
-        row:selected .item-label, row:selected .item-label-dim {{
-            color: #ffffff;
-        }}
-        .hotkey-badge {{
-            font-size: 10.5px;
-            font-weight: bold;
-            color: {UI_COLORS['selected']};
-            background-color: rgba(233, 84, 32, 0.15);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }}
-        row:selected .hotkey-badge {{
-            color: #ffffff;
-            background-color: rgba(255, 255, 255, 0.2);
-        }}
-        .pin-badge {{
-            font-size: 12px;
-        }}
-        .timestamp-label {{
-            font-size: 11px;
-            color: {UI_COLORS['fg_dim']};
-        }}
-        row:selected .timestamp-label {{
-            color: rgba(255, 255, 255, 0.8);
-        }}
-        .item-image {{
-            border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-        }}
+            #MainContainer {{
+                background-color: {UI_COLORS['card_bg']};
+                border-radius: 16px;
+                border: 1px solid {UI_COLORS['card_border']};
+            }}
+            #SearchCard {{
+                background-color: rgba(45, 45, 45, 0.6);
+                border-radius: 10px;
+                border: 1px solid rgba(80, 80, 80, 0.4);
+            }}
+            #SearchEntry {{
+                background-color: transparent;
+                border: none;
+                color: {UI_COLORS['fg']};
+                font-size: 14px;
+            }}
+            #SearchEntry:focus {{
+                outline: none;
+            }}
+            #ListCard {{
+                background-color: rgba(28, 28, 28, 0.4);
+                border-radius: 10px;
+                border: 1px solid rgba(60, 60, 60, 0.3);
+            }}
+            #ListWidget {{
+                background-color: transparent;
+                border: none;
+                outline: 0;
+            }}
+            #ListWidget::item {{
+                background-color: transparent;
+                border-radius: 8px;
+                margin: 2px 6px;
+                border: none;
+            }}
+            #ListWidget::item:hover {{
+                background-color: transparent;
+            }}
+            #ListWidget::item:selected {{
+                background-color: transparent;
+            }}
         """
-        provider = Gtk.CssProvider()
-        provider.load_from_data(css.encode())
-        Gtk.StyleContext.add_provider_for_screen(
-            Gdk.Screen.get_default(),
-            provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-        )
+        self.setStyleSheet(css)
 
-    def _populate_list(self):
-        for child in self.listbox.get_children():
-            self.listbox.remove(child)
+    def populate_list(self):
+        self.list_widget.clear()
 
         if not self.filtered_history:
-            lbl = Gtk.Label(label="No clips found.")
-            lbl.get_style_context().add_class("item-label-dim")
-            lbl.set_margin_top(20)
-            lbl.set_margin_bottom(20)
-            row = Gtk.ListBoxRow()
-            row.add(lbl)
-            row.set_selectable(False)
-            self.listbox.add(row)
-            self.listbox.show_all()
+            item = QListWidgetItem("No clips found.")
+            item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            item.setFlags(Qt.ItemFlag.NoItemFlags)
+            self.list_widget.addItem(item)
             return
 
-        for idx, item in enumerate(self.filtered_history):
-            row = Gtk.ListBoxRow()
-            
-            # HBox principal da linha (com classe para card colorido isolado)
-            hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-            hbox.get_style_context().add_class("card-item")
-            
-            # Icone ou Imagem na Esquerda
-            left_widget = None
-            if item["type"] == "text":
-                content_str = item["content"]
-                if content_str.startswith(("http://", "https://", "www.")):
-                    left_widget = Gtk.Image.new_from_icon_name("web-browser-symbolic", Gtk.IconSize.MENU)
+        for idx, item_data in enumerate(self.filtered_history):
+            widget = QWidget()
+            widget.setObjectName("CardItem")
+            h_layout = QHBoxLayout(widget)
+            h_layout.setContentsMargins(12, 12, 12, 12)
+            h_layout.setSpacing(12)
+
+            # Left icon/image
+            icon_label = QLabel()
+            if item_data["type"] == "text":
+                content_str = item_data["content"]
+                
+                # Use system icons like GTK did
+                icon_name = "web-browser-symbolic" if content_str.startswith(("http://", "https://", "www.")) else "text-x-generic-symbolic"
+                pixmap = get_tinted_icon(icon_name, UI_COLORS['fg_dim'])
+                
+                if pixmap:
+                    icon_label.setPixmap(pixmap)
                 else:
-                    left_widget = Gtk.Image.new_from_icon_name("text-x-generic-symbolic", Gtk.IconSize.MENU)
+                    icon_label.setText("🌐" if icon_name == "web-browser-symbolic" else "📄")
+                    icon_label.setStyleSheet(f"font-size: 16px; color: {UI_COLORS['fg_dim']}; background: transparent;")
                 
                 preview = content_str.replace('\n', '  ')
-                if len(preview) > 45:
-                    preview = preview[:42] + "..."
+                if len(preview) > 50:
+                    preview = preview[:47] + "..."
+                    # Ditto-style hover preview for long text
+                    widget.setToolTip(content_str[:1000]) # Mostra até 1000 chars no hover
+                    
+                text_label = QLabel(preview)
+                text_label.setObjectName("ItemLabel")
                 
-                lbl = Gtk.Label(label=preview)
-                lbl.set_xalign(0)
-                lbl.set_ellipsize(Pango.EllipsizeMode.END)
-                lbl.get_style_context().add_class("item-label")
+                h_layout.addWidget(icon_label)
+                h_layout.addWidget(text_label, stretch=1)
                 
-                hbox.pack_start(left_widget, False, False, 0)
-                hbox.pack_start(lbl, True, True, 0)
+            elif item_data["type"] == "image":
+                filepath = item_data["content"]
+                pixmap = QPixmap(filepath)
+                if not pixmap.isNull():
+                    # Escala e recorta para um tamanho estático padrão (ex: 80x45)
+                    pixmap = pixmap.scaled(80, 45, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+                    
+                    # Cria um pixmap recortado exato
+                    crop = QPixmap(80, 45)
+                    crop.fill(Qt.GlobalColor.transparent)
+                    from PyQt6.QtGui import QPainter
+                    painter = QPainter(crop)
+                    # Centraliza o crop
+                    x = (pixmap.width() - 80) // 2
+                    y = (pixmap.height() - 45) // 2
+                    painter.drawPixmap(0, 0, pixmap, x, y, 80, 45)
+                    painter.end()
+                    
+                    icon_label.setPixmap(crop)
+                    icon_label.setFixedSize(80, 45)
                 
-            elif item["type"] == "image":
-                filepath = item["content"]
-                try:
-                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(filepath, 80, 45, True)
-                    left_widget = Gtk.Image.new_from_pixbuf(pixbuf)
-                    left_widget.get_style_context().add_class("item-image")
-                except Exception:
-                    left_widget = Gtk.Image.new_from_icon_name("image-x-generic-symbolic", Gtk.IconSize.DND)
+                # Ditto-style hover preview for images via HTML tooltip!
+                widget.setToolTip(f'<img src="{filepath}" width="300">')
                 
-                lbl = Gtk.Label(label="[Imagem PNG]")
-                lbl.set_xalign(0)
-                lbl.get_style_context().add_class("item-label-dim")
+                text_label = QLabel("[Imagem PNG]")
+                text_label.setObjectName("ItemLabelDim")
                 
-                hbox.pack_start(left_widget, False, False, 0)
-                hbox.pack_start(lbl, True, True, 0)
+                h_layout.addWidget(icon_label)
+                h_layout.addWidget(text_label, stretch=1)
 
-            # Box da Direita (Data, Pin, Badge de Atalho)
-            right_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            # Right badges
+            right_widget = QWidget()
+            r_layout = QHBoxLayout(right_widget)
+            r_layout.setContentsMargins(0, 0, 0, 0)
+            r_layout.setSpacing(8)
+
+
+            if item_data["is_pinned"]:
+                pin = QLabel("📌")
+                pin.setStyleSheet("background: transparent; font-size: 12px;")
+                r_layout.addWidget(pin)
+                
+            dt = datetime.datetime.fromtimestamp(item_data["created_at"])
+            time_lbl = QLabel(dt.strftime("%H:%M"))
+            time_lbl.setObjectName("TimestampLabel")
+            r_layout.addWidget(time_lbl)
+
+            h_layout.addWidget(right_widget)
+
+            # Define specific CSS for this widget to match GTK3 hover/select logic
+            # PyQt6 supports dynamic properties or just relying on QListWidget state
+            # but setting it dynamically on the widget is cleaner for complex children
+            widget.setStyleSheet(f"""
+                #CardItem {{
+                    background-color: transparent;
+                    border-radius: 8px;
+                }}
+                #ItemLabel {{
+                    color: {UI_COLORS['fg']}; 
+                    font-weight: 500; 
+                    font-size: 13.5px; 
+                    background: transparent;
+                }}
+                #ItemLabelDim {{
+                    color: {UI_COLORS['fg_dim']}; 
+                    font-weight: 500; 
+                    font-size: 13.5px; 
+                    background: transparent;
+                }}
+                #TimestampLabel {{
+                    color: {UI_COLORS['fg_dim']}; 
+                    font-size: 11px; 
+                    background: transparent;
+                }}
+            """)
+
+            list_item = QListWidgetItem(self.list_widget)
+            list_item.setSizeHint(widget.sizeHint())
+            self.list_widget.addItem(list_item)
+            self.list_widget.setItemWidget(list_item, widget)
             
-            if idx < 9:
-                badge = Gtk.Label(label=f"^{idx+1}")
-                badge.get_style_context().add_class("hotkey-badge")
-                right_box.pack_start(badge, False, False, 0)
-                
-            if item["is_pinned"]:
-                pin = Gtk.Label(label="📌")
-                pin.get_style_context().add_class("pin-badge")
-                right_box.pack_start(pin, False, False, 0)
-                
-            dt = datetime.datetime.fromtimestamp(item["created_at"])
-            time_str = dt.strftime("%H:%M")
-            time_lbl = Gtk.Label(label=time_str)
-            time_lbl.get_style_context().add_class("timestamp-label")
-            right_box.pack_start(time_lbl, False, False, 0)
-
-            hbox.pack_end(right_box, False, False, 0)
+            list_item.setData(Qt.ItemDataRole.UserRole, item_data)
             
-            row.add(hbox)
-            row.connect("button-press-event", self.on_row_button_press, item)
-            self.listbox.add(row)
+        self.list_widget.setCurrentRow(-1)
+        self.search_entry.setFocus()
+        self.list_widget.itemSelectionChanged.connect(self.update_selection_style)
 
-        self.listbox.show_all()
-        self.listbox.unselect_all()
-        self.search_entry.grab_focus()
+    def update_selection_style(self):
+        # We manually update the background color of the selected widget
+        # to match the GTK3 transparent outer row / colored inner box behavior
+        for i in range(self.list_widget.count()):
+            item = self.list_widget.item(i)
+            widget = self.list_widget.itemWidget(item)
+            if not widget:
+                continue
+                
+            if item.isSelected():
+                widget.setStyleSheet(f"""
+                    #CardItem {{
+                        background-color: {UI_COLORS['selected']};
+                        border-radius: 8px;
+                    }}
+                    #ItemLabel, #ItemLabelDim {{
+                        color: #ffffff; 
+                        font-weight: 500; 
+                        font-size: 13.5px; 
+                        background: transparent;
+                    }}
+                    #TimestampLabel {{
+                        color: rgba(255, 255, 255, 0.8); 
+                        font-size: 11px; 
+                        background: transparent;
+                    }}
+                """)
+            else:
+                widget.setStyleSheet(f"""
+                    #CardItem {{
+                        background-color: transparent;
+                        border-radius: 8px;
+                    }}
+                    #CardItem:hover {{
+                        background-color: {UI_COLORS['hover']};
+                    }}
+                    #ItemLabel {{
+                        color: {UI_COLORS['fg']}; 
+                        font-weight: 500; 
+                        font-size: 13.5px; 
+                        background: transparent;
+                    }}
+                    #ItemLabelDim {{
+                        color: {UI_COLORS['fg_dim']}; 
+                        font-weight: 500; 
+                        font-size: 13.5px; 
+                        background: transparent;
+                    }}
+                    #TimestampLabel {{
+                        color: {UI_COLORS['fg_dim']}; 
+                        font-size: 11px; 
+                        background: transparent;
+                    }}
+                """)
 
-    def on_search_changed(self, entry):
-        query = entry.get_text().strip()
+    def on_search_changed(self, text):
+        query = text.strip()
         if not query:
             self.full_history = history.load_history()
             self.filtered_history = list(self.full_history)
         else:
             self.filtered_history = history.load_history(query)
-        self._populate_list()
+        self.populate_list()
 
-    def on_row_activated(self, listbox, row):
-        index = row.get_index()
-        if 0 <= index < len(self.filtered_history):
-            self._paste_item(self.filtered_history[index])
+    def paste_by_index(self, idx):
+        if 0 <= idx < len(self.filtered_history):
+            self.paste_item(self.filtered_history[idx])
 
-    def on_row_button_press(self, row, event, item):
-        if event.button == 3:
-            menu = Gtk.Menu()
-            
-            pin_lbl = "📍 Unpin Item" if item["is_pinned"] else "📌 Pin Item"
-            pin_menu = Gtk.MenuItem(label=pin_lbl)
-            pin_menu.connect("activate", lambda w: self.toggle_pin_item(item))
-            menu.append(pin_menu)
-            
-            del_menu = Gtk.MenuItem(label="🗑️ Remove Item")
-            del_menu.connect("activate", lambda w: self.delete_item(item))
-            menu.append(del_menu)
-            
-            menu.append(Gtk.SeparatorMenuItem())
-            
-            clear_menu = Gtk.MenuItem(label="🧹 Clear Unpinned History")
-            clear_menu.connect("activate", lambda w: self.clear_unpinned_history())
-            menu.append(clear_menu)
-            
-            menu.show_all()
-            menu.popup_at_pointer(event)
-            return True
-        return False
+    def on_item_activated(self, item):
+        item_data = item.data(Qt.ItemDataRole.UserRole)
+        if item_data:
+            self.paste_item(item_data)
 
-    def toggle_pin_item(self, item):
-        history.toggle_pin(item["id"])
-        self._refresh_list()
-
-    def delete_item(self, item):
-        history.delete_item(item["id"])
-        self._refresh_list()
-
-    def clear_unpinned_history(self):
-        history.clear()
-        self._refresh_list()
-
-    def _refresh_list(self):
-        self.on_search_changed(self.search_entry)
-
-    def on_key_press(self, widget, event):
-        keyval = event.keyval
-        state = event.state
-        is_ctrl = bool(state & Gdk.ModifierType.CONTROL_MASK)
+    def paste_item(self, item_data):
+        import subprocess
+        import shutil
         
-        if keyval == Gdk.KEY_Escape:
-            self.close_app()
-            return True
-            
-        if keyval == Gdk.KEY_Delete:
-            current_row = self.listbox.get_selected_row()
-            if current_row:
-                idx = current_row.get_index()
-                if 0 <= idx < len(self.filtered_history):
-                    self.delete_item(self.filtered_history[idx])
-            return True
-
-        if keyval == Gdk.KEY_f and is_ctrl:
-            self.search_entry.grab_focus()
-            return True
-
-        if keyval == Gdk.KEY_p and is_ctrl:
-            current_row = self.listbox.get_selected_row()
-            if current_row:
-                idx = current_row.get_index()
-                if 0 <= idx < len(self.filtered_history):
-                    self.toggle_pin_item(self.filtered_history[idx])
-            return True
-
-        if is_ctrl and (Gdk.KEY_1 <= keyval <= Gdk.KEY_9):
-            num = keyval - Gdk.KEY_1
-            if num < len(self.filtered_history):
-                self._paste_item(self.filtered_history[num])
-            return True
-            
-        if keyval in (Gdk.KEY_Down, Gdk.KEY_Up):
-            max_idx = len(self.filtered_history) - 1
-            if max_idx < 0: 
-                return False
-            
-            current_row = self.listbox.get_selected_row()
-            idx = current_row.get_index() if current_row else -1
-            
-            if keyval == Gdk.KEY_Down:
-                idx = min(idx + 1, max_idx)
-            else:
-                idx = max(idx - 1, 0)
-                
-            row = self.listbox.get_row_at_index(idx)
-            self.listbox.select_row(row)
-            row.grab_focus()
-            return True
-            
-        if keyval == Gdk.KEY_Return:
-            current_row = self.listbox.get_selected_row()
-            if current_row:
-                idx = current_row.get_index()
-                if 0 <= idx < len(self.filtered_history):
-                    self._paste_item(self.filtered_history[idx])
-            else:
-                if self.filtered_history:
-                    self._paste_item(self.filtered_history[0])
-            return True
-
-        if not self.search_entry.has_focus() and keyval < 0xFF:
-            self.search_entry.grab_focus()
-            
-        return False
-
-    def _paste_item(self, item):
-        if item["type"] == "text":
-            text = item["content"]
+        has_wl = shutil.which('wl-copy') is not None
+        has_xclip = shutil.which('xclip') is not None
+        
+        if item_data["type"] == "text":
+            text = item_data["content"]
             try:
-                proc = subprocess.Popen(['wl-copy'], stdin=subprocess.PIPE)
-                proc.communicate(text.encode('utf-8'))
+                if has_wl:
+                    proc = subprocess.Popen(['wl-copy'], stdin=subprocess.PIPE)
+                    proc.communicate(text.encode('utf-8'))
+                elif has_xclip:
+                    proc = subprocess.Popen(['xclip', '-selection', 'clipboard'], stdin=subprocess.PIPE)
+                    proc.communicate(text.encode('utf-8'))
+                else:
+                    QApplication.clipboard().setText(text)
                 history.add_text(text)
             except Exception as e:
-                print(f"[FastPaste] Erro no wl-copy texto: {e}")
+                print(f"[FastPaste] Erro ao copiar texto: {e}")
                 
-        elif item["type"] == "image":
-            filepath = item["content"]
+        elif item_data["type"] == "image":
+            filepath = item_data["content"]
             try:
-                proc = subprocess.Popen(['wl-copy', '--type', 'image/png'], stdin=subprocess.PIPE)
                 with open(filepath, 'rb') as f:
                     img_data = f.read()
+                    
+                if has_wl:
+                    proc = subprocess.Popen(['wl-copy', '--type', 'image/png'], stdin=subprocess.PIPE)
                     proc.communicate(img_data)
+                elif has_xclip:
+                    proc = subprocess.Popen(['xclip', '-selection', 'clipboard', '-t', 'image/png'], stdin=subprocess.PIPE)
+                    proc.communicate(img_data)
+                else:
+                    img = QPixmap(filepath).toImage()
+                    QApplication.clipboard().setImage(img)
+                    
                 history.add_image(img_data)
             except Exception as e:
-                print(f"[FastPaste] Erro no wl-copy imagem: {e}")
-
+                print(f"[FastPaste] Erro ao copiar imagem: {e}")
+        
         self.close_app(simulate_paste=True)
 
+    def show_context_menu(self, position):
+        item = self.list_widget.itemAt(position)
+        if not item:
+            return
+            
+        item_data = item.data(Qt.ItemDataRole.UserRole)
+        if not item_data:
+            return
+
+        menu = QMenu(self)
+        
+        pin_action = menu.addAction("📍 Unpin Item" if item_data["is_pinned"] else "📌 Pin Item")
+        del_action = menu.addAction("🗑️ Remove Item")
+        menu.addSeparator()
+        clear_action = menu.addAction("🧹 Clear Unpinned History")
+        
+        action = menu.exec(self.list_widget.mapToGlobal(position))
+        
+        if action == pin_action:
+            history.toggle_pin(item_data["id"])
+            self.refresh_list()
+        elif action == del_action:
+            history.delete_item(item_data["id"])
+            self.refresh_list()
+        elif action == clear_action:
+            history.clear()
+            self.refresh_list()
+
+    def toggle_pin_selected(self):
+        row = self.list_widget.currentRow()
+        if 0 <= row < len(self.filtered_history):
+            history.toggle_pin(self.filtered_history[row]["id"])
+            self.refresh_list()
+
+    def delete_selected(self):
+        row = self.list_widget.currentRow()
+        if 0 <= row < len(self.filtered_history):
+            history.delete_item(self.filtered_history[row]["id"])
+            self.refresh_list()
+
+    def refresh_list(self):
+        self.on_search_changed(self.search_entry.text())
+
+    def changeEvent(self, event):
+        # Fechar a janela quando ela perder o foco completamente
+        if event.type() == QEvent.Type.ActivationChange:
+            if not self.isActiveWindow():
+                self.close_app()
+        super().changeEvent(event)
+
+    def focusOutEvent(self, event):
+        self.close_app()
+        super().focusOutEvent(event)
+
+    def keyPressEvent(self, event):
+        key = event.key()
+        
+        # Seta para baixo / para cima
+        if key in (Qt.Key.Key_Down, Qt.Key.Key_Up):
+            # Se a barra de pesquisa tem o foco, passa para a lista
+            if self.search_entry.hasFocus():
+                self.list_widget.setFocus()
+                if self.list_widget.currentRow() < 0 and self.list_widget.count() > 0:
+                    self.list_widget.setCurrentRow(0)
+            super().keyPressEvent(event)
+            return
+            
+        # Enter / Return
+        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            row = self.list_widget.currentRow()
+            if row >= 0:
+                self.paste_by_index(row)
+            elif self.list_widget.count() > 0:
+                self.paste_by_index(0)
+            return
+
+        # Digitação vai direto para a barra de pesquisa
+        if not self.search_entry.hasFocus() and len(event.text()) > 0 and event.text().isprintable():
+            self.search_entry.setFocus()
+            self.search_entry.insert(event.text())
+            
+        super().keyPressEvent(event)
+
     def close_app(self, simulate_paste=False):
-        self.destroy()
+        self.hide()
         if simulate_paste:
-            cmd = None
-            if shutil.which("wtype"):
-                cmd = "sleep 0.15 && wtype -M ctrl -k v -m ctrl"
-            elif shutil.which("ydotool"):
-                cmd = "sleep 0.15 && ydotool key 29:1 47:1 47:0 29:0"
-            elif shutil.which("xdotool"):
-                cmd = "sleep 0.15 && xdotool key ctrl+v"
-                
-            if cmd:
-                subprocess.Popen(['sh', '-c', cmd], start_new_session=True)
-                
+            self.input_sim.paste()
+            
         if self.standalone:
-            Gtk.main_quit()
+            QApplication.quit()
 
 def show(standalone=True):
-    app = FastPastePopup(standalone=standalone)
-    app.show_all()
+    app = QApplication.instance()
+    if not app:
+        app = QApplication(sys.argv)
+        
+    window = FastPastePopup(standalone=standalone)
+    window.show()
+    
+    # Force focus
+    window.activateWindow()
+    window.raise_()
+    
     if standalone:
-        Gtk.main()
-    return app
+        sys.exit(app.exec())
+    return window
 
 if __name__ == "__main__":
     show(standalone=True)

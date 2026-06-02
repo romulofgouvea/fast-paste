@@ -1,204 +1,196 @@
 #!/usr/bin/env python3
 import os
-import signal
 import sys
+import signal
 import time
+
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtNetwork import QLocalServer, QLocalSocket
+from PyQt6.QtCore import QTimer
 
 from config import PID_FILE, LOG_FILE
 import history
 
+IPC_SERVER_NAME = "FastPaste_IPC_Server"
+
 def check_status():
-    if os.path.exists(PID_FILE):
-        try:
-            with open(PID_FILE, 'r') as f:
-                pid = int(f.read().strip())
-            os.kill(pid, 0)
-            return pid
-        except (ProcessLookupError, ValueError):
-            return None
-    return None
+    """Check if the daemon is running by trying to connect to the local server."""
+    socket = QLocalSocket()
+    socket.connectToServer(IPC_SERVER_NAME)
+    if socket.waitForConnected(500):
+        socket.disconnectFromServer()
+        return True
+    return False
 
 def start_daemon():
-    pid = check_status()
-    if pid:
-        print(f"✅ FastPaste Monitor já está rodando (PID: {pid})")
+    if check_status():
+        print("✅ FastPaste Monitor is already running.")
         return
 
-    print("🚀 Iniciando monitor em background...")
+    print("🚀 Starting background monitor...")
     
-    # Double fork para daemonizar (sem importar GTK)
-    pid1 = os.fork()
-    if pid1 > 0:
-        time.sleep(0.5)
-        new_pid = check_status()
-        if new_pid:
-            print(f"✅ Monitor iniciado com sucesso (PID: {new_pid})")
-        return
+    # Forking before Qt init on Linux/Mac
+    if os.name == 'posix':
+        pid1 = os.fork()
+        if pid1 > 0:
+            time.sleep(0.5)
+            if check_status():
+                print("✅ Monitor started successfully.")
+            return
 
-    os.setsid()
-    pid2 = os.fork()
-    if pid2 > 0:
-        os._exit(0)
+        os.setsid()
+        pid2 = os.fork()
+        if pid2 > 0:
+            os._exit(0)
 
-    # Escreve PID
-    with open(PID_FILE, 'w') as f:
-        f.write(str(os.getpid()))
-
-    # Redireciona saídas
-    sys.stdout.flush()
-    sys.stderr.flush()
-    with open(LOG_FILE, 'a') as log:
+        # Redirect output
+        sys.stdout.flush()
+        sys.stderr.flush()
+        log = open(LOG_FILE, 'a')
         os.dup2(log.fileno(), sys.stdout.fileno())
         os.dup2(log.fileno(), sys.stderr.fileno())
-
-    # Inicia o monitor (script separado para não misturar imports)
-    import monitor
-    m = monitor.ClipboardMonitor()
-    signal.signal(signal.SIGTERM, m.stop)
-    signal.signal(signal.SIGINT, m.stop)
-    m.start()
+        
+        # Now run foreground
+        run_foreground()
+    else:
+        # On Windows, we instruct the user to use pythonw or run directly
+        print("To run in background on Windows, use: pythonw fast_paste.py run")
+        run_foreground()
 
 def stop_daemon():
-    pid = check_status()
-    if pid:
-        os.kill(pid, signal.SIGTERM)
-        print(f"🛑 Monitor parado (PID: {pid})")
-        time.sleep(0.5)
-    if os.path.exists(PID_FILE):
-        os.unlink(PID_FILE)
-    if not pid:
-        print("Monitor não estava rodando.")
+    if not check_status():
+        print("Monitor is not running.")
+        return
+        
+    socket = QLocalSocket()
+    socket.connectToServer(IPC_SERVER_NAME)
+    if socket.waitForConnected(1000):
+        socket.write(b"STOP\n")
+        socket.waitForBytesWritten(1000)
+        socket.disconnectFromServer()
+        print("🛑 Monitor stopped.")
 
 def show_popup():
-    import socket
-    from config import SOCKET_PATH
-    if os.path.exists(SOCKET_PATH):
-        try:
-            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-                s.settimeout(1.0)
-                s.connect(SOCKET_PATH)
-                s.sendall(b"SHOW\n")
+    if check_status():
+        socket = QLocalSocket()
+        socket.connectToServer(IPC_SERVER_NAME)
+        if socket.waitForConnected(1000):
+            socket.write(b"SHOW\n")
+            socket.waitForBytesWritten(1000)
+            socket.disconnectFromServer()
             return
-        except Exception:
-            pass
-
-    # Fallback se daemon não estiver escutando no socket
+            
+    # Fallback if server is not running
     import popup
     popup.show(standalone=True)
+
 
 popup_instance = None
 
 def run_foreground():
-    """Roda o daemon no foreground. Ideal para serviços systemd ou depuração.
-    Se houver interface gráfica disponível, inicia o ícone de bandeja (Tray).
-    Caso contrário, roda puramente em modo headless."""
-    display = os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")
-    if not display:
-        print("[FastPaste] Sem ambiente gráfico ativo. Rodando monitor puramente em terminal.")
-        import monitor
-        m = monitor.ClipboardMonitor()
-        signal.signal(signal.SIGTERM, m.stop)
-        signal.signal(signal.SIGINT, m.stop)
-        m.start()
-        return
+    """Runs the main Qt application with System Tray, Clipboard Monitor, Global Hotkeys and IPC Server."""
+    # Ensure a QApplication instance exists
+    app = QApplication.instance()
+    if not app:
+        app = QApplication(sys.argv)
+    
+    # Prevent app from quitting when popup is closed
+    app.setQuitOnLastWindowClosed(False)
 
-    # Se há interface gráfica, inicia GTK e o Ícone de Bandeja (Tray)
-    import gi
-    gi.require_version('Gtk', '3.0')
-    from gi.repository import Gtk, GLib
-    import threading
     import monitor
     import tray
-    import subprocess
-    import socket
-    from config import SOCKET_PATH
-    
-    m = monitor.ClipboardMonitor()
-    
-    # Roda o monitor de transferência em thread secundária (evita travar o GTK)
-    monitor_thread = threading.Thread(target=m.start, daemon=True)
-    monitor_thread.start()
-    
-    # Configura IPC via Socket Unix para Single-Instance
-    if os.path.exists(SOCKET_PATH):
-        try:
-            os.remove(SOCKET_PATH)
-        except OSError:
-            pass
-            
-    ipc_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    ipc_socket.bind(SOCKET_PATH)
-    ipc_socket.listen(1)
-    ipc_socket.setblocking(False)
-    
-    def on_ipc_accept(source, condition):
-        try:
-            conn, addr = ipc_socket.accept()
-            conn.settimeout(0.5)
-            data = conn.recv(1024)
-            if data.strip() == b"SHOW":
-                global popup_instance
-                if popup_instance is None or popup_instance.get_window() is None:
-                    import popup
-                    popup_instance = popup.show(standalone=False)
-                else:
-                    popup_instance.present()
-            conn.close()
-        except Exception as e:
-            print(f"[FastPaste IPC Error] {e}")
-        return True # keep watching
-        
-    GLib.io_add_watch(ipc_socket.fileno(), GLib.IO_IN, on_ipc_accept)
+    import popup
+    from platform_handler import GlobalHotkeyManager
 
-    # Callback para abrir a janela de histórico (usado pelo Tray)
+    # 1. Setup IPC Server
+    server = QLocalServer()
+    # Remove existing server if crashed
+    QLocalServer.removeServer(IPC_SERVER_NAME)
+    
+    def on_new_connection():
+        global popup_instance
+        socket = server.nextPendingConnection()
+        socket.waitForReadyRead(1000)
+        data = socket.readAll().data()
+        
+        if b"SHOW" in data:
+            if clipboard_monitor:
+                clipboard_monitor.force_check()
+                
+            if not popup_instance:
+                popup_instance = popup.FastPastePopup(standalone=False)
+            popup_instance.refresh_list()
+            popup_instance.show()
+            popup_instance.activateWindow()
+            popup_instance.raise_()
+        elif b"STOP" in data:
+            QApplication.quit()
+            
+        socket.disconnectFromServer()
+        socket.deleteLater()
+
+    server.newConnection.connect(on_new_connection)
+    server.listen(IPC_SERVER_NAME)
+
     def show_popup_cb():
         global popup_instance
-        if popup_instance is None or popup_instance.get_window() is None:
-            import popup
-            popup_instance = popup.show(standalone=False)
-        else:
-            popup_instance.present()
+        if clipboard_monitor:
+            clipboard_monitor.force_check()
+            
+        if not popup_instance:
+            popup_instance = popup.FastPastePopup(standalone=False)
+        popup_instance.refresh_list()
+        popup_instance.show()
+        popup_instance.activateWindow()
+        popup_instance.raise_()
 
-    # Callback para encerrar o daemon graciosamente
-    def exit_daemon_cb(*args):
-        m.stop()
-        if os.path.exists(SOCKET_PATH):
-            try:
-                os.remove(SOCKET_PATH)
-            except OSError:
-                pass
-        Gtk.main_quit()
-        return False
+    def exit_cb():
+        QApplication.quit()
 
-    # Bind SIGTERM e SIGINT no GTK main loop
-    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, exit_daemon_cb)
-    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, exit_daemon_cb)
+    # 2. Start Clipboard Monitor
+    global clipboard_monitor
+    clipboard_monitor = monitor.ClipboardMonitor()
+    clipboard_monitor.start()
 
-    # Configura o ícone na bandeja
-    t = tray.FastPasteTray(on_show_callback=show_popup_cb, on_exit_callback=exit_daemon_cb)
-    t.setup()
+    # 3. Setup System Tray
+    # No Linux Wayland, o QSystemTrayIcon pode criar uma janela invisível que buga a dock.
+    is_wayland = os.environ.get('WAYLAND_DISPLAY') is not None
+    if sys.platform.startswith('linux') and is_wayland:
+        print("[FastPaste] Wayland detectado: Desativando System Tray para evitar bugs na dock.")
+    else:
+        tray_icon = tray.FastPasteTray(on_show_callback=show_popup_cb, on_exit_callback=exit_cb)
+        tray_icon.setup()
+
+    # 4. Setup Global Hotkeys (Windows/Mac)
+    hotkeys = GlobalHotkeyManager(callback=show_popup_cb)
+    hotkeys.start()
+
+    # Handle Ctrl+C gracefully in terminal
+    signal.signal(signal.SIGINT, lambda *args: QApplication.quit())
+    signal.signal(signal.SIGTERM, lambda *args: QApplication.quit())
     
-    # Inicia o loop gráfico do GTK para manter a bandeja viva
-    Gtk.main()
+    # Required for Python signals to be caught in PyQt loop
+    timer = QTimer()
+    timer.start(500)
+    timer.timeout.connect(lambda: None)
+
+    # Exec Event Loop
+    sys.exit(app.exec())
+
 
 def print_usage():
     print("""
 ╔═══════════════════════════════════════════════╗
-║         ⚡ FastPaste - Clipboard Manager      ║
+║         ⚡ FastPaste - Cross-Platform         ║
 ╠═══════════════════════════════════════════════╣
 ║                                               ║
-║  Comandos:                                    ║
-║    start   - Inicia o monitor em background   ║
-║    stop    - Para o monitor                   ║
-║    run     - Executa o daemon + bandeja       ║
-║    show    - Abre o popup com histórico       ║
-║    status  - Verifica status do monitor       ║
-║    clear   - Limpa o histórico copiado        ║
-║                                               ║
-║  Uso:                                         ║
-║    python3 fast_paste.py start                ║
-║    python3 fast_paste.py run                  ║
-║    python3 fast_paste.py show                 ║
+║  Commands:                                    ║
+║    start   - Start background monitor         ║
+║    stop    - Stop background monitor          ║
+║    run     - Run daemon in foreground         ║
+║    show    - Show history popup               ║
+║    status  - Check daemon status              ║
+║    clear   - Clear unpinned history           ║
 ║                                               ║
 ╚═══════════════════════════════════════════════╝
 """)
@@ -219,15 +211,14 @@ if __name__ == "__main__":
     elif cmd == "show":
         show_popup()
     elif cmd == "status":
-        pid = check_status()
-        if pid:
-            print(f"✅ Monitor rodando perfeitamente (PID: {pid})")
+        if check_status():
+            print("✅ Monitor is running perfectly.")
         else:
-            print("❌ Monitor NÃO está rodando.")
+            print("❌ Monitor is NOT running.")
     elif cmd == "clear":
         history.clear()
-        print("✅ Histórico limpo com sucesso!")
+        print("✅ History cleared successfully!")
     else:
-        print(f"Comando desconhecido: {cmd}")
+        print(f"Unknown command: {cmd}")
         print_usage()
         sys.exit(1)

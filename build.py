@@ -77,7 +77,7 @@ def main():
 
     # 2. Define platform-specific options
     name = "fast-paste"
-    pyinstaller_args = ["pyinstaller", "--noconfirm", "--clean"]
+    pyinstaller_args = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean"]
     
     # Check OS
     if sys.platform.startswith("win"):

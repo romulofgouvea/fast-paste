@@ -21,7 +21,7 @@ def run_command(command, shell=False):
         sys.exit(result.returncode)
 
 def main():
-    print("═══ FastPaste Builder ═══")
+    print("=== FastPaste Builder ===")
     
     # 1. Verify and install dependencies
     deps = {
@@ -61,17 +61,17 @@ def main():
                     pass
         
         if not installed:
-            print(f"\n❌ Error: pip is not available or failed to install dependencies: {missing_packages}")
+            print(f"\n[Error] pip is not available or failed to install dependencies: {missing_packages}")
             if sys.platform.startswith("win"):
-                print("👉 Please run: python -m ensurepip")
+                print("[Info] Please run: python -m ensurepip")
             elif sys.platform.startswith("darwin"):
-                print("👉 Please run: python3 -m ensurepip")
+                print("[Info] Please run: python3 -m ensurepip")
             else:
-                print("👉 Please install pip using your package manager:")
+                print("[Info] Please install pip using your package manager:")
                 print("   sudo apt update && sudo apt install python3-pip")
             sys.exit(1)
     else:
-        print("✅ All dependencies are already installed (PyQt6, pynput, pyinstaller).")
+        print("[OK] All dependencies are already installed (PyQt6, pynput, pyinstaller).")
 
     # Generate .ico for Windows if Pillow is available and fast_paste.png exists
     if os.path.exists("fast_paste.png"):
@@ -81,7 +81,7 @@ def main():
                 from PIL import Image
                 img = Image.open("fast_paste.png")
                 img.save(ico_path, format="ICO", sizes=[(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)])
-                print("✅ Generated fast_paste.ico for Windows.")
+                print("[OK] Generated fast_paste.ico for Windows.")
             except Exception as e:
                 pass
 
@@ -91,7 +91,7 @@ def main():
     
     # Check OS
     if sys.platform.startswith("win"):
-        print("🖥️ OS detected: Windows")
+        print("[Info] OS detected: Windows")
         pyinstaller_args.extend([
             "--onefile",
             "--windowed",
@@ -101,7 +101,7 @@ def main():
             pyinstaller_args.append("--icon=fast_paste.ico")
         pyinstaller_args.append("fast_paste.py")
     elif sys.platform.startswith("darwin"):
-        print("🍎 OS detected: macOS")
+        print("[Info] OS detected: macOS")
         pyinstaller_args.extend([
             "--windowed",
             f"--name={name}",
@@ -110,7 +110,7 @@ def main():
             pyinstaller_args.append("--icon=fast_paste.png")
         pyinstaller_args.append("fast_paste.py")
     else:
-        print("🐧 OS detected: Linux")
+        print("[Info] OS detected: Linux")
         pyinstaller_args.extend([
             "--onefile",
             "--windowed",
@@ -128,8 +128,8 @@ def main():
     print("Running PyInstaller...")
     run_command(pyinstaller_args)
     
-    print("\n══════════════════════════════════════════")
-    print("🎉 Build process completed successfully!")
+    print("\n==========================================")
+    print("Build process completed successfully!")
     
     if sys.platform.startswith("darwin"):
         print(f"Output application: dist/{name}.app")
@@ -143,7 +143,7 @@ def main():
         # 5. Package into .deb on Linux if dpkg-deb is available
         dpkg_deb = shutil.which("dpkg-deb")
         if dpkg_deb:
-            print("\n📦 Generating .deb package...")
+            print("\n[Package] Generating .deb package...")
             try:
                 deb_dir = "build/deb_package"
                 if os.path.exists(deb_dir):
@@ -252,15 +252,15 @@ Description: Fast Paste Clipboard Manager
                 
                 # Build DEB
                 run_command(["dpkg-deb", "--build", deb_dir, f"dist/Fast-Paste-Clipboard-Manager_{arch}.deb"])
-                print(f"✅ Generated deb package: dist/Fast-Paste-Clipboard-Manager_{arch}.deb")
-                print("\n👉 To install the deb package with dependencies:")
+                print(f"[OK] Generated deb package: dist/Fast-Paste-Clipboard-Manager_{arch}.deb")
+                print("\n[Info] To install the deb package with dependencies:")
                 print(f"   sudo apt install ./dist/Fast-Paste-Clipboard-Manager_{arch}.deb")
-                print("👉 To enable the background service:")
+                print("[Info] To enable the background service:")
                 print("   systemctl --user enable --now fast-paste")
             except Exception as e:
-                print(f"⚠️ Failed to generate .deb package: {e}")
+                print(f"[Warning] Failed to generate .deb package: {e}")
                 
-    print("══════════════════════════════════════════")
+    print("==========================================")
 
 if __name__ == "__main__":
     main()

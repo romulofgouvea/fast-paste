@@ -2,6 +2,16 @@ import os
 import sys
 import subprocess
 import shutil
+import io
+
+# Force UTF-8 encoding on Windows to prevent UnicodeEncodeError with emojis/box-drawing characters
+if sys.platform.startswith("win"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except AttributeError:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
 def run_command(command, shell=False):
     print(f"Executing: {' '.join(command) if isinstance(command, list) else command}")

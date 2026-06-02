@@ -1,0 +1,72 @@
+name: Build FastPaste Ubuntu
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-linux-deb:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby rubygems ruby-dev
+          sudo gem install fpm
+          
+      - name: Package into native .deb
+        run: |
+          # Create deb structure
+          mkdir -p build_deb/opt/fast-paste
+          mkdir -p build_deb/usr/bin
+          mkdir -p build_deb/usr/share/applications
+          
+          # Copy source files
+          cp -r *.py build_deb/opt/fast-paste/
+          cp requirements.txt build_deb/opt/fast-paste/
+          chmod +x build_deb/opt/fast-paste/fast_paste.py
+          
+          # Create symlink wrapper
+          cat <<EOF > build_deb/usr/bin/fast-paste
+          #!/bin/bash
+          cd /opt/fast-paste
+          exec python3 fast_paste.py "\$@"
+          EOF
+          chmod +x build_deb/usr/bin/fast-paste
+          
+          # Create .desktop file
+          cat <<EOF > build_deb/usr/share/applications/fast-paste.desktop
+          [Desktop Entry]
+          Name=FastPaste
+          Exec=/usr/bin/fast-paste run
+          Icon=edit-paste
+          Type=Application
+          Categories=Utility;
+          EOF
+          
+          # Use FPM to build Debian package with dependencies!
+          fpm -s dir -t deb \
+            -n fast-paste \
+            -v 1.0.0 \
+            --architecture all \
+            --maintainer "FastPaste Team" \
+            --description "A GTK3 Wayland Clipboard Manager" \
+            -d "python3" \
+            -d "python3-gi" \
+            -d "python3-gi-cairo" \
+            -d "gir1.2-gtk-3.0" \
+            -d "xclip" \
+            -C build_deb \
+            opt usr
+            
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: fast-paste-ubuntu-deb
+          path: fast-paste_1.0.0_all.deb

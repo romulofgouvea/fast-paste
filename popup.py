@@ -121,19 +121,30 @@ class FastPastePopup(Gtk.Window):
             background-color: transparent;
         }}
         row {{
+            background-color: transparent !important;
+            border: none !important;
+            padding: 6px !important;
+            margin: 0 !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }}
+        row:hover, row:selected {{
+            background-color: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }}
+        .card-item {{
             border-radius: 8px;
-            margin: 2px 6px;
             padding: 8px 12px;
             background-color: transparent;
-            border: none;
             transition: all 0.15s ease;
         }}
-        row:hover {{
-            background-color: {UI_COLORS['hover']};
+        row:hover .card-item {{
+            background-color: {UI_COLORS['hover']} !important;
         }}
-        row:selected {{
-            background-color: {UI_COLORS['selected']};
-            color: {UI_COLORS['fg']};
+        row:selected .card-item {{
+            background-color: {UI_COLORS['selected']} !important;
         }}
         .item-label {{
             font-size: 13.5px;
@@ -184,7 +195,6 @@ class FastPastePopup(Gtk.Window):
         )
 
     def _populate_list(self):
-        # Limpa itens anteriores
         for child in self.listbox.get_children():
             self.listbox.remove(child)
 
@@ -203,20 +213,19 @@ class FastPastePopup(Gtk.Window):
         for idx, item in enumerate(self.filtered_history):
             row = Gtk.ListBoxRow()
             
-            # HBox principal da linha
+            # HBox principal da linha (com classe para card colorido isolado)
             hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+            hbox.get_style_context().add_class("card-item")
             
             # Icone ou Imagem na Esquerda
             left_widget = None
             if item["type"] == "text":
                 content_str = item["content"]
-                # Se for URL, mostra ícone de navegação
                 if content_str.startswith(("http://", "https://", "www.")):
                     left_widget = Gtk.Image.new_from_icon_name("web-browser-symbolic", Gtk.IconSize.MENU)
                 else:
                     left_widget = Gtk.Image.new_from_icon_name("text-x-generic-symbolic", Gtk.IconSize.MENU)
                 
-                # Trata quebras de linha no preview
                 preview = content_str.replace('\n', '  ')
                 if len(preview) > 45:
                     preview = preview[:42] + "..."
@@ -232,12 +241,10 @@ class FastPastePopup(Gtk.Window):
             elif item["type"] == "image":
                 filepath = item["content"]
                 try:
-                    # Carrega e escala a miniatura para 80x45 (proporção 16:9 ideal)
                     pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(filepath, 80, 45, True)
                     left_widget = Gtk.Image.new_from_pixbuf(pixbuf)
                     left_widget.get_style_context().add_class("item-image")
                 except Exception:
-                    # Fallback caso a miniatura falhe ao carregar
                     left_widget = Gtk.Image.new_from_icon_name("image-x-generic-symbolic", Gtk.IconSize.DND)
                 
                 lbl = Gtk.Label(label="[Imagem PNG]")
@@ -250,19 +257,16 @@ class FastPastePopup(Gtk.Window):
             # Box da Direita (Data, Pin, Badge de Atalho)
             right_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
             
-            # 1. Badge de Atalho (Ctrl+1 a Ctrl+9)
             if idx < 9:
                 badge = Gtk.Label(label=f"^{idx+1}")
                 badge.get_style_context().add_class("hotkey-badge")
                 right_box.pack_start(badge, False, False, 0)
                 
-            # 2. Badge de Pin
             if item["is_pinned"]:
                 pin = Gtk.Label(label="📌")
                 pin.get_style_context().add_class("pin-badge")
                 right_box.pack_start(pin, False, False, 0)
                 
-            # 3. Horário
             dt = datetime.datetime.fromtimestamp(item["created_at"])
             time_str = dt.strftime("%H:%M")
             time_lbl = Gtk.Label(label=time_str)
@@ -272,10 +276,7 @@ class FastPastePopup(Gtk.Window):
             hbox.pack_end(right_box, False, False, 0)
             
             row.add(hbox)
-            
-            # Registra evento de clique com o botão direito (Button 3) para menu contextual
             row.connect("button-press-event", self.on_row_button_press, item)
-            
             self.listbox.add(row)
 
         self.listbox.show_all()
@@ -288,7 +289,6 @@ class FastPastePopup(Gtk.Window):
             self.full_history = history.load_history()
             self.filtered_history = list(self.full_history)
         else:
-            # Realiza busca rápida direta no SQLite (conteúdo + data local)
             self.filtered_history = history.load_history(query)
         self._populate_list()
 
@@ -298,25 +298,20 @@ class FastPastePopup(Gtk.Window):
             self._paste_item(self.filtered_history[index])
 
     def on_row_button_press(self, row, event, item):
-        # Clique com botão direito (Button 3)
         if event.button == 3:
             menu = Gtk.Menu()
             
-            # Opção de Fixar / Desafixar
             pin_lbl = "📍 Unpin Item" if item["is_pinned"] else "📌 Pin Item"
             pin_menu = Gtk.MenuItem(label=pin_lbl)
             pin_menu.connect("activate", lambda w: self.toggle_pin_item(item))
             menu.append(pin_menu)
             
-            # Opção de Deletar
             del_menu = Gtk.MenuItem(label="🗑️ Remove Item")
             del_menu.connect("activate", lambda w: self.delete_item(item))
             menu.append(del_menu)
             
-            # Separador
             menu.append(Gtk.SeparatorMenuItem())
             
-            # Limpar Histórico não fixado
             clear_menu = Gtk.MenuItem(label="🧹 Clear Unpinned History")
             clear_menu.connect("activate", lambda w: self.clear_unpinned_history())
             menu.append(clear_menu)
@@ -339,7 +334,6 @@ class FastPastePopup(Gtk.Window):
         self._refresh_list()
 
     def _refresh_list(self):
-        # Atualiza a lista respeitando a busca atual
         self.on_search_changed(self.search_entry)
 
     def on_key_press(self, widget, event):
@@ -347,12 +341,10 @@ class FastPastePopup(Gtk.Window):
         state = event.state
         is_ctrl = bool(state & Gdk.ModifierType.CONTROL_MASK)
         
-        # 1. ESC: fecha o aplicativo
         if keyval == Gdk.KEY_Escape:
             self.close_app()
             return True
             
-        # 2. DELETE: exclui item selecionado
         if keyval == Gdk.KEY_Delete:
             current_row = self.listbox.get_selected_row()
             if current_row:
@@ -361,12 +353,10 @@ class FastPastePopup(Gtk.Window):
                     self.delete_item(self.filtered_history[idx])
             return True
 
-        # 3. Ctrl + F: foca o campo de busca
         if keyval == Gdk.KEY_f and is_ctrl:
             self.search_entry.grab_focus()
             return True
 
-        # 4. Ctrl + P: fixa/desafixa item selecionado
         if keyval == Gdk.KEY_p and is_ctrl:
             current_row = self.listbox.get_selected_row()
             if current_row:
@@ -375,14 +365,12 @@ class FastPastePopup(Gtk.Window):
                     self.toggle_pin_item(self.filtered_history[idx])
             return True
 
-        # 5. Ctrl + [1-9]: Colar rápido instantâneo
         if is_ctrl and (Gdk.KEY_1 <= keyval <= Gdk.KEY_9):
             num = keyval - Gdk.KEY_1
             if num < len(self.filtered_history):
                 self._paste_item(self.filtered_history[num])
             return True
             
-        # 6. Seta UP e DOWN: Navegação inteligente da lista
         if keyval in (Gdk.KEY_Down, Gdk.KEY_Up):
             max_idx = len(self.filtered_history) - 1
             if max_idx < 0: 
@@ -401,7 +389,6 @@ class FastPastePopup(Gtk.Window):
             row.grab_focus()
             return True
             
-        # 7. ENTER: Cola o item selecionado
         if keyval == Gdk.KEY_Return:
             current_row = self.listbox.get_selected_row()
             if current_row:
@@ -409,51 +396,41 @@ class FastPastePopup(Gtk.Window):
                 if 0 <= idx < len(self.filtered_history):
                     self._paste_item(self.filtered_history[idx])
             else:
-                # Se nenhum item selecionado mas lista tiver conteúdo, cola o primeiro
                 if self.filtered_history:
                     self._paste_item(self.filtered_history[0])
             return True
 
-        # Encaminha digitação padrão para a barra de busca automaticamente
         if not self.search_entry.has_focus() and keyval < 0xFF:
             self.search_entry.grab_focus()
             
         return False
 
     def _paste_item(self, item):
-        """Prepara o clipe selecionado na área de transferência e envia comando de colar."""
-        # Se for Texto
         if item["type"] == "text":
             text = item["content"]
             try:
                 proc = subprocess.Popen(['wl-copy'], stdin=subprocess.PIPE)
                 proc.communicate(text.encode('utf-8'))
-                # Re-adiciona para que suba ao topo do histórico
                 history.add_text(text)
             except Exception as e:
                 print(f"[FastPaste] Erro no wl-copy texto: {e}")
                 
-        # Se for Imagem
         elif item["type"] == "image":
             filepath = item["content"]
             try:
-                # Copia a imagem binária de volta
                 proc = subprocess.Popen(['wl-copy', '--type', 'image/png'], stdin=subprocess.PIPE)
                 with open(filepath, 'rb') as f:
                     img_data = f.read()
                     proc.communicate(img_data)
-                # Re-adiciona para que suba ao topo do histórico
                 history.add_image(img_data)
             except Exception as e:
                 print(f"[FastPaste] Erro no wl-copy imagem: {e}")
 
-        # Fecha a UI imediatamente para devolver o foco à janela ativa e simular o Ctrl+V
         self.close_app(simulate_paste=True)
 
     def close_app(self, simulate_paste=False):
         self.destroy()
         if simulate_paste:
-            # Simulação assíncrona desacoplada do thread principal do GTK
             cmd = None
             if shutil.which("wtype"):
                 cmd = "sleep 0.15 && wtype -M ctrl -k v -m ctrl"

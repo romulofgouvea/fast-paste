@@ -58,11 +58,9 @@ class GlobalHotkeyManager:
         if self.os_name in ["Windows", "Darwin"]:
             try:
                 from pynput import keyboard
+                from settings_manager import settings
                 
-                # Ctrl+Shift+V
-                hotkey = '<ctrl>+<shift>+v'
-                if self.os_name == "Darwin":
-                    hotkey = '<cmd>+<shift>+v'
+                hotkey = settings.get('hotkey', '<ctrl>+<shift>+v')
                     
                 self.listener = keyboard.GlobalHotKeys({
                     hotkey: self.callback

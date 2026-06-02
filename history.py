@@ -2,14 +2,28 @@ import sqlite3
 import os
 import hashlib
 import time
-from config import DB_FILE, IMAGES_DIR, MAX_HISTORY, DATA_DIR
+from config import DB_FILE, IMAGES_DIR, DATA_DIR
+from settings_manager import settings
+
+def get_db_path():
+    path = settings.get('db_path', DATA_DIR)
+    os.makedirs(path, exist_ok=True)
+    return os.path.join(path, "history.db")
+
+def get_images_path():
+    path = settings.get('db_path', DATA_DIR)
+    img_path = os.path.join(path, "images")
+    os.makedirs(img_path, exist_ok=True)
+    return img_path
+
+def get_connection():
+    db_file = get_db_path()
+    conn = sqlite3.connect(db_file)
+    return conn
 
 def init_db():
-    """Garante que as pastas e o banco de dados SQLite estejam inicializados."""
-    os.makedirs(DATA_DIR, exist_ok=True)
-    os.makedirs(IMAGES_DIR, exist_ok=True)
-    
-    conn = sqlite3.connect(DB_FILE)
+    get_images_path()
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS clipboard_history (
@@ -35,10 +49,10 @@ def cleanup_history(conn):
           AND is_pinned = 0 
           AND id NOT IN (
               SELECT id FROM clipboard_history 
-              ORDER BY is_pinned DESC, created_at DESC 
+              ORDER by is_pinned DESC, created_at DESC 
               LIMIT ?
           )
-    """, (MAX_HISTORY,))
+    """, (settings.get('max_history', 50),))
     
     files_to_delete = [row[0] for row in cursor.fetchall()]
     for filepath in files_to_delete:
@@ -57,7 +71,7 @@ def cleanup_history(conn):
               ORDER BY is_pinned DESC, created_at DESC 
               LIMIT ?
           )
-    """, (MAX_HISTORY,))
+    """, (settings.get('max_history', 50),))
 
 def add_text(text):
     """Adiciona um novo texto ao histórico, tratando duplicatas consecutivas e gerais."""
@@ -68,7 +82,7 @@ def add_text(text):
     hash_val = hashlib.sha256(text.encode('utf-8')).hexdigest()
     now = time.time()
     
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_connection()
     cursor = conn.cursor()
     
     # Verifica duplicata consecutiva no topo
@@ -106,7 +120,7 @@ def add_image(image_bytes):
     hash_val = hashlib.sha256(image_bytes).hexdigest()
     now = time.time()
     
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_connection()
     cursor = conn.cursor()
     
     # Verifica duplicata consecutiva no topo
@@ -126,7 +140,7 @@ def add_image(image_bytes):
     else:
         # Salva o arquivo PNG de forma limpa no disco
         filename = f"{hash_val}.png"
-        filepath = os.path.join(IMAGES_DIR, filename)
+        filepath = os.path.join(get_images_path(), filename)
         try:
             with open(filepath, 'wb') as f:
                 f.write(image_bytes)
@@ -147,7 +161,7 @@ def add_image(image_bytes):
 def load_history(search_query=None):
     """Carrega o histórico do banco de dados, aplicando busca por conteúdo ou por data se especificado."""
     init_db()
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_connection()
     cursor = conn.cursor()
     
     if search_query:
@@ -185,7 +199,7 @@ def load_history(search_query=None):
 def toggle_pin(item_id):
     """Inverte o status de fixado de um item."""
     init_db()
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("UPDATE clipboard_history SET is_pinned = 1 - is_pinned WHERE id = ?", (item_id,))
     conn.commit()
@@ -194,7 +208,7 @@ def toggle_pin(item_id):
 def delete_item(item_id):
     """Exclui um item específico, incluindo o arquivo físico caso seja uma imagem."""
     init_db()
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_connection()
     cursor = conn.cursor()
     
     # Se for imagem, remove o arquivo correspondente
@@ -215,7 +229,7 @@ def delete_item(item_id):
 def clear():
     """Limpa todo o histórico de clipes não fixados."""
     init_db()
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_connection()
     cursor = conn.cursor()
     
     # Deleta arquivos físicos de imagens não fixadas

@@ -32,17 +32,25 @@ class FastPasteTray:
         # Context Menu
         self.menu = QMenu()
         
-        show_action = QAction("⚡ Show History", self.menu)
+        from popup import get_tinted_icon
+        from config import UI_COLORS
+        
+        # Helper para evitar travamentos se o ícone não existir
+        def make_icon(name):
+            pixmap = get_tinted_icon(name, UI_COLORS['fg'])
+            return QIcon(pixmap) if pixmap else QIcon()
+        
+        show_action = QAction(make_icon("view-fullscreen-symbolic"), "Mostrar FastPaste", self.menu)
         show_action.triggered.connect(self.on_show_callback)
         self.menu.addAction(show_action)
         
-        clear_action = QAction("🧹 Clear History", self.menu)
+        clear_action = QAction(make_icon("edit-clear-all-symbolic"), "Limpar Histórico", self.menu)
         clear_action.triggered.connect(self._clear_history)
         self.menu.addAction(clear_action)
         
         self.menu.addSeparator()
         
-        exit_action = QAction("🛑 Exit", self.menu)
+        exit_action = QAction(make_icon("application-exit-symbolic"), "Sair", self.menu)
         exit_action.triggered.connect(self.on_exit_callback)
         self.menu.addAction(exit_action)
         

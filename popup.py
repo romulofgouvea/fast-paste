@@ -4,7 +4,7 @@ import datetime
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
     QLineEdit, QListWidget, QListWidgetItem, QLabel, 
-    QMenu, QGraphicsDropShadowEffect, QFrame
+    QMenu, QGraphicsDropShadowEffect, QFrame, QPushButton
 )
 from PyQt6.QtCore import Qt, QSize, QEvent, QTimer
 from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut
@@ -114,6 +114,23 @@ class FastPastePopup(QWidget):
         self.search_entry.textChanged.connect(self.on_search_changed)
         search_layout.addWidget(self.search_entry)
         
+        self.settings_btn = QPushButton("⚙️")
+        self.settings_btn.setFixedSize(30, 30)
+        self.settings_btn.setToolTip("Configurações")
+        self.settings_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: None;
+                font-size: 16px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+                border-radius: 4px;
+            }
+        """)
+        self.settings_btn.clicked.connect(self.open_settings)
+        search_layout.addWidget(self.settings_btn)
+        
         container_layout.addWidget(self.search_card)
 
         # List Card
@@ -214,8 +231,8 @@ class FastPastePopup(QWidget):
                 preview = content_str.replace('\n', '  ')
                 if len(preview) > 50:
                     preview = preview[:47] + "..."
-                    # Ditto-style hover preview for long text
-                    widget.setToolTip(content_str[:1000]) # Mostra até 1000 chars no hover
+                
+                widget.setToolTip(content_str[:1000]) # Mostra até 1000 chars no hover
                     
                 text_label = QLabel(preview)
                 text_label.setObjectName("ItemLabel")
@@ -373,6 +390,21 @@ class FastPastePopup(QWidget):
         else:
             self.filtered_history = history.load_history(query)
         self.populate_list()
+        
+    def open_settings(self):
+        from settings_ui import SettingsDialog
+        dialog = SettingsDialog(self)
+        if dialog.exec():
+            # If saved, force cleanup and refresh
+            conn = history.get_connection()
+            history.cleanup_history(conn)
+            conn.close()
+            
+            # Re-read history since DB path might have changed
+            self.full_history = history.load_history()
+            self.filtered_history = list(self.full_history)
+            
+            self.refresh_list()
 
     def paste_by_index(self, idx):
         if 0 <= idx < len(self.filtered_history):
@@ -427,33 +459,56 @@ class FastPastePopup(QWidget):
         
         self.close_app(simulate_paste=True)
 
-    def show_context_menu(self, position):
-        item = self.list_widget.itemAt(position)
-        if not item:
-            return
+    def show_context_menu(self, pos):
+        item = self.list_widget.itemAt(pos)
+        if not item: return
+        
+        idx = self.list_widget.row(item)
+        if 0 <= idx < len(self.filtered_history):
+            item_data = self.filtered_history[idx]
             
-        item_data = item.data(Qt.ItemDataRole.UserRole)
-        if not item_data:
-            return
-
-        menu = QMenu(self)
-        
-        pin_action = menu.addAction("📍 Unpin Item" if item_data["is_pinned"] else "📌 Pin Item")
-        del_action = menu.addAction("🗑️ Remove Item")
-        menu.addSeparator()
-        clear_action = menu.addAction("🧹 Clear Unpinned History")
-        
-        action = menu.exec(self.list_widget.mapToGlobal(position))
-        
-        if action == pin_action:
-            history.toggle_pin(item_data["id"])
-            self.refresh_list()
-        elif action == del_action:
-            history.delete_item(item_data["id"])
-            self.refresh_list()
-        elif action == clear_action:
-            history.clear()
-            self.refresh_list()
+            menu = QMenu(self)
+            menu.setStyleSheet(f"""
+                QMenu {{
+                    background-color: {UI_COLORS['card_bg']};
+                    color: {UI_COLORS['fg']};
+                    border: 1px solid {UI_COLORS['card_border']};
+                    border-radius: 4px;
+                    padding: 4px;
+                }}
+                QMenu::item {{
+                    padding: 6px 24px 6px 8px;
+                    border-radius: 4px;
+                }}
+                QMenu::item:selected {{
+                    background-color: {UI_COLORS['hover']};
+                }}
+            """)
+            
+            is_pinned = item_data.get("is_pinned")
+            pin_text = "Desafixar" if is_pinned else "Fixar"
+            pin_pixmap = get_tinted_icon("emblem-favorite-symbolic" if is_pinned else "bookmark-new-symbolic", UI_COLORS['fg_dim'])
+            pin_action = menu.addAction(QIcon(pin_pixmap) if pin_pixmap else QIcon(), pin_text)
+            
+            del_pixmap = get_tinted_icon("edit-delete-symbolic", UI_COLORS['fg_dim'])
+            if not del_pixmap:
+                del_pixmap = get_tinted_icon("user-trash-symbolic", UI_COLORS['fg_dim'])
+            delete_action = menu.addAction(QIcon(del_pixmap) if del_pixmap else QIcon(), "Remover")
+            
+            menu.addSeparator()
+            clear_pixmap = get_tinted_icon("edit-clear-all-symbolic", UI_COLORS['fg_dim'])
+            clear_action = menu.addAction(QIcon(clear_pixmap) if clear_pixmap else QIcon(), "Limpar Histórico")
+            
+            action = menu.exec(self.list_widget.mapToGlobal(pos))
+            if action == pin_action:
+                history.toggle_pin(item_data["id"])
+                self.refresh_list()
+            elif action == delete_action:
+                history.delete_item(item_data["id"])
+                self.refresh_list()
+            elif action == clear_action:
+                history.clear()
+                self.refresh_list()
 
     def toggle_pin_selected(self):
         row = self.list_widget.currentRow()

@@ -63,6 +63,18 @@ def main():
     else:
         print("✅ All dependencies are already installed (PyQt6, pynput, pyinstaller).")
 
+    # Generate .ico for Windows if Pillow is available and fast_paste.png exists
+    if os.path.exists("fast_paste.png"):
+        ico_path = "fast_paste.ico"
+        if not os.path.exists(ico_path):
+            try:
+                from PIL import Image
+                img = Image.open("fast_paste.png")
+                img.save(ico_path, format="ICO", sizes=[(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)])
+                print("✅ Generated fast_paste.ico for Windows.")
+            except Exception as e:
+                pass
+
     # 2. Define platform-specific options
     name = "fast-paste"
     pyinstaller_args = ["pyinstaller", "--noconfirm", "--clean"]
@@ -74,15 +86,19 @@ def main():
             "--onefile",
             "--windowed",
             f"--name={name}",
-            "fast_paste.py"
         ])
+        if os.path.exists("fast_paste.ico"):
+            pyinstaller_args.append("--icon=fast_paste.ico")
+        pyinstaller_args.append("fast_paste.py")
     elif sys.platform.startswith("darwin"):
         print("🍎 OS detected: macOS")
         pyinstaller_args.extend([
             "--windowed",
             f"--name={name}",
-            "fast_paste.py"
         ])
+        if os.path.exists("fast_paste.png"):
+            pyinstaller_args.append("--icon=fast_paste.png")
+        pyinstaller_args.append("fast_paste.py")
     else:
         print("🐧 OS detected: Linux")
         pyinstaller_args.extend([
@@ -141,7 +157,7 @@ def main():
                 
                 # Create desktop entry
                 desktop_content = """[Desktop Entry]
-Name=FastPaste
+Name=Fast Paste Clipboard Manager
 Comment=Clipboard History Manager
 Exec=/usr/bin/fast-paste show
 Icon=fast-paste
@@ -158,15 +174,25 @@ Categories=Utility;
   <id>org.fast_paste.fast-paste</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
-  <name>FastPaste</name>
+  <name>Fast Paste Clipboard Manager</name>
   <summary>Modern and lightweight clipboard manager for Linux</summary>
   <description>
     <p>
-      FastPaste is a modern, premium, and lightweight clipboard manager for Linux (Wayland and X11) built with Python and PyQt6. It runs silently in the background, listening to copy events and allowing you to paste easily using a keyboard shortcut.
+      O Fast Paste Clipboard Manager é um gerenciador de área de transferência moderno, rápido e bonito projetado para Linux (Wayland e X11). Ele armazena silenciosamente tudo o que você copia e permite pesquisar e colar instantaneamente através de um popup prático.
     </p>
+    <p>Principais Funcionalidades:</p>
+    <ul>
+      <li>Monitoramento Silencioso: Salva tudo o que você copia (textos e imagens) automaticamente.</li>
+      <li>Busca Dinâmica: Comece a digitar para encontrar rapidamente itens antigos do seu histórico.</li>
+      <li>Navegação por Teclado: Use setas para navegar e Enter para colar instantaneamente.</li>
+      <li>Interface Premium: Design escuro moderno com visual translúcido e foco automático na pesquisa.</li>
+      <li>Histórico Inteligente: Fila rotativa de histórico de até 500 itens (configurável, os itens antigos são removidos quando novos entram).</li>
+      <li>Fixar Itens: Fixe itens importantes para garantir que nunca sejam excluídos pelo limite de histórico.</li>
+      <li>Auto-Paste: Digita automaticamente o item selecionado na posição do seu cursor de texto.</li>
+    </ul>
   </description>
   <launchable type="desktop-id">fast-paste.desktop</launchable>
-  <developer_name>FastPaste Team</developer_name>
+  <developer_name>Stevanini</developer_name>
   <url type="homepage">https://github.com/fast-paste/fast-paste</url>
   <url type="bugtracker">https://github.com/fast-paste/fast-paste/issues</url>
   <content_rating type="oars-1.1"/>
@@ -200,25 +226,25 @@ WantedBy=default.target
                     pass
                 
                 # Create control file with dependencies (PEP 668/Wayland setup)
-                control_content = f"""Package: fast-paste
+                control_content = f"""Package: fast-paste-clipboard-manager
 Version: 1.0.0
 Section: utils
 Priority: optional
 Architecture: {arch}
-Maintainer: FastPaste Team <support@fastpaste.org>
+Maintainer: Stevanini <contato@stevanini.com.br>
 Depends: wl-clipboard, xclip, wtype, xdotool
 Homepage: https://github.com/fast-paste/fast-paste
-Description: FastPaste Clipboard Manager
+Description: Fast Paste Clipboard Manager
  Standalone clipboard manager for Linux (Wayland and X11) with PyQt6.
 """
                 with open(f"{deb_dir}/DEBIAN/control", "w", encoding="utf-8") as f:
                     f.write(control_content)
                 
                 # Build DEB
-                run_command(["dpkg-deb", "--build", deb_dir, f"dist/fast-paste_{arch}.deb"])
-                print(f"✅ Generated deb package: dist/fast-paste_{arch}.deb")
+                run_command(["dpkg-deb", "--build", deb_dir, f"dist/Fast-Paste-Clipboard-Manager_{arch}.deb"])
+                print(f"✅ Generated deb package: dist/Fast-Paste-Clipboard-Manager_{arch}.deb")
                 print("\n👉 To install the deb package with dependencies:")
-                print(f"   sudo apt install ./dist/fast-paste_{arch}.deb")
+                print(f"   sudo apt install ./dist/Fast-Paste-Clipboard-Manager_{arch}.deb")
                 print("👉 To enable the background service:")
                 print("   systemctl --user enable --now fast-paste")
             except Exception as e:

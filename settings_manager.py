@@ -1,6 +1,6 @@
 import os
 import json
-from config import DATA_DIR
+from config import DATA_DIR, MAX_HISTORY
 
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 
@@ -15,7 +15,7 @@ class SettingsManager:
 
     def _load(self):
         self.settings = {
-            "max_history": 50,
+            "max_history": MAX_HISTORY,
             "hotkey": "<ctrl>+<shift>+v",
             "db_path": DATA_DIR
         }

@@ -2,7 +2,7 @@ import sqlite3
 import os
 import hashlib
 import time
-from config import DB_FILE, IMAGES_DIR, DATA_DIR
+from config import DB_FILE, IMAGES_DIR, DATA_DIR, MAX_HISTORY
 from settings_manager import settings
 
 def get_db_path():
@@ -52,7 +52,7 @@ def cleanup_history(conn):
               ORDER by is_pinned DESC, created_at DESC 
               LIMIT ?
           )
-    """, (settings.get('max_history', 50),))
+    """, (settings.get('max_history', MAX_HISTORY),))
     
     files_to_delete = [row[0] for row in cursor.fetchall()]
     for filepath in files_to_delete:
@@ -71,7 +71,7 @@ def cleanup_history(conn):
               ORDER BY is_pinned DESC, created_at DESC 
               LIMIT ?
           )
-    """, (settings.get('max_history', 50),))
+    """, (settings.get('max_history', MAX_HISTORY),))
 
 def add_text(text):
     """Adiciona um novo texto ao histórico, tratando duplicatas consecutivas e gerais."""
@@ -181,7 +181,7 @@ def load_history(search_query=None):
             FROM clipboard_history 
             ORDER BY is_pinned DESC, created_at DESC
             LIMIT ?
-        """, (settings.get('max_history', 50),))
+        """, (settings.get('max_history', MAX_HISTORY),))
         
     rows = cursor.fetchall()
     conn.close()

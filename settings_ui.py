@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
 from PyQt6.QtCore import Qt, pyqtSignal
 
 from settings_manager import settings
-from config import DATA_DIR
+from config import DATA_DIR, MAX_HISTORY
 
 class SettingsWidget(QWidget):
     settings_closed = pyqtSignal(bool)
@@ -57,7 +57,7 @@ class SettingsWidget(QWidget):
         hist_label = QLabel("Limite de histórico (Cópias não fixadas):")
         self.hist_spin = QSpinBox()
         self.hist_spin.setRange(10, 5000)
-        self.hist_spin.setValue(settings.get('max_history', 50))
+        self.hist_spin.setValue(settings.get('max_history', MAX_HISTORY))
         self.hist_spin.setToolTip("Quando atingir este limite, a cópia mais antiga será excluída (fila).")
         hist_layout.addWidget(hist_label)
         hist_layout.addWidget(self.hist_spin)

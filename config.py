@@ -1,7 +1,7 @@
 import os
 
 APP_NAME = "FastPaste"
-MAX_HISTORY = 50
+MAX_HISTORY = 500
 
 # Caminhos dos arquivos baseados no padrão XDG
 DATA_DIR = os.path.expanduser("~/.local/share/fast-paste")

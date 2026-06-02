@@ -64,37 +64,31 @@ class ClipboardMonitor:
                 self.on_clipboard_changed()
 
     def _wayland_watch_loop(self):
-        # Em vez de polling (que engasga a dock), usamos wl-paste --watch para bloquear até haver mudança!
-        try:
-            self.wl_proc = subprocess.Popen(
-                ['wl-paste', '--watch', 'echo', 'CHANGED'], 
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                text=True
-            )
-            
-            while self.running:
-                line = self.wl_proc.stdout.readline()
-                if not line:
-                    break # Processo morreu ou parou
-                
-                # Houve uma mudança no clipboard! 
-                # Espera uns milissegundos para o buffer estabilizar antes de ler
-                time.sleep(0.1)
-                self._do_linux_check()
-                
-        except Exception as e:
-            print(f"[FastPaste] Watch loop crashed: {e}")
+        # GNOME Wayland doesn't support wlroots data-control protocol, 
+        # so wl-paste --watch fails immediately. 
+        # The only universal Wayland fallback is polling wl-paste.
+        # Since we disabled QSystemTrayIcon on Wayland, this polling will NOT bug the dock.
+        while self.running:
+            self._do_linux_check()
+            time.sleep(1)
 
     def _do_linux_check(self):
+        # Para não bugar a dock do GNOME/Ubuntu (que pisca um ícone quando wl-paste roda),
+        # priorizamos o xclip (XWayland/X11), que roda invisível.
+        has_xclip = shutil.which('xclip') is not None
         has_wl = shutil.which('wl-paste') is not None
-        if not has_wl: return
         
+        if not has_xclip and not has_wl:
+            return
+
         try:
-            # 1. Tentar pegar imagem
+            # 1. Imagem
             img_bytes = b""
             try:
-                img_bytes = subprocess.check_output(['wl-paste', '--type', 'image/png'], stderr=subprocess.DEVNULL)
+                if has_xclip:
+                    img_bytes = subprocess.check_output(['xclip', '-selection', 'clipboard', '-t', 'image/png', '-o'], stderr=subprocess.DEVNULL)
+                else:
+                    img_bytes = subprocess.check_output(['wl-paste', '--type', 'image/png'], stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError:
                 pass
             
@@ -104,12 +98,15 @@ class ClipboardMonitor:
                     self.last_image_hash = current_hash
                     self.last_text_hash = None 
                     history.add_image(img_bytes)
-                    print("[FastPaste] Print (Imagem) salvo via Wayland Watch.")
+                    print("[FastPaste] Print (Imagem) salvo (Polling background).")
             else:
-                # 2. Tentar pegar texto
+                # 2. Texto
                 text_bytes = b""
                 try:
-                    text_bytes = subprocess.check_output(['wl-paste', '--type', 'text', '--no-newline'], stderr=subprocess.DEVNULL)
+                    if has_xclip:
+                        text_bytes = subprocess.check_output(['xclip', '-selection', 'clipboard', '-o'], stderr=subprocess.DEVNULL)
+                    else:
+                        text_bytes = subprocess.check_output(['wl-paste', '--type', 'text', '--no-newline'], stderr=subprocess.DEVNULL)
                 except subprocess.CalledProcessError:
                     pass
                         
@@ -120,7 +117,7 @@ class ClipboardMonitor:
                         text = text_bytes.decode('utf-8', errors='ignore')
                         if text.strip():
                             history.add_text(text)
-                            print("[FastPaste] Texto salvo via Wayland Watch.")
+                            print("[FastPaste] Texto salvo (Polling background).")
                             
         except Exception:
             pass

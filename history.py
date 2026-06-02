@@ -180,7 +180,8 @@ def load_history(search_query=None):
             SELECT id, type, content, is_pinned, created_at 
             FROM clipboard_history 
             ORDER BY is_pinned DESC, created_at DESC
-        """)
+            LIMIT ?
+        """, (settings.get('max_history', 50),))
         
     rows = cursor.fetchall()
     conn.close()

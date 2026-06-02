@@ -1,22 +1,22 @@
 import sys
 import os
-from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QSpinBox, QLineEdit, QPushButton, QFileDialog, QMessageBox)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 
 from settings_manager import settings
 from config import DATA_DIR
 
-class SettingsDialog(QDialog):
+class SettingsWidget(QWidget):
+    settings_closed = pyqtSignal(bool)
+    
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Configurações do FastPaste")
-        self.setFixedSize(450, 300)
         
         # Apply dark theme stylesheet to match popup
         self.setStyleSheet("""
-            QDialog {
-                background-color: #1e1e1e;
+            QWidget {
+                background-color: transparent;
                 color: #ffffff;
             }
             QLabel {
@@ -111,7 +111,7 @@ class SettingsDialog(QDialog):
         btn_layout.addStretch(1)
         
         cancel_btn = QPushButton("Cancelar")
-        cancel_btn.clicked.connect(self.reject)
+        cancel_btn.clicked.connect(self.cancel_settings)
         
         save_btn = QPushButton("Salvar Configurações")
         save_btn.setObjectName("saveButton")
@@ -123,9 +123,25 @@ class SettingsDialog(QDialog):
         layout.addLayout(btn_layout)
 
     def browse_db_path(self):
-        folder = QFileDialog.getExistingDirectory(self, "Selecione a pasta para salvar o Banco de Dados", self.db_input.text())
+        # Workaround for Wayland: Hide the stays-on-top parent window 
+        # so the modal file dialog can actually be seen!
+        parent_window = self.window()
+        was_visible = parent_window.isVisible()
+        if was_visible:
+            parent_window.hide()
+            
+        folder = QFileDialog.getExistingDirectory(None, "Selecione a pasta para salvar o Banco de Dados", self.db_input.text())
+        
+        if was_visible:
+            parent_window.show()
+            parent_window.activateWindow()
+            parent_window.raise_()
+            
         if folder:
             self.db_input.setText(folder)
+
+    def cancel_settings(self):
+        self.settings_closed.emit(False)
 
     def save_settings(self):
         # Validação
@@ -141,4 +157,4 @@ class SettingsDialog(QDialog):
         if not (sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY')):
             settings.set('hotkey', self.hotkey_input.text())
             
-        self.accept()
+        self.settings_closed.emit(True)

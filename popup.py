@@ -4,7 +4,7 @@ import datetime
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
     QLineEdit, QListWidget, QListWidgetItem, QLabel, 
-    QMenu, QGraphicsDropShadowEffect, QFrame, QPushButton
+    QMenu, QGraphicsDropShadowEffect, QFrame, QPushButton, QStackedWidget
 )
 from PyQt6.QtCore import Qt, QSize, QEvent, QTimer
 from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut
@@ -89,6 +89,16 @@ class FastPastePopup(QWidget):
         shadow.setColor(QColor(0, 0, 0, 80))
         shadow.setOffset(0, 10)
         self.container.setGraphicsEffect(shadow)
+        
+        self.stacked_widget = QStackedWidget()
+        container_layout.addWidget(self.stacked_widget)
+        
+        self.main_page = QWidget()
+        main_page_layout = QVBoxLayout(self.main_page)
+        main_page_layout.setContentsMargins(0, 0, 0, 0)
+        main_page_layout.setSpacing(10)
+        
+        self.stacked_widget.addWidget(self.main_page)
 
         # Search Card
         self.search_card = QFrame()
@@ -114,24 +124,32 @@ class FastPastePopup(QWidget):
         self.search_entry.textChanged.connect(self.on_search_changed)
         search_layout.addWidget(self.search_entry)
         
-        self.settings_btn = QPushButton("⚙️")
+        self.settings_btn = QPushButton()
         self.settings_btn.setFixedSize(30, 30)
         self.settings_btn.setToolTip("Configurações")
         self.settings_btn.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
                 border: None;
-                font-size: 16px;
             }
             QPushButton:hover {
                 background-color: rgba(255, 255, 255, 0.1);
                 border-radius: 4px;
             }
         """)
+        
+        settings_pixmap = get_tinted_icon("preferences-system-symbolic", UI_COLORS['fg_dim'])
+        if settings_pixmap:
+            self.settings_btn.setIcon(QIcon(settings_pixmap))
+            self.settings_btn.setIconSize(QSize(16, 16))
+        else:
+            self.settings_btn.setText("⚙")
+            self.settings_btn.setStyleSheet(self.settings_btn.styleSheet() + "QPushButton { font-size: 16px; color: " + UI_COLORS['fg_dim'] + "; }")
+            
         self.settings_btn.clicked.connect(self.open_settings)
         search_layout.addWidget(self.settings_btn)
         
-        container_layout.addWidget(self.search_card)
+        main_page_layout.addWidget(self.search_card)
 
         # List Card
         self.list_card = QFrame()
@@ -148,7 +166,13 @@ class FastPastePopup(QWidget):
         self.list_widget.customContextMenuRequested.connect(self.show_context_menu)
         
         list_layout.addWidget(self.list_widget)
-        container_layout.addWidget(self.list_card)
+        main_page_layout.addWidget(self.list_card)
+        
+        # Settings Page
+        from settings_ui import SettingsWidget
+        self.settings_page = SettingsWidget(self)
+        self.settings_page.settings_closed.connect(self.close_settings)
+        self.stacked_widget.addWidget(self.settings_page)
 
     def apply_styles(self):
         css = f"""
@@ -392,10 +416,15 @@ class FastPastePopup(QWidget):
         self.populate_list()
         
     def open_settings(self):
-        from settings_ui import SettingsDialog
-        dialog = SettingsDialog(self)
-        if dialog.exec():
-            # If saved, force cleanup and refresh
+        # Switch to settings page
+        self.stacked_widget.setCurrentIndex(1)
+        
+    def close_settings(self, saved=False):
+        # Switch back to main page
+        self.stacked_widget.setCurrentIndex(0)
+        self.search_entry.setFocus()
+        
+        if saved:
             conn = history.get_connection()
             history.cleanup_history(conn)
             conn.close()

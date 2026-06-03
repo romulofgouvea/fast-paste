@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QMenu, QGraphicsDropShadowEffect, QFrame, QPushButton, QStackedWidget
 )
 from PyQt6.QtCore import Qt, QSize, QEvent, QTimer, QMimeData, QUrl
-from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut, QDrag, QPainter, QPen, QBrush
+from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut, QDrag, QPainter, QPen, QBrush, QImage
 
 from core import history
 from configs.config import UI_COLORS, APP_NAME, hide_dock_icon
@@ -17,38 +17,79 @@ class DraggableListWidget(QListWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setDragEnabled(True)
-        self._drag_start_pos = None
+        self.setDragDropMode(QListWidget.DragDropMode.DragOnly)
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_start_pos = event.position().toPoint()
-        super().mousePressEvent(event)
+    def supportedDropActions(self):
+        return Qt.DropAction.CopyAction
 
-    def mouseMoveEvent(self, event):
-        if event.buttons() == Qt.MouseButton.LeftButton and self._drag_start_pos:
-            if (event.position().toPoint() - self._drag_start_pos).manhattanLength() > max(15, QApplication.startDragDistance()):
-                item = self.itemAt(self._drag_start_pos)
-                if item:
-                    item_data = item.data(Qt.ItemDataRole.UserRole)
-                    if item_data and item_data.get("type") == "image":
-                        filepath = item_data.get("content")
-                        if filepath and os.path.exists(filepath):
-                            drag = QDrag(self)
-                            mime_data = QMimeData()
-                            url = QUrl.fromLocalFile(filepath)
-                            mime_data.setUrls([url])
-                            
-                            pixmap = QPixmap(filepath)
-                            if not pixmap.isNull():
-                                drag_pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-                                drag.setPixmap(drag_pixmap)
-                                drag.setHotSpot(drag_pixmap.rect().center())
-                            
-                            drag.setMimeData(mime_data)
-                            drag.exec(Qt.DropAction.CopyAction)
-                            self._drag_start_pos = None
-                            return
-        super().mouseMoveEvent(event)
+    def startDrag(self, supportedActions):
+        item = self.currentItem()
+        if not item:
+            return
+            
+        item_data = item.data(Qt.ItemDataRole.UserRole)
+        if not item_data:
+            return
+            
+        drag = QDrag(self)
+        mime_data = QMimeData()
+        
+        if item_data.get("type") == "image":
+            filepath = item_data.get("content")
+            if filepath and os.path.exists(filepath):
+                # 1. URL de Arquivo Local (para Área de Trabalho / Gerenciadores de Arquivo)
+                mime_data.setUrls([QUrl.fromLocalFile(filepath)])
+                
+                # 2. Dados de Imagem (para WhatsApp, Discord, Slack, Photoshop, etc.)
+                image = QImage(filepath)
+                if not image.isNull():
+                    mime_data.setImageData(image)
+                    # Set raw image data MIME type
+                    try:
+                        with open(filepath, 'rb') as f:
+                            mime_data.setData("image/png", f.read())
+                    except Exception as e:
+                        print(f"[FastPaste] Error loading image bytes for drag: {e}")
+                
+                # 3. Ícone Visual do Arraste
+                pixmap = QPixmap.fromImage(image)
+                if not pixmap.isNull():
+                    drag_pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                    drag.setPixmap(drag_pixmap)
+                    drag.setHotSpot(drag_pixmap.rect().center())
+                
+                drag.setMimeData(mime_data)
+                drag.exec(Qt.DropAction.CopyAction)
+                
+        elif item_data.get("type") == "text":
+            text_content = item_data.get("content")
+            if text_content:
+                mime_data.setText(text_content)
+                
+                # Ícone Visual do Arraste (pequeno card arredondado com preview de texto)
+                pixmap = QPixmap(130, 32)
+                pixmap.fill(Qt.GlobalColor.transparent)
+                
+                painter = QPainter(pixmap)
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                # Rounded background card
+                painter.setBrush(QColor(UI_COLORS.get('hover', '#323232')))
+                painter.setPen(QColor(UI_COLORS.get('card_border', '#3c3c3c')))
+                painter.drawRoundedRect(pixmap.rect().adjusted(1, 1, -1, -1), 6, 6)
+                
+                # Text preview
+                painter.setPen(QColor(UI_COLORS.get('fg', '#ffffff')))
+                display_text = text_content.replace("\n", " ").strip()
+                if len(display_text) > 15:
+                    display_text = display_text[:12] + "..."
+                painter.drawText(pixmap.rect().adjusted(8, 4, -8, -4), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, display_text)
+                painter.end()
+                
+                drag.setPixmap(pixmap)
+                drag.setHotSpot(pixmap.rect().center())
+                
+                drag.setMimeData(mime_data)
+                drag.exec(Qt.DropAction.CopyAction)
 
 def draw_custom_search_icon(color_hex):
     pixmap = QPixmap(18, 18)
@@ -675,16 +716,7 @@ class FastPastePopup(QWidget):
         
         super().showEvent(event)
 
-    def changeEvent(self, event):
-        # Fechar a janela quando ela perder o foco completamente
-        if event.type() == QEvent.Type.ActivationChange:
-            if not self.isActiveWindow():
-                self.close_app()
-        super().changeEvent(event)
 
-    def focusOutEvent(self, event):
-        self.close_app()
-        super().focusOutEvent(event)
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -727,6 +759,13 @@ class FastPastePopup(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             clicked_widget = self.childAt(event.position().toPoint())
             if clicked_widget not in [self.list_widget, self.search_entry] and not self.list_widget.underMouse() and not self.search_entry.underMouse():
+                # Tenta o arraste nativo do sistema (essencial para funcionamento correto no Wayland)
+                if self.windowHandle():
+                    self.windowHandle().startSystemMove()
+                    event.accept()
+                    return
+                
+                # Fallback manual para X11/Windows
                 if hasattr(event, 'globalPosition'):
                     self._drag_pos = event.globalPosition().toPoint()
                 else:

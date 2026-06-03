@@ -137,6 +137,16 @@ def run_foreground():
     # Remove existing server if crashed
     QLocalServer.removeServer(IPC_SERVER_NAME)
     
+    def get_or_create_popup():
+        global popup_instance
+        if not popup_instance:
+            popup_instance = popup.FastPastePopup(standalone=False)
+            def on_destroyed():
+                global popup_instance
+                popup_instance = None
+            popup_instance.destroyed.connect(on_destroyed)
+        return popup_instance
+
     def on_new_connection():
         global popup_instance
         socket = server.nextPendingConnection()
@@ -147,8 +157,7 @@ def run_foreground():
             if clipboard_monitor:
                 clipboard_monitor.force_check()
                 
-            if not popup_instance:
-                popup_instance = popup.FastPastePopup(standalone=False)
+            popup_instance = get_or_create_popup()
             popup_instance.refresh_list()
             popup_instance.show()
             popup_instance.activateWindow()
@@ -167,8 +176,7 @@ def run_foreground():
         if clipboard_monitor:
             clipboard_monitor.force_check()
             
-        if not popup_instance:
-            popup_instance = popup.FastPastePopup(standalone=False)
+        popup_instance = get_or_create_popup()
         popup_instance.refresh_list()
         popup_instance.show()
         popup_instance.activateWindow()
@@ -176,8 +184,7 @@ def run_foreground():
 
     def show_settings_cb():
         global popup_instance
-        if not popup_instance:
-            popup_instance = popup.FastPastePopup(standalone=False)
+        popup_instance = get_or_create_popup()
         popup_instance.open_settings()
         popup_instance.show()
         popup_instance.activateWindow()

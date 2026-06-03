@@ -51,6 +51,7 @@ class FastPastePopup(QWidget):
         self.resize(600, 550)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         
         self.full_history = history.load_history()
         self.filtered_history = list(self.full_history)
@@ -268,11 +269,19 @@ class FastPastePopup(QWidget):
                 
             elif item_data["type"] == "image":
                 filepath = item_data["content"]
-                pixmap = QPixmap(filepath)
+                from PyQt6.QtGui import QImageReader
+                reader = QImageReader(filepath)
+                reader.setAutoTransform(True)
+                orig_size = reader.size()
+                pixmap = QPixmap()
+                if not orig_size.isEmpty():
+                    # Scale down during loading to keep memory footprint tiny
+                    target_size = orig_size.scaled(80, 45, Qt.AspectRatioMode.KeepAspectRatioByExpanding)
+                    reader.setScaledSize(target_size)
+                    image = reader.read()
+                    pixmap = QPixmap.fromImage(image)
+                
                 if not pixmap.isNull():
-                    # Escala e recorta para um tamanho estático padrão (ex: 80x45)
-                    pixmap = pixmap.scaled(80, 45, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
-                    
                     # Cria um pixmap recortado exato
                     crop = QPixmap(80, 45)
                     crop.fill(Qt.GlobalColor.transparent)
@@ -614,7 +623,7 @@ class FastPastePopup(QWidget):
         super().keyPressEvent(event)
 
     def close_app(self, simulate_paste=False):
-        self.hide()
+        self.close()
         if simulate_paste:
             self.input_sim.paste()
             

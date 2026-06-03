@@ -41,9 +41,9 @@ O **FastPaste** é um gerenciador de área de transferência (clipboard) moderno
 
 Selecione o guia específico abaixo correspondente ao seu sistema operacional para ver as instruções detalhadas de pré-requisitos, instalação, atalhos do sistema e autostart:
 
-- [🐧 Guia de Instalação no Ubuntu / Debian / Linux](readmes/ubuntu-readme.md)
-- [🍎 Guia de Instalação no macOS](readmes/mac-readme.md)
-- [🪟 Guia de Instalação no Windows](readmes/windows-readme.md)
+- [Ubuntu / Debian / Linux](readmes/ubuntu-readme.md)
+- [MacOS](readmes/mac-readme.md)
+- [Windows](readmes/windows-readme.md)
 
 ---
 

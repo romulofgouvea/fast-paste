@@ -33,7 +33,8 @@ def main():
     deps = {
         "PyQt6": "PyQt6",
         "pynput": "pynput",
-        "PyInstaller": "pyinstaller"
+        "PyInstaller": "pyinstaller",
+        "PIL": "pillow"
     }
     missing_packages = []
     for module, package in deps.items():

@@ -11,15 +11,12 @@ Devido às restrições de segurança do macOS (como o Gatekeeper e o Sandbox do
 Se você deseja compilar o FastPaste localmente na sua máquina para gerar o arquivo `.app` otimizado para o seu hardware (Intel ou Apple Silicon M1/M2/M3):
 
 1. Certifique-se de que possui o Python 3 instalado.
-2. Instale os pacotes de compilação e dependências:
-   ```bash
-   pip install PyQt6 pynput pyinstaller
-   ```
-3. Execute o script de build na pasta raiz do repositório:
+2. Execute o script de build na pasta raiz do repositório:
    ```bash
    python3 scripts/build.py
    ```
-4. O build gerará o aplicativo empacotado em:
+   *(O script irá detectar e instalar automaticamente todas as dependências necessárias, como PyQt6, pynput, pyinstaller e pillow).*
+3. O build gerará o aplicativo empacotado em:
    ```
    dist/fast-paste.app
    ```

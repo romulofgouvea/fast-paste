@@ -9,16 +9,12 @@ Este guia detalha como configurar, compilar e rodar o FastPaste no sistema opera
 Se você deseja compilar o FastPaste para gerar um executável portátil (`.exe`) independente:
 
 1. Certifique-se de ter o Python instalado (marque a opção "Add Python to PATH" durante a instalação).
-2. Abra o Prompt de Comando (CMD) ou PowerShell na pasta do projeto e instale as dependências:
-   ```cmd
-   pip install PyQt6 pynput pyinstaller pillow
-   ```
-   *(A biblioteca `pillow` é opcional, mas recomendada para gerar o ícone do sistema `fast_paste.ico` automaticamente durante o build).*
-3. Execute o script de compilação:
+2. Abra o Prompt de Comando (CMD) ou PowerShell na pasta do projeto e execute o script de compilação:
    ```cmd
    python scripts/build.py
    ```
-4. O executável portátil compilado será criado em:
+   *(O script irá detectar e instalar automaticamente todas as dependências necessárias, como PyQt6, pynput, pyinstaller e pillow).*
+3. O executável portátil compilado será criado em:
    ```
    dist/fast-paste.exe
    ```

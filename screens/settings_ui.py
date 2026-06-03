@@ -2,12 +2,135 @@ import sys
 import os
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QSpinBox, QLineEdit, QPushButton, QFileDialog, QMessageBox, QCheckBox,
-                             QAbstractButton, QSizePolicy)
+                             QAbstractButton, QSizePolicy, QRadioButton, QButtonGroup)
 from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPropertyAnimation, pyqtProperty, QEasingCurve
-from PyQt6.QtGui import QPainter, QColor, QBrush
+from PyQt6.QtGui import QPainter, QColor, QBrush, QKeySequence
 
 from configs.settings_manager import settings
 from configs.config import DATA_DIR, MAX_HISTORY
+
+def pynput_to_qt(pynput_str):
+    if not pynput_str:
+        return ""
+    parts = pynput_str.split('+')
+    qt_parts = []
+    for part in parts:
+        if part == "<ctrl>":
+            qt_parts.append("Ctrl")
+        elif part == "<shift>":
+            qt_parts.append("Shift")
+        elif part == "<alt>":
+            qt_parts.append("Alt")
+        elif part == "<cmd>":
+            qt_parts.append("Meta")
+        else:
+            clean = part.replace('<', '').replace('>', '')
+            qt_parts.append(clean.upper() if len(clean) == 1 else clean.capitalize())
+    return "+".join(qt_parts)
+
+class HotkeyLineEdit(QLineEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setReadOnly(True)
+        self.setPlaceholderText("Clique para gravar...")
+        self.recording = False
+        self.raw_hotkey = settings.get('hotkey', "<ctrl>+'")
+        
+        if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):
+            self.setText("Configurado no Sistema")
+            self.setStyleSheet("background-color: #1a1a1a; color: #888888; border-color: #333333;")
+        else:
+            self.setText(pynput_to_qt(self.raw_hotkey))
+            self.setStyleSheet("cursor: pointer;")
+
+    def mousePressEvent(self, event):
+        if not self.recording:
+            if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):
+                super().mousePressEvent(event)
+                return
+            self.start_recording()
+        super().mousePressEvent(event)
+
+    def focusOutEvent(self, event):
+        if self.recording:
+            self.stop_recording()
+        super().focusOutEvent(event)
+
+    def start_recording(self):
+        self.recording = True
+        self.setText("Pressione o atalho...")
+        self.setStyleSheet("background-color: #3a1c1c; border: 1.5px solid #ff4444; color: #ffffff; cursor: pointer;")
+        self.grabKeyboard()
+
+    def stop_recording(self):
+        self.recording = False
+        self.releaseKeyboard()
+        self.setStyleSheet("cursor: pointer;")
+        if not self.raw_hotkey:
+            self.setText(pynput_to_qt(settings.get('hotkey', "<ctrl>+'")))
+        else:
+            self.setText(pynput_to_qt(self.raw_hotkey))
+
+    def keyPressEvent(self, event):
+        if not self.recording:
+            super().keyPressEvent(event)
+            return
+
+        key = event.key()
+        modifiers = event.modifiers()
+
+        if key in (Qt.Key.Key_Control, Qt.Key.Key_Shift, Qt.Key.Key_Alt, Qt.Key.Key_Meta):
+            return
+
+        parts = []
+        pynput_parts = []
+        
+        if modifiers & Qt.KeyboardModifier.ControlModifier:
+            parts.append("Ctrl")
+            pynput_parts.append("<ctrl>")
+        if modifiers & Qt.KeyboardModifier.ShiftModifier:
+            parts.append("Shift")
+            pynput_parts.append("<shift>")
+        if modifiers & Qt.KeyboardModifier.AltModifier:
+            parts.append("Alt")
+            pynput_parts.append("<alt>")
+        if modifiers & Qt.KeyboardModifier.MetaModifier:
+            parts.append("Meta")
+            pynput_parts.append("<cmd>")
+
+        key_str = ""
+        pynput_key = ""
+        
+        if Qt.Key.Key_A <= key <= Qt.Key.Key_Z:
+            key_str = chr(key).upper()
+            pynput_key = chr(key).lower()
+        elif Qt.Key.Key_0 <= key <= Qt.Key.Key_9:
+            key_str = chr(key)
+            pynput_key = chr(key)
+        elif key == Qt.Key.Key_Apostrophe:
+            key_str = "'"
+            pynput_key = "'"
+        elif key == Qt.Key.Key_Space:
+            key_str = "Space"
+            pynput_key = "<space>"
+        elif key == Qt.Key.Key_Escape:
+            self.stop_recording()
+            return
+        else:
+            key_seq = QKeySequence(key).toString()
+            if key_seq:
+                key_str = key_seq
+                pynput_key = key_seq.lower()
+
+        if not key_str:
+            return
+
+        parts.append(key_str)
+        pynput_parts.append(pynput_key)
+
+        self.raw_hotkey = "+".join(pynput_parts)
+        self.setText("+".join(parts))
+        self.stop_recording()
 
 class SwitchButton(QAbstractButton):
     def __init__(self, parent=None):
@@ -94,6 +217,11 @@ class SettingsWidget(QWidget):
                 border: 1px solid #4a4a4a;
                 border-radius: 4px;
                 padding: 5px;
+                font-size: 13px;
+                selection-background-color: #e95420;
+            }
+            QLineEdit:focus, QSpinBox:focus {
+                border: 1px solid #e95420;
             }
             QPushButton {
                 background-color: #3a3a3a;
@@ -116,6 +244,28 @@ class SettingsWidget(QWidget):
                 color: #ffffff;
                 font-size: 13px;
             }
+            QRadioButton {
+                color: #ffffff;
+                font-size: 13px;
+                spacing: 8px;
+            }
+            QRadioButton:hover {
+                color: #ff855c;
+            }
+            QRadioButton::indicator {
+                width: 16px;
+                height: 16px;
+                border-radius: 9px;
+                border: 2px solid #5a5a5a;
+                background-color: #2c2c2c;
+            }
+            QRadioButton::indicator:hover {
+                border-color: #e95420;
+            }
+            QRadioButton::indicator:checked {
+                border: 2px solid #e95420;
+                background-color: #e95420;
+            }
         """)
 
         layout = QVBoxLayout(self)
@@ -127,27 +277,28 @@ class SettingsWidget(QWidget):
         self.hist_spin = QSpinBox()
         self.hist_spin.setRange(10, 5000)
         self.hist_spin.setValue(settings.get('max_history', MAX_HISTORY))
+        self.hist_spin.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
+        self.hist_spin.setFixedWidth(120)
+        self.hist_spin.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.hist_spin.setToolTip("Quando atingir este limite, a cópia mais antiga será excluída (fila).")
         hist_layout.addWidget(hist_label)
         hist_layout.addWidget(self.hist_spin)
+        hist_layout.addStretch(1)
         layout.addLayout(hist_layout)
 
         # 2. Configuração de Hotkey
         hotkey_layout = QHBoxLayout()
         hotkey_label = QLabel("Atalho Global:")
-        self.hotkey_input = QLineEdit()
-        self.hotkey_input.setText(settings.get('hotkey', "<ctrl>+'"))
+        self.hotkey_input = HotkeyLineEdit()
         
         self.open_shortcuts_btn = QPushButton("Configurar no Sistema")
         self.open_shortcuts_btn.setToolTip("Abre o painel do sistema operacional para configurar atalhos globais.")
         self.open_shortcuts_btn.clicked.connect(self.open_system_shortcuts)
         
         if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):
-            self.hotkey_input.setReadOnly(True)
             self.hotkey_input.setToolTip("No Wayland, configure o atalho nas configurações do seu sistema para rodar o comando: fast-paste show")
-            self.hotkey_input.setText("Configurar nas teclas do sistema")
         else:
-            self.hotkey_input.setToolTip("Exemplo: <ctrl>+' (Padrão)")
+            self.hotkey_input.setToolTip("Clique no campo e pressione a combinação de teclas desejada (ex: Ctrl+Shift+V). Pressione Esc para cancelar.")
             
         hotkey_layout.addWidget(hotkey_label)
         hotkey_layout.addWidget(self.hotkey_input)
@@ -191,6 +342,36 @@ class SettingsWidget(QWidget):
         autostart_layout.addStretch(1)
         autostart_layout.addWidget(self.autostart_switch)
         layout.addLayout(autostart_layout)
+        
+        # 5. Modo de Interação (Ditto vs CopyQ)
+        mode_layout = QVBoxLayout()
+        mode_label = QLabel("Modo de Interação:")
+        mode_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;")
+        
+        mode_options_layout = QHBoxLayout()
+        self.mode_group = QButtonGroup(self)
+        
+        self.mode1_radio = QRadioButton("Modo 1 (Clique único)")
+        self.mode1_radio.setToolTip("Clique único copia/cola e fecha o popup. Fecha ao perder o foco (clicar fora).")
+        self.mode2_radio = QRadioButton("Modo 2 (Drag Drop)")
+        self.mode2_radio.setToolTip("Clique duplo copia/cola. Permite arrastar itens e mover a janela. Fica aberto ao clicar fora.")
+        
+        self.mode_group.addButton(self.mode1_radio, 1)
+        self.mode_group.addButton(self.mode2_radio, 2)
+        
+        current_mode = settings.get('interaction_mode', 2)
+        if current_mode == 1:
+            self.mode1_radio.setChecked(True)
+        else:
+            self.mode2_radio.setChecked(True)
+            
+        mode_options_layout.addWidget(self.mode1_radio)
+        mode_options_layout.addWidget(self.mode2_radio)
+        mode_options_layout.addStretch(1)
+        
+        mode_layout.addWidget(mode_label)
+        mode_layout.addLayout(mode_options_layout)
+        layout.addLayout(mode_layout)
         
         # Info text
         info = QLabel("Dica: Itens fixados (★) nunca são excluídos automaticamente.")
@@ -245,10 +426,12 @@ class SettingsWidget(QWidget):
         # Salvar
         settings.set('max_history', self.hist_spin.value())
         settings.set('db_path', self.db_input.text())
+        settings.set('interaction_mode', self.mode_group.checkedId())
         
         # No linux (wayland) não tentamos salvar o hotkey do campo read-only
         if not (sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY')):
-            settings.set('hotkey', self.hotkey_input.text())
+            if hasattr(self.hotkey_input, 'raw_hotkey'):
+                settings.set('hotkey', self.hotkey_input.raw_hotkey)
 
         # Configurar Autostart (Iniciar com o sistema)
         try:

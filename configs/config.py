@@ -52,16 +52,25 @@ def hide_dock_icon():
             import ctypes.util
             objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('objc'))
             void_p = ctypes.c_void_p
+            
             objc.objc_getClass.restype = void_p
             objc.sel_registerName.restype = void_p
+            
             ns_app_class = objc.objc_getClass(b"NSApplication")
             shared_app_sel = objc.sel_registerName(b"sharedApplication")
-            objc.objc_msgSend.restype = void_p
-            objc.objc_msgSend.argtypes = [void_p, void_p]
-            shared_app = objc.objc_msgSend(ns_app_class, shared_app_sel)
             set_policy_sel = objc.sel_registerName(b"setActivationPolicy:")
-            # NSApplicationActivationPolicyAccessory = 1
-            objc.objc_msgSend(shared_app, set_policy_sel, ctypes.c_long(1))
+            
+            # Cast objc_msgSend for sharedApplication (no extra args, returns void_p)
+            proto_shared = ctypes.CFUNCTYPE(void_p, void_p, void_p)
+            msg_send_shared = proto_shared(objc.objc_msgSend)
+            shared_app = msg_send_shared(ns_app_class, shared_app_sel)
+            
+            if shared_app:
+                # Cast objc_msgSend for setActivationPolicy: (takes c_long, returns void_p)
+                proto_set_policy = ctypes.CFUNCTYPE(void_p, void_p, void_p, ctypes.c_long)
+                msg_send_set_policy = proto_set_policy(objc.objc_msgSend)
+                # NSApplicationActivationPolicyAccessory = 1 (removes app from Dock, runs as menu/accessory app)
+                msg_send_set_policy(shared_app, set_policy_sel, 1)
         except Exception as e:
             print(f"[FastPaste] Failed to set macOS activation policy dynamically: {e}")
 

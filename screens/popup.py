@@ -11,6 +11,7 @@ from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut, QDrag, 
 
 from core import history
 from configs.config import UI_COLORS, APP_NAME, hide_dock_icon
+from configs.settings_manager import settings
 from core.platform_handler import InputSimulator
 
 class DraggableListWidget(QListWidget):
@@ -188,6 +189,7 @@ class FastPastePopup(QWidget):
             QShortcut(QKeySequence(f"Ctrl+{i}"), self, lambda checked=False, idx=i-1: self.paste_by_index(idx))
 
         self.populate_list()
+        self.setup_interaction_mode()
 
     def init_ui(self):
         # Aumentar o delay e estilo da tooltip globalmente
@@ -579,6 +581,7 @@ class FastPastePopup(QWidget):
             self.filtered_history = list(self.full_history)
             
             self.refresh_list()
+            self.setup_interaction_mode()
 
     def paste_by_index(self, idx):
         if 0 <= idx < len(self.filtered_history):
@@ -757,26 +760,30 @@ class FastPastePopup(QWidget):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            clicked_widget = self.childAt(event.position().toPoint())
-            if clicked_widget not in [self.list_widget, self.search_entry] and not self.list_widget.underMouse() and not self.search_entry.underMouse():
-                # Tenta o arraste nativo do sistema (essencial para funcionamento correto no Wayland)
-                if self.windowHandle():
-                    self.windowHandle().startSystemMove()
+            # Apenas permite movimentar a janela no Modo 2 (CopyQ)
+            mode = settings.get('interaction_mode', 2)
+            if mode == 2:
+                clicked_widget = self.childAt(event.position().toPoint())
+                if clicked_widget not in [self.list_widget, self.search_entry] and not self.list_widget.underMouse() and not self.search_entry.underMouse():
+                    # Tenta o arraste nativo do sistema (essencial para funcionamento correto no Wayland)
+                    if self.windowHandle():
+                        self.windowHandle().startSystemMove()
+                        event.accept()
+                        return
+                    
+                    # Fallback manual para X11/Windows
+                    if hasattr(event, 'globalPosition'):
+                        self._drag_pos = event.globalPosition().toPoint()
+                    else:
+                        self._drag_pos = event.globalPos()
+                    self._drag_window_pos = self.pos()
                     event.accept()
                     return
-                
-                # Fallback manual para X11/Windows
-                if hasattr(event, 'globalPosition'):
-                    self._drag_pos = event.globalPosition().toPoint()
-                else:
-                    self._drag_pos = event.globalPos()
-                self._drag_window_pos = self.pos()
-                event.accept()
-                return
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, '_drag_pos'):
+        mode = settings.get('interaction_mode', 2)
+        if mode == 2 and event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, '_drag_pos'):
             if hasattr(event, 'globalPosition'):
                 diff = event.globalPosition().toPoint() - self._drag_pos
             else:
@@ -785,6 +792,44 @@ class FastPastePopup(QWidget):
             event.accept()
             return
         super().mouseMoveEvent(event)
+
+    def setup_interaction_mode(self):
+        # Desconecta os sinais existentes para evitar chamadas duplicadas
+        try:
+            self.list_widget.itemDoubleClicked.disconnect(self.on_item_activated)
+        except TypeError:
+            pass
+        try:
+            self.list_widget.itemClicked.disconnect(self.on_item_single_clicked)
+        except TypeError:
+            pass
+            
+        mode = settings.get('interaction_mode', 2)
+        if mode == 1:
+            # Modo 1: clique único ativa (copia/cola)
+            self.list_widget.itemClicked.connect(self.on_item_single_clicked)
+            # Desativa o arrastar e soltar (DND)
+            self.list_widget.setDragEnabled(False)
+        else:
+            # Modo 2: duplo clique ativa (copia/cola)
+            self.list_widget.itemDoubleClicked.connect(self.on_item_activated)
+            # Reativa o arrastar e soltar (DND)
+            self.list_widget.setDragEnabled(True)
+
+    def on_item_single_clicked(self, item):
+        mode = settings.get('interaction_mode', 2)
+        if mode == 1:
+            self.on_item_activated(item)
+
+    def changeEvent(self, event):
+        if event.type() == QEvent.Type.ActivationChange:
+            if not self.isActiveWindow():
+                # No Modo 1 (Ditto), fecha o popup ao perder o foco (clicar fora)
+                mode = settings.get('interaction_mode', 2)
+                if mode == 1:
+                    # Delay mínimo para evitar conflito se o clique for uma ação de fechar
+                    QTimer.singleShot(100, self.close)
+        super().changeEvent(event)
 
 def show(standalone=True):
     app = QApplication.instance()

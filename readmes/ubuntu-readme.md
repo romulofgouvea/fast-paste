@@ -6,16 +6,15 @@ Este guia detalha como instalar, configurar e rodar o FastPaste em sistemas base
 
 ## 🚀 Instalação
 
-Você pode instalar o FastPaste no Linux de duas formas: usando o instalador automatizado (`setup.sh`) ou gerando/instalando o pacote `.deb`.
+Você pode instalar o FastPaste no Linux de duas formas: usando o instalador automatizado (`setup.py`) ou gerando/instalando o pacote `.deb`.
 
-### Método 1: Usando o Instalador Automatizado (`setup.sh`)
+### Método 1: Usando o Instalador Automatizado (`setup.py`)
 O instalador automatizado irá instalar as dependências do sistema, instalar os pacotes Python necessários, configurar o daemon como um serviço de usuário do Systemd e registrar o atalho global no GNOME.
 
 1. Clone ou baixe este repositório.
 2. Abra o terminal na pasta do projeto e execute:
    ```bash
-   chmod +x scripts/setup.sh
-   ./scripts/setup.sh
+   python3 scripts/setup.py
    ```
 3. O serviço será ativado e iniciará automaticamente. Você pode verificar seu status com:
    ```bash

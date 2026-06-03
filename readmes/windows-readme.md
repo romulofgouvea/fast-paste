@@ -4,6 +4,18 @@ Este guia detalha como configurar, compilar e rodar o FastPaste no sistema opera
 
 ---
 
+## 🚀 Instalação e Configuração Automática
+
+Você pode instalar as dependências do Python e configurar o atalho de inicialização automática no Windows executando nosso script unificado de configuração:
+
+1. Abra o PowerShell ou Prompt de Comando na pasta do projeto e execute:
+   ```cmd
+   python scripts/setup.py
+   ```
+2. O script instalará os pacotes do Python e configurará um atalho de inicialização em segundo plano na pasta Startup do seu usuário Windows.
+
+---
+
 ## 🛠️ Compilação e Geração do Executável
 
 Se você deseja compilar o FastPaste para gerar um executável portátil (`.exe`) independente:

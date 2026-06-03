@@ -6,6 +6,18 @@ Devido às restrições de segurança do macOS (como o Gatekeeper e o Sandbox do
 
 ---
 
+## 🚀 Instalação e Configuração Automática
+
+Você pode instalar as dependências do Python e configurar o serviço de inicialização do LaunchAgent do macOS executando nosso script unificado de configuração:
+
+1. Abra o terminal na pasta do projeto e execute:
+   ```bash
+   python3 scripts/setup.py
+   ```
+2. O script instalará os pacotes necessários e registrará o FastPaste no seu sistema para iniciar automaticamente no login.
+
+---
+
 ## 🛠️ Compilação e Geração do Executável
 
 Se você deseja compilar o FastPaste localmente na sua máquina para gerar o arquivo `.app` otimizado para o seu hardware (Intel ou Apple Silicon M1/M2/M3):

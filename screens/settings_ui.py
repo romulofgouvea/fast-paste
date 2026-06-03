@@ -110,6 +110,12 @@ class HotkeyLineEdit(QLineEdit):
         elif key == Qt.Key.Key_Apostrophe:
             key_str = "'"
             pynput_key = "'"
+        elif key == Qt.Key.Key_QuoteLeft:
+            key_str = "`"
+            pynput_key = "`"
+        elif key == Qt.Key.Key_QuoteDbl:
+            key_str = '"'
+            pynput_key = '"'
         elif key == Qt.Key.Key_Space:
             key_str = "Space"
             pynput_key = "<space>"

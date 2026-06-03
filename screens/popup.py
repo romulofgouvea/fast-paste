@@ -732,6 +732,11 @@ class FastPastePopup(QWidget):
     def keyPressEvent(self, event):
         key = event.key()
         
+        # Esc closes the window
+        if key == Qt.Key.Key_Escape:
+            self.close()
+            return
+            
         # Seta para baixo / para cima
         if key in (Qt.Key.Key_Down, Qt.Key.Key_Up):
             # Se a barra de pesquisa tem o foco, passa para a lista
@@ -769,7 +774,7 @@ class FastPastePopup(QWidget):
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             # Apenas permite movimentar a janela no Modo 2 (CopyQ)
-            mode = settings.get('interaction_mode', 2)
+            mode = settings.get('interaction_mode', 1)
             if mode == 2:
                 clicked_widget = self.childAt(event.position().toPoint())
                 if clicked_widget not in [self.list_widget, self.search_entry] and not self.list_widget.underMouse() and not self.search_entry.underMouse():
@@ -790,7 +795,7 @@ class FastPastePopup(QWidget):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        mode = settings.get('interaction_mode', 2)
+        mode = settings.get('interaction_mode', 1)
         if mode == 2 and event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, '_drag_pos'):
             if hasattr(event, 'globalPosition'):
                 diff = event.globalPosition().toPoint() - self._drag_pos
@@ -812,7 +817,7 @@ class FastPastePopup(QWidget):
         except TypeError:
             pass
             
-        mode = settings.get('interaction_mode', 2)
+        mode = settings.get('interaction_mode', 1)
         if mode == 1:
             # Modo 1: clique único ativa (copia/cola)
             self.list_widget.itemClicked.connect(self.on_item_single_clicked)
@@ -825,7 +830,7 @@ class FastPastePopup(QWidget):
             self.list_widget.setDragEnabled(True)
 
     def on_item_single_clicked(self, item):
-        mode = settings.get('interaction_mode', 2)
+        mode = settings.get('interaction_mode', 1)
         if mode == 1:
             self.on_item_activated(item)
 
@@ -833,7 +838,7 @@ class FastPastePopup(QWidget):
         if event.type() == QEvent.Type.ActivationChange:
             if not self.isActiveWindow():
                 # No Modo 1 (Ditto), fecha o popup ao perder o foco (clicar fora)
-                mode = settings.get('interaction_mode', 2)
+                mode = settings.get('interaction_mode', 1)
                 if mode == 1:
                     # Delay mínimo para evitar conflito se o clique for uma ação de fechar
                     QTimer.singleShot(100, self.close)

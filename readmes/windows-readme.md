@@ -73,3 +73,17 @@ O FastPaste pode ser configurado para iniciar automaticamente junto com o Window
 2. Clique no ícone de engrenagem (**Configurações ⚙**) no canto superior direito.
 3. Ative a opção **"Iniciar automaticamente com o sistema"** e clique em **Salvar Configurações**.
 4. A partir desse momento, o FastPaste iniciará silenciosamente em segundo plano sempre que você ligar o computador e fizer login no Windows.
+
+---
+
+## ⚠️ Execução com Privilégios de Administrador (UAC)
+
+No Windows, se você estiver com o foco em uma janela executada como **Administrador** (como o PowerShell, Command Prompt, Task Manager ou IDEs abertas como Administrador), o Windows bloqueia a captura do atalho global por razões de segurança (UIPI - User Interface Privilege Isolation) se o FastPaste estiver rodando como usuário comum. Nesse caso, o atalho não ativa o popup e o caractere `'` acaba sendo digitado na janela ativa.
+
+**Como resolver**:
+Para que o atalho funcione globalmente mesmo sobre janelas de Administrador, execute o **FastPaste como Administrador**:
+1. Feche o processo atual do FastPaste (pelo ícone da bandeja ou pelo comando `python main.py stop`).
+2. Execute a aplicação (ou terminal) como **Administrador**:
+   * Clique com o botão direito sobre o terminal (ou atalho do FastPaste) e selecione **"Executar como Administrador"**.
+   * Execute o comando `python main.py start` ou abra o executável.
+

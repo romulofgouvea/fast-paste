@@ -112,6 +112,51 @@ def normalize_pynput_key(key, os_name):
     return key
 
 
+def parse_hotkey_for_filter(hotkey_str):
+    expected = {
+        'ctrl': False,
+        'shift': False,
+        'alt': False,
+        'vks': []
+    }
+    
+    parts = hotkey_str.lower().split('+')
+    for part in parts:
+        if part == "<ctrl>":
+            expected['ctrl'] = True
+        elif part == "<shift>":
+            expected['shift'] = True
+        elif part == "<alt>":
+            expected['alt'] = True
+        else:
+            clean = part.replace('<', '').replace('>', '')
+            if len(clean) == 1:
+                char = clean
+                if 'a' <= char <= 'z':
+                    expected['vks'].append(ord(char.upper()))
+                elif char == "'":
+                    expected['vks'].extend([192, 222])
+                elif char == ",":
+                    expected['vks'].append(188)
+                elif char == ".":
+                    expected['vks'].append(190)
+                elif char == "/":
+                    expected['vks'].append(191)
+                elif char == "[":
+                    expected['vks'].append(219)
+                elif char == "]":
+                    expected['vks'].append(221)
+                elif char == ";":
+                    expected['vks'].append(186)
+                elif char == "=":
+                    expected['vks'].append(187)
+                elif char == "-":
+                    expected['vks'].append(189)
+                elif '0' <= char <= '9':
+                    expected['vks'].append(ord(char))
+    return expected
+
+
 class GlobalHotkeyManager:
     def __init__(self, callback):
         self.os_name = platform.system()
@@ -141,9 +186,43 @@ class GlobalHotkeyManager:
                         normalized = normalize_pynput_key(key, self.os_name)
                         self.hotkey_instance.release(normalized)
                 
-                self.listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+                kwargs = {
+                    'on_press': on_press,
+                    'on_release': on_release
+                }
+                
+                if self.os_name == "Windows":
+                    filter_criteria = parse_hotkey_for_filter(hotkey_str)
+                    
+                    def win32_event_filter(msg, data):
+                        import ctypes
+                        
+                        is_ctrl = (ctypes.windll.user32.GetKeyState(17) & 0x8000) != 0
+                        is_shift = (ctypes.windll.user32.GetKeyState(16) & 0x8000) != 0
+                        is_alt = (ctypes.windll.user32.GetKeyState(18) & 0x8000) != 0
+                        
+                        mods_match = (
+                            is_ctrl == filter_criteria['ctrl'] and
+                            is_shift == filter_criteria['shift'] and
+                            is_alt == filter_criteria['alt']
+                        )
+                        
+                        key_match = data.vkCode in filter_criteria['vks']
+                        
+                        if mods_match and key_match:
+                            # Only trigger callback on keydown (WM_KEYDOWN or WM_SYSKEYDOWN)
+                            if msg in [256, 260]:
+                                self.callback()
+                            # Suppress key propagation to prevent active app from typing the key
+                            return False
+                            
+                        return True
+                        
+                    kwargs['win32_event_filter'] = win32_event_filter
+                
+                self.listener = keyboard.Listener(**kwargs)
                 self.listener.start()
-                print(f"[FastPaste] Custom global hotkey ({hotkey_str}) registered via normalized listener.")
+                print(f"[FastPaste] Custom global hotkey ({hotkey_str}) registered via normalized listener (suppression enabled on Windows).")
             except Exception as e:
                 print(f"[FastPaste] Could not start global hotkey listener: {e}")
                 if self.os_name == "Darwin":

@@ -367,7 +367,7 @@ class SettingsWidget(QWidget):
         self.mode_group.addButton(self.mode1_radio, 1)
         self.mode_group.addButton(self.mode2_radio, 2)
         
-        current_mode = settings.get('interaction_mode', 2)
+        current_mode = settings.get('interaction_mode', 1)
         if current_mode == 1:
             self.mode1_radio.setChecked(True)
         else:

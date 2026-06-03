@@ -17,7 +17,8 @@ class SettingsManager:
         self.settings = {
             "max_history": MAX_HISTORY,
             "hotkey": "<ctrl>+'",
-            "db_path": DATA_DIR
+            "db_path": DATA_DIR,
+            "interaction_mode": 1
         }
         
         if os.path.exists(SETTINGS_FILE):

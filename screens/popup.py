@@ -250,7 +250,7 @@ class FastPastePopup(QWidget):
         self.popup_server_name = f"{APP_NAME}_Popup_Server"
         self.popup_server = QLocalServer(self)
         QLocalServer.removeServer(self.popup_server_name)
-        self.popup_server.newConne'ction.connect(self.on_new_popup_connection)
+        self.popup_server.newConnection.connect(self.on_new_popup_connection)
         self.popup_server.listen(self.popup_server_name)
 
     def on_new_popup_connection(self):
@@ -258,7 +258,13 @@ class FastPastePopup(QWidget):
         if socket.waitForReadyRead(1000):
             data = socket.readAll().data()
             if b"CLOSE" in data:
-                self.close_app()
+                if self.stacked_widget.currentIndex() == 1:
+                    # Se estiver na página de configurações, proíbe fechar a janela
+                    # e apenas traz ela para o foco.
+                    self.activateWindow()
+                    self.raise_()
+                else:
+                    self.close_app()
         socket.disconnectFromServer()
         socket.deleteLater()
 

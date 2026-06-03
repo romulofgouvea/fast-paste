@@ -134,26 +134,50 @@ def parse_hotkey_for_filter(hotkey_str):
                 char = clean
                 if 'a' <= char <= 'z':
                     expected['vks'].append(ord(char.upper()))
-                elif char == "'":
+                elif char in ("'", '"'):
                     expected['vks'].extend([192, 222])
-                elif char == ",":
+                elif char in (",", "<"):
                     expected['vks'].append(188)
-                elif char == ".":
+                elif char in (".", ">"):
                     expected['vks'].append(190)
-                elif char == "/":
+                elif char in ("/", "?"):
                     expected['vks'].append(191)
-                elif char == "[":
+                elif char in ("[", "{"):
                     expected['vks'].append(219)
-                elif char == "]":
+                elif char in ("]", "}"):
                     expected['vks'].append(221)
-                elif char == ";":
+                elif char in (";", ":"):
                     expected['vks'].append(186)
-                elif char == "=":
+                elif char in ("=", "+"):
                     expected['vks'].append(187)
-                elif char == "-":
+                elif char in ("-", "_"):
                     expected['vks'].append(189)
+                elif char in ("\\", "|"):
+                    expected['vks'].append(220)
+                elif char in ("`", "~"):
+                    expected['vks'].extend([192, 222])
                 elif '0' <= char <= '9':
                     expected['vks'].append(ord(char))
+                elif char == "!":
+                    expected['vks'].append(49)
+                elif char == "@":
+                    expected['vks'].append(50)
+                elif char == "#":
+                    expected['vks'].append(51)
+                elif char == "$":
+                    expected['vks'].append(52)
+                elif char == "%":
+                    expected['vks'].append(53)
+                elif char == "^":
+                    expected['vks'].append(54)
+                elif char == "&":
+                    expected['vks'].append(55)
+                elif char == "*":
+                    expected['vks'].append(56)
+                elif char == "(":
+                    expected['vks'].append(57)
+                elif char == ")":
+                    expected['vks'].append(48)
     return expected
 
 

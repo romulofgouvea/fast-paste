@@ -38,7 +38,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: dist/fast-paste_*.deb
+          files: dist/fpaste_*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -60,7 +60,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: dist/fast-paste.exe
+          files: dist/fpaste.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -80,11 +80,11 @@ jobs:
         run: |
           python scripts/build.py
           cd dist
-          zip -r fast-paste.app.zip fast-paste.app
+          zip -r fpaste.app.zip fpaste.app
       - name: Upload .app to Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: dist/fast-paste.app.zip
+          files: dist/fpaste.app.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

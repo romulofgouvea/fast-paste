@@ -21,7 +21,7 @@ O **FastPaste** é um gerenciador de área de transferência (clipboard) moderno
 ### 💡 Workflow do Dia a Dia
 
 1. **Copie normalmente** textos ou capture imagens usando `Ctrl+C` ou print de tela.
-2. **Abra o popup** a qualquer momento usando o atalho de teclado rápido (exemplo: `Ctrl + '` ou `Ctrl + Shift + V`).
+2. **Abra o popup** a qualquer momento usando o atalho de teclado padrão: **`Ctrl + '`** (Ctrl + aspas simples).
 3. **Busque e navegue** usando as setas do teclado (`↑` e `↓`) ou digite letras para buscar o texto.
 4. **Pressione Enter** para colar o item selecionado de forma automática!
 

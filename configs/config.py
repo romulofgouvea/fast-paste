@@ -4,8 +4,15 @@ import tempfile
 APP_NAME = "FastPaste"
 MAX_HISTORY = 500
 
-# Caminhos dos arquivos baseados em uma pasta temporária padrão multiplataforma
-DATA_DIR = os.path.join(tempfile.gettempdir(), "fast-paste")
+# Caminhos dos arquivos persistentes (evita perda ao reiniciar e problemas de sandbox como Snaps/Flatpaks)
+import sys
+if sys.platform.startswith("win"):
+    DATA_DIR = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), "fast-paste")
+elif sys.platform.startswith("darwin"):
+    DATA_DIR = os.path.join(os.path.expanduser("~"), "Library", "Application Support", "fast-paste")
+else:
+    DATA_DIR = os.path.join(os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")), "fast-paste")
+
 DB_FILE = os.path.join(DATA_DIR, "history.db")
 IMAGES_DIR = os.path.join(DATA_DIR, "images")
 LOG_FILE = os.path.join(DATA_DIR, "daemon.log")
@@ -35,4 +42,26 @@ def get_asset_path(filename):
     # If running from source
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_dir, "assets", filename)
+
+def hide_dock_icon():
+    """Hides the application icon from the macOS Dock programmatically."""
+    import sys
+    if sys.platform == "darwin":
+        try:
+            import ctypes
+            import ctypes.util
+            objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('objc'))
+            void_p = ctypes.c_void_p
+            objc.objc_getClass.restype = void_p
+            objc.sel_registerName.restype = void_p
+            ns_app_class = objc.objc_getClass(b"NSApplication")
+            shared_app_sel = objc.sel_registerName(b"sharedApplication")
+            objc.objc_msgSend.restype = void_p
+            objc.objc_msgSend.argtypes = [void_p, void_p]
+            shared_app = objc.objc_msgSend(ns_app_class, shared_app_sel)
+            set_policy_sel = objc.sel_registerName(b"setActivationPolicy:")
+            # NSApplicationActivationPolicyAccessory = 1
+            objc.objc_msgSend(shared_app, set_policy_sel, ctypes.c_long(1))
+        except Exception as e:
+            print(f"[FastPaste] Failed to set macOS activation policy dynamically: {e}")
 

@@ -6,16 +6,93 @@ from PyQt6.QtWidgets import (
     QLineEdit, QListWidget, QListWidgetItem, QLabel, 
     QMenu, QGraphicsDropShadowEffect, QFrame, QPushButton, QStackedWidget
 )
-from PyQt6.QtCore import Qt, QSize, QEvent, QTimer
-from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut
+from PyQt6.QtCore import Qt, QSize, QEvent, QTimer, QMimeData, QUrl
+from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut, QDrag, QPainter, QPen, QBrush
 
 from core import history
-from configs.config import UI_COLORS, APP_NAME
+from configs.config import UI_COLORS, APP_NAME, hide_dock_icon
 from core.platform_handler import InputSimulator
 
-def get_tinted_icon(icon_name, color_hex):
-    from PyQt6.QtGui import QPainter
+class DraggableListWidget(QListWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setDragEnabled(True)
+        self._drag_start_pos = None
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_start_pos = event.position().toPoint()
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.MouseButton.LeftButton and self._drag_start_pos:
+            if (event.position().toPoint() - self._drag_start_pos).manhattanLength() > max(15, QApplication.startDragDistance()):
+                item = self.itemAt(self._drag_start_pos)
+                if item:
+                    item_data = item.data(Qt.ItemDataRole.UserRole)
+                    if item_data and item_data.get("type") == "image":
+                        filepath = item_data.get("content")
+                        if filepath and os.path.exists(filepath):
+                            drag = QDrag(self)
+                            mime_data = QMimeData()
+                            url = QUrl.fromLocalFile(filepath)
+                            mime_data.setUrls([url])
+                            
+                            pixmap = QPixmap(filepath)
+                            if not pixmap.isNull():
+                                drag_pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                                drag.setPixmap(drag_pixmap)
+                                drag.setHotSpot(drag_pixmap.rect().center())
+                            
+                            drag.setMimeData(mime_data)
+                            drag.exec(Qt.DropAction.CopyAction)
+                            self._drag_start_pos = None
+                            return
+        super().mouseMoveEvent(event)
+
+def draw_custom_search_icon(color_hex):
+    pixmap = QPixmap(18, 18)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    pen = QPen(QColor(color_hex), 2)
+    painter.setPen(pen)
+    painter.drawEllipse(2, 2, 9, 9)
+    painter.drawLine(10, 10, 15, 15)
+    painter.end()
+    return pixmap
+
+def draw_custom_gear_icon(color_hex):
+    import math
+    pixmap = QPixmap(18, 18)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
     
+    pen = QPen(QColor(color_hex), 2)
+    painter.setPen(pen)
+    
+    center_x = 9
+    center_y = 9
+    r_inner = 4
+    r_outer = 6.5
+    for i in range(8):
+        angle = i * math.pi / 4
+        x1 = center_x + r_inner * math.cos(angle)
+        y1 = center_y + r_inner * math.sin(angle)
+        x2 = center_x + r_outer * math.cos(angle)
+        y2 = center_y + r_outer * math.sin(angle)
+        painter.drawLine(int(x1), int(y1), int(x2), int(y2))
+        
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.drawEllipse(5, 5, 8, 8)
+    
+    painter.setBrush(QBrush(QColor(color_hex)))
+    painter.drawEllipse(7, 7, 4, 4)
+    painter.end()
+    return pixmap
+
+def get_tinted_icon(icon_name, color_hex):
     icon = QIcon.fromTheme(icon_name)
     if icon.isNull():
         icon = QIcon.fromTheme(icon_name.replace("-symbolic", ""))
@@ -43,6 +120,7 @@ def get_tinted_icon(icon_name, color_hex):
 class FastPastePopup(QWidget):
     def __init__(self, standalone=True):
         super().__init__()
+        hide_dock_icon()
         self.standalone = standalone
         self.input_sim = InputSimulator()
 
@@ -110,8 +188,13 @@ class FastPastePopup(QWidget):
         search_layout.setContentsMargins(12, 6, 12, 6)
         search_layout.setSpacing(10)
         
+        is_linux = sys.platform.startswith("linux")
+        
         search_icon = QLabel()
-        pixmap = get_tinted_icon("system-search-symbolic", UI_COLORS['fg_dim'])
+        if is_linux:
+            pixmap = get_tinted_icon("system-search-symbolic", UI_COLORS['fg_dim'])
+        else:
+            pixmap = draw_custom_search_icon(UI_COLORS['fg_dim'])
         
         if pixmap:
             search_icon.setPixmap(pixmap)
@@ -119,21 +202,27 @@ class FastPastePopup(QWidget):
             search_icon.setText("🔍")
             search_icon.setStyleSheet(f"color: {UI_COLORS['fg_dim']}; font-size: 16px; background: transparent;")
         
+        search_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         search_layout.addWidget(search_icon)
 
         self.search_entry = QLineEdit()
         self.search_entry.setPlaceholderText("Search clips or dates...")
         self.search_entry.setObjectName("SearchEntry")
+        if not is_linux:
+            self.search_entry.setAttribute(Qt.WidgetAttribute.WA_MacShowFocusRect, False)
         self.search_entry.textChanged.connect(self.on_search_changed)
         search_layout.addWidget(self.search_entry)
         
         self.settings_btn = QPushButton()
         self.settings_btn.setFixedSize(30, 30)
+        self.settings_btn.setFlat(True)
         self.settings_btn.setToolTip("Configurações")
         self.settings_btn.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
-                border: None;
+                border: none;
+                margin: 0px;
+                padding: 0px;
             }
             QPushButton:hover {
                 background-color: rgba(255, 255, 255, 0.1);
@@ -141,10 +230,14 @@ class FastPastePopup(QWidget):
             }
         """)
         
-        settings_pixmap = get_tinted_icon("preferences-system-symbolic", UI_COLORS['fg_dim'])
+        if is_linux:
+            settings_pixmap = get_tinted_icon("preferences-system-symbolic", UI_COLORS['fg_dim'])
+        else:
+            settings_pixmap = draw_custom_gear_icon(UI_COLORS['fg_dim'])
+            
         if settings_pixmap:
             self.settings_btn.setIcon(QIcon(settings_pixmap))
-            self.settings_btn.setIconSize(QSize(16, 16))
+            self.settings_btn.setIconSize(QSize(18, 18))
         else:
             self.settings_btn.setText("⚙")
             self.settings_btn.setStyleSheet(self.settings_btn.styleSheet() + "QPushButton { font-size: 16px; color: " + UI_COLORS['fg_dim'] + "; }")
@@ -160,11 +253,11 @@ class FastPastePopup(QWidget):
         list_layout = QVBoxLayout(self.list_card)
         list_layout.setContentsMargins(0, 4, 0, 4)
 
-        self.list_widget = QListWidget()
+        self.list_widget = DraggableListWidget()
         self.list_widget.setObjectName("ListWidget")
         self.list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.list_widget.itemActivated.connect(self.on_item_activated)
+        self.list_widget.itemDoubleClicked.connect(self.on_item_activated)
         self.list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.list_widget.customContextMenuRequested.connect(self.show_context_menu)
         
@@ -629,6 +722,30 @@ class FastPastePopup(QWidget):
             
         if self.standalone:
             QApplication.quit()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            clicked_widget = self.childAt(event.position().toPoint())
+            if clicked_widget not in [self.list_widget, self.search_entry] and not self.list_widget.underMouse() and not self.search_entry.underMouse():
+                if hasattr(event, 'globalPosition'):
+                    self._drag_pos = event.globalPosition().toPoint()
+                else:
+                    self._drag_pos = event.globalPos()
+                self._drag_window_pos = self.pos()
+                event.accept()
+                return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, '_drag_pos'):
+            if hasattr(event, 'globalPosition'):
+                diff = event.globalPosition().toPoint() - self._drag_pos
+            else:
+                diff = event.globalPos() - self._drag_pos
+            self.move(self._drag_window_pos + diff)
+            event.accept()
+            return
+        super().mouseMoveEvent(event)
 
 def show(standalone=True):
     app = QApplication.instance()

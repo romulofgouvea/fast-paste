@@ -142,6 +142,21 @@ def main():
     print("Running PyInstaller...")
     run_command(pyinstaller_args)
     
+    if sys.platform.startswith("darwin"):
+        plist_path = f"dist/{name}.app/Contents/Info.plist"
+        if os.path.exists(plist_path):
+            print("Configuring macOS Info.plist to hide from Dock...")
+            import plistlib
+            try:
+                with open(plist_path, 'rb') as fp:
+                    pl = plistlib.load(fp)
+                pl['LSUIElement'] = True
+                with open(plist_path, 'wb') as fp:
+                    plistlib.dump(pl, fp)
+                print("[OK] Hided from Dock (LSUIElement set in Info.plist).")
+            except Exception as e:
+                print(f"[Warning] Failed to modify Info.plist: {e}")
+    
     print("\n==========================================")
     print("Build process completed successfully!")
     

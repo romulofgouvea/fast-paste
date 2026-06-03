@@ -136,17 +136,22 @@ class SettingsWidget(QWidget):
         hotkey_layout = QHBoxLayout()
         hotkey_label = QLabel("Atalho Global:")
         self.hotkey_input = QLineEdit()
-        self.hotkey_input.setText(settings.get('hotkey', '<ctrl>+<shift>+v'))
+        self.hotkey_input.setText(settings.get('hotkey', "<ctrl>+'"))
+        
+        self.open_shortcuts_btn = QPushButton("Configurar no Sistema")
+        self.open_shortcuts_btn.setToolTip("Abre o painel do sistema operacional para configurar atalhos globais.")
+        self.open_shortcuts_btn.clicked.connect(self.open_system_shortcuts)
         
         if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):
             self.hotkey_input.setReadOnly(True)
-            self.hotkey_input.setToolTip("No Wayland, defina o atalho nas configurações do seu sistema operacional\npara rodar o comando: python3 main.py show")
-            self.hotkey_input.setText("Configurar no Ubuntu (GNOME)")
+            self.hotkey_input.setToolTip("No Wayland, configure o atalho nas configurações do seu sistema para rodar o comando: fast-paste show")
+            self.hotkey_input.setText("Configurar nas teclas do sistema")
         else:
-            self.hotkey_input.setToolTip("Exemplo: <ctrl>+<shift>+v (Padrão Windows/Mac)")
+            self.hotkey_input.setToolTip("Exemplo: <ctrl>+' (Padrão)")
             
         hotkey_layout.addWidget(hotkey_label)
         hotkey_layout.addWidget(self.hotkey_input)
+        hotkey_layout.addWidget(self.open_shortcuts_btn)
         layout.addLayout(hotkey_layout)
 
         # 3. Caminho do banco de dados
@@ -256,3 +261,25 @@ class SettingsWidget(QWidget):
             print(f"[Settings] Error saving autostart setting: {e}")
             
         self.settings_closed.emit(True)
+
+    def open_system_shortcuts(self):
+        import shutil
+        import subprocess
+        try:
+            if sys.platform.startswith("linux"):
+                if shutil.which("gnome-control-center"):
+                    subprocess.Popen(["gnome-control-center", "keyboard"])
+                elif shutil.which("systemsettings5"):
+                    subprocess.Popen(["systemsettings5", "kcm_keys"])
+                elif shutil.which("xfce4-keyboard-settings"):
+                    subprocess.Popen(["xfce4-keyboard-settings"])
+                else:
+                    QMessageBox.information(self, "Atalhos no Linux", 
+                        "No Linux, configure um atalho global nas configurações de teclado do seu sistema para executar o comando:\n\nfast-paste show")
+            elif sys.platform.startswith("darwin"):
+                # macOS Keyboard Shortcuts Preference Pane
+                subprocess.Popen(["open", "x-apple.systempreferences:com.apple.preference.keyboard?shortcuts"])
+            elif sys.platform.startswith("win32") or sys.platform.startswith("win"):
+                os.system("start ms-settings:keyboard")
+        except Exception as e:
+            print(f"[FastPaste] Error opening system keyboard settings: {e}")

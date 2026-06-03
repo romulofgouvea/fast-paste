@@ -133,6 +133,16 @@ def stop_daemon():
         socket.disconnectFromServer()
         print("🛑 Monitor stopped.")
 
+def restart_daemon():
+    print("🔄 Restarting FastPaste...")
+    stop_daemon()
+    # Wait up to 5 seconds for status to become inactive
+    for _ in range(25):
+        if not check_status():
+            break
+        time.sleep(0.2)
+    start_daemon()
+
 def show_popup():
     if check_status():
         socket = QLocalSocket()
@@ -153,6 +163,9 @@ def run_foreground():
     app = QApplication.instance()
     if not app:
         app = QApplication(sys.argv)
+    
+    from configs.config import hide_dock_icon
+    hide_dock_icon()
     
     # Prevent app from quitting when popup is closed
     app.setQuitOnLastWindowClosed(False)
@@ -203,6 +216,10 @@ def run_foreground():
         global popup_instance
         if clipboard_monitor:
             clipboard_monitor.force_check()
+            
+        if popup_instance and popup_instance.isVisible():
+            popup_instance.close()
+            return
             
         popup_instance = get_or_create_popup()
         popup_instance.refresh_list()
@@ -259,6 +276,7 @@ def print_usage():
 ║  Commands:                                    ║
 ║    start   - Start background monitor         ║
 ║    stop    - Stop background monitor          ║
+║    restart - Restart background monitor       ║
 ║    run     - Run daemon in foreground         ║
 ║    show    - Show history popup               ║
 ║    status  - Check daemon status              ║
@@ -286,6 +304,8 @@ def main():
         start_daemon()
     elif cmd == "stop":
         stop_daemon()
+    elif cmd == "restart":
+        restart_daemon()
     elif cmd == "run":
         run_foreground()
     elif cmd == "show":

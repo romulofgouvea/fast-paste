@@ -47,7 +47,7 @@ Se você preferir rodar o FastPaste diretamente a partir do código fonte (sem c
 ## ⌨️ Atalho de Teclado no Windows
 
 O atalho de teclado global padrão configurado para o Windows é:
-**`Ctrl + Shift + V`**
+**`Ctrl + '`** (Ctrl + aspas simples)
 
 Quando o monitor está ativo em segundo plano, pressionar esse atalho abrirá instantaneamente o popup sob o cursor. Use as setas do teclado para navegar e **Enter** para colar o texto automaticamente na sua aplicação ativa.
 

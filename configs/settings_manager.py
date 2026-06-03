@@ -16,7 +16,7 @@ class SettingsManager:
     def _load(self):
         self.settings = {
             "max_history": MAX_HISTORY,
-            "hotkey": "<ctrl>+<shift>+v",
+            "hotkey": "<ctrl>+'",
             "db_path": DATA_DIR
         }
         

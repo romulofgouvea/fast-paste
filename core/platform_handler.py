@@ -64,7 +64,7 @@ class GlobalHotkeyManager:
                 from pynput import keyboard
                 from configs.settings_manager import settings
                 
-                hotkey = settings.get('hotkey', '<ctrl>+<shift>+v')
+                hotkey = settings.get('hotkey', "<ctrl>+'")
                     
                 self.listener = keyboard.GlobalHotKeys({
                     hotkey: self.callback

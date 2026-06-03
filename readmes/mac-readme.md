@@ -54,7 +54,7 @@ Para que o FastPaste possa simular o atalho `Cmd+V` para colar os textos automat
 ## ⌨️ Atalhos de Teclado e Popup
 
 ### Como abrir o Popup de histórico no Mac
-O atalho padrão global para abrir a janela do popup no Mac é **`Ctrl + Shift + V`**. Ele rodará em segundo plano graças à biblioteca `pynput`.
+O atalho padrão global para abrir a janela do popup no Mac é **`Ctrl + '`** (Ctrl + aspas simples). Ele rodará em segundo plano graças à biblioteca `pynput`.
 
 #### Alternativa: Criar um Atalho de Teclado Nativo do macOS
 Caso queira desativar o monitoramento de atalho em Python e usar o sistema nativo da Apple (mais rápido e seguro):

@@ -4,6 +4,7 @@ import hashlib
 import time
 from configs.config import DB_FILE, IMAGES_DIR, DATA_DIR, MAX_HISTORY
 from configs.settings_manager import settings
+from core import crypto
 
 def get_db_path():
     path = settings.get('db_path', DATA_DIR)
@@ -101,10 +102,11 @@ def add_text(text):
         cursor.execute("UPDATE clipboard_history SET created_at = ? WHERE hash = ?", (now, hash_val))
     else:
         # Insere novo registro de texto
+        encrypted_text = crypto.encrypt_text(text)
         cursor.execute("""
             INSERT INTO clipboard_history (type, content, hash, created_at)
             VALUES ('text', ?, ?, ?)
-        """, (text, hash_val, now))
+        """, (encrypted_text, hash_val, now))
         
     conn.commit()
     cleanup_history(conn)
@@ -138,12 +140,13 @@ def add_image(image_bytes):
         # Apenas atualiza a data para mover para o topo do histórico
         cursor.execute("UPDATE clipboard_history SET created_at = ? WHERE hash = ?", (now, hash_val))
     else:
-        # Salva o arquivo PNG de forma limpa no disco
+        # Salva o arquivo PNG criptografado no disco
         filename = f"{hash_val}.png"
         filepath = os.path.join(get_images_path(), filename)
         try:
+            encrypted_bytes = crypto.encrypt_bytes(image_bytes)
             with open(filepath, 'wb') as f:
-                f.write(image_bytes)
+                f.write(encrypted_bytes)
                 
             # Insere novo registro de imagem
             cursor.execute("""
@@ -159,43 +162,66 @@ def add_image(image_bytes):
     conn.close()
 
 def load_history(search_query=None):
-    """Carrega o histórico do banco de dados, aplicando busca por conteúdo ou por data se especificado."""
+    """Carrega o histórico do banco de dados, descriptografando o texto e aplicando filtro em memória."""
     init_db()
     conn = get_connection()
     cursor = conn.cursor()
+    import datetime
     
-    if search_query:
-        # Busca no conteúdo de texto ou na data formatada
-        # strftime formatará o timestamp unix armazenado em 'created_at' no fuso local
-        q = f"%{search_query}%"
-        cursor.execute("""
-            SELECT id, type, content, is_pinned, created_at 
-            FROM clipboard_history 
-            WHERE (type = 'text' AND content LIKE ?)
-               OR (strftime('%d/%m/%Y %H:%M', created_at, 'unixepoch', 'localtime') LIKE ?)
-            ORDER BY is_pinned DESC, created_at DESC
-        """, (q, q))
-    else:
-        cursor.execute("""
-            SELECT id, type, content, is_pinned, created_at 
-            FROM clipboard_history 
-            ORDER BY is_pinned DESC, created_at DESC
-            LIMIT ?
-        """, (settings.get('max_history', MAX_HISTORY),))
+    limit = settings.get('max_history', MAX_HISTORY)
+    cursor.execute("""
+        SELECT id, type, content, is_pinned, created_at 
+        FROM clipboard_history 
+        ORDER BY is_pinned DESC, created_at DESC
+        LIMIT ?
+    """, (limit,))
         
     rows = cursor.fetchall()
     conn.close()
     
     history_list = []
     for row in rows:
+        item_type = row[1]
+        content = row[2]
+        
+        # Descriptografa texto
+        if item_type == 'text':
+            content = crypto.decrypt_text(content)
+            
+        if search_query:
+            q = search_query.lower()
+            dt_str = datetime.datetime.fromtimestamp(row[4]).strftime('%d/%m/%Y %H:%M')
+            
+            matches = False
+            if q in dt_str.lower():
+                matches = True
+            elif item_type == 'text' and q in content.lower():
+                matches = True
+                
+            if not matches:
+                continue
+
         history_list.append({
             "id": row[0],
-            "type": row[1],
-            "content": row[2],
+            "type": item_type,
+            "content": content,
             "is_pinned": bool(row[3]),
             "created_at": row[4]
         })
+        
     return history_list
+
+def get_image_bytes(filepath):
+    """Lê e descriptografa os bytes de uma imagem."""
+    if not os.path.exists(filepath):
+        return None
+    try:
+        with open(filepath, 'rb') as f:
+            data = f.read()
+        return crypto.decrypt_bytes(data)
+    except Exception as e:
+        print(f"[FastPaste] Erro ao carregar imagem criptografada: {e}")
+        return None
 
 def toggle_pin(item_id):
     """Inverte o status de fixado de um item."""

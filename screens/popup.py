@@ -68,29 +68,38 @@ class DraggableListWidget(QListWidget):
         if item_data.get("type") == "image":
             filepath = item_data.get("content")
             if filepath and os.path.exists(filepath):
-                # 1. URL de Arquivo Local (para Área de Trabalho / Gerenciadores de Arquivo)
-                mime_data.setUrls([QUrl.fromLocalFile(filepath)])
-                
-                # 2. Dados de Imagem (para WhatsApp, Discord, Slack, Photoshop, etc.)
-                image = QImage(filepath)
-                if not image.isNull():
-                    mime_data.setImageData(image)
-                    # Set raw image data MIME type
+                from core import history
+                img_data = history.get_image_bytes(filepath)
+                if img_data:
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(img_data)
+                    image = pixmap.toImage()
+                    
+                    # 1. URL de Arquivo Local Temporário (para Área de Trabalho / Gerenciadores de Arquivos)
                     try:
-                        with open(filepath, 'rb') as f:
-                            mime_data.setData("image/png", f.read())
+                        import tempfile
+                        temp_dir = tempfile.gettempdir()
+                        safe_title = f"fpaste_{os.path.basename(filepath)}"
+                        temp_filepath = os.path.join(temp_dir, safe_title)
+                        with open(temp_filepath, "wb") as f:
+                            f.write(img_data)
+                        mime_data.setUrls([QUrl.fromLocalFile(temp_filepath)])
                     except Exception as e:
-                        print(f"[FastPaste] Error loading image bytes for drag: {e}")
-                
-                # 3. Ícone Visual do Arraste
-                pixmap = QPixmap.fromImage(image)
-                if not pixmap.isNull():
-                    drag_pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-                    drag.setPixmap(drag_pixmap)
-                    drag.setHotSpot(drag_pixmap.rect().center())
-                
-                drag.setMimeData(mime_data)
-                drag.exec(Qt.DropAction.CopyAction)
+                        print(f"[FPaste] Erro ao gerar arquivo de imagem temporário para drag-and-drop: {e}")
+                    
+                    # 2. Dados de Imagem (para WhatsApp, Discord, Slack, Photoshop, etc.)
+                    if not image.isNull():
+                        mime_data.setImageData(image)
+                        mime_data.setData("image/png", img_data)
+                    
+                    # 3. Ícone Visual do Arraste
+                    if not pixmap.isNull():
+                        drag_pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                        drag.setPixmap(drag_pixmap)
+                        drag.setHotSpot(drag_pixmap.rect().center())
+                    
+                    drag.setMimeData(mime_data)
+                    drag.exec(Qt.DropAction.CopyAction)
                 
         elif item_data.get("type") == "text":
             text_content = item_data.get("content")
@@ -545,34 +554,32 @@ class FastPastePopup(QWidget):
                 
             elif item_data["type"] == "image":
                 filepath = item_data["content"]
-                from PyQt6.QtGui import QImageReader
-                reader = QImageReader(filepath)
-                reader.setAutoTransform(True)
-                orig_size = reader.size()
-                pixmap = QPixmap()
-                if not orig_size.isEmpty():
-                    # Scale down during loading to keep memory footprint tiny
-                    target_size = orig_size.scaled(80, 45, Qt.AspectRatioMode.KeepAspectRatioByExpanding)
-                    reader.setScaledSize(target_size)
-                    image = reader.read()
-                    pixmap = QPixmap.fromImage(image)
+                img_data = history.get_image_bytes(filepath)
                 
-                if not pixmap.isNull():
-                    # Cria um pixmap recortado exato
-                    crop = QPixmap(80, 45)
-                    crop.fill(Qt.GlobalColor.transparent)
-                    from PyQt6.QtGui import QPainter
-                    painter = QPainter(crop)
-                    # Centraliza o crop
-                    x = (pixmap.width() - 80) // 2
-                    y = (pixmap.height() - 45) // 2
-                    painter.drawPixmap(0, 0, pixmap, x, y, 80, 45)
-                    painter.end()
+                if img_data:
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(img_data)
                     
-                    icon_label.setPixmap(crop)
-                    icon_label.setFixedSize(80, 45)
-                
-                widget.setToolTip(f'<img src="{filepath}" width="300">')
+                    if not pixmap.isNull():
+                        # Create cropped pixmap
+                        crop = QPixmap(80, 45)
+                        crop.fill(Qt.GlobalColor.transparent)
+                        from PyQt6.QtGui import QPainter
+                        painter = QPainter(crop)
+                        
+                        # Scale down first
+                        scaled_pixmap = pixmap.scaled(80, 45, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+                        x = (scaled_pixmap.width() - 80) // 2
+                        y = (scaled_pixmap.height() - 45) // 2
+                        painter.drawPixmap(0, 0, scaled_pixmap, x, y, 80, 45)
+                        painter.end()
+                        
+                        icon_label.setPixmap(crop)
+                        icon_label.setFixedSize(80, 45)
+                    
+                    import base64
+                    b64_data = base64.b64encode(img_data).decode('utf-8')
+                    widget.setToolTip(f'<img src="data:image/png;base64,{b64_data}" width="300">')
                 
                 text_label = QLabel("[Imagem PNG]")
                 text_label.setObjectName("ItemLabelDim")
@@ -771,8 +778,9 @@ class FastPastePopup(QWidget):
         elif item_data["type"] == "image":
             filepath = item_data["content"]
             try:
-                with open(filepath, 'rb') as f:
-                    img_data = f.read()
+                img_data = history.get_image_bytes(filepath)
+                if not img_data:
+                    raise Exception("Não foi possível carregar os bytes da imagem (provavelmente apagada ou corrompida).")
                     
                 if has_wl:
                     proc = subprocess.Popen(['wl-copy', '--type', 'image/png'], stdin=subprocess.PIPE)
@@ -781,8 +789,9 @@ class FastPastePopup(QWidget):
                     proc = subprocess.Popen(['xclip', '-selection', 'clipboard', '-t', 'image/png'], stdin=subprocess.PIPE)
                     proc.communicate(img_data)
                 else:
-                    img = QPixmap(filepath).toImage()
-                    QApplication.clipboard().setImage(img)
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(img_data)
+                    QApplication.clipboard().setImage(pixmap.toImage())
                     
                 history.add_image(img_data)
             except Exception as e:

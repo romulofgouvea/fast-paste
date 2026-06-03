@@ -582,6 +582,14 @@ class FastPastePopup(QWidget):
             
             self.refresh_list()
             self.setup_interaction_mode()
+            
+            # Restart global hotkeys dynamically to apply new keybindings immediately
+            try:
+                import core.app
+                if hasattr(core.app, 'hotkeys_manager') and core.app.hotkeys_manager:
+                    core.app.hotkeys_manager.restart()
+            except Exception as e:
+                print(f"[FastPaste] Error reloading hotkey listener: {e}")
 
     def paste_by_index(self, idx):
         if 0 <= idx < len(self.filtered_history):

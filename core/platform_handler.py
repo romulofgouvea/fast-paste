@@ -82,4 +82,13 @@ class GlobalHotkeyManager:
             
     def stop(self):
         if self.listener:
-            self.listener.stop()
+            try:
+                self.listener.stop()
+            except Exception:
+                pass
+            self.listener = None
+
+    def restart(self):
+        """Restarts the hotkey listener with the updated configuration."""
+        self.stop()
+        self.start()

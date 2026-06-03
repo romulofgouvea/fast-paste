@@ -13,6 +13,7 @@ from core import history
 IPC_SERVER_NAME = "FastPaste_IPC_Server"
 popup_instance = None
 clipboard_monitor = None
+hotkeys_manager = None
 
 class HotkeySignaler(QObject):
     show_popup = pyqtSignal()
@@ -160,7 +161,7 @@ def show_popup():
 
 def run_foreground():
     """Runs the main Qt application with System Tray, Clipboard Monitor, Global Hotkeys and IPC Server."""
-    global popup_instance, clipboard_monitor
+    global popup_instance, clipboard_monitor, hotkeys_manager
     
     # Ensure a QApplication instance exists
     app = QApplication.instance()
@@ -257,8 +258,8 @@ def run_foreground():
     # 4. Setup Global Hotkeys (Windows/Mac)
     signaler = HotkeySignaler()
     signaler.show_popup.connect(show_popup_cb)
-    hotkeys = GlobalHotkeyManager(callback=signaler.show_popup.emit)
-    hotkeys.start()
+    hotkeys_manager = GlobalHotkeyManager(callback=signaler.show_popup.emit)
+    hotkeys_manager.start()
 
     # Handle Ctrl+C gracefully in terminal
     signal.signal(signal.SIGINT, lambda *args: QApplication.quit())

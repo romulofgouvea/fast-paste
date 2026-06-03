@@ -224,6 +224,52 @@ class FastPastePopup(QWidget):
         
         self.stacked_widget.addWidget(self.main_page)
 
+        # Header Container at the top of the main page
+        self.header_container = QFrame()
+        self.header_container.setObjectName("HeaderContainer")
+        header_layout = QHBoxLayout(self.header_container)
+        header_layout.setContentsMargins(6, 0, 6, 0)
+        header_layout.setSpacing(8)
+        
+        # Name of the application: FastPaste
+        self.app_title = QLabel("FastPaste")
+        self.app_title.setObjectName("AppTitle")
+        header_layout.addWidget(self.app_title)
+        
+        header_layout.addStretch(1)
+        
+        # Mode Toggle Button
+        self.header_mode_btn = QPushButton()
+        self.header_mode_btn.setObjectName("HeaderModeBtn")
+        self.header_mode_btn.setFlat(True)
+        self.header_mode_btn.clicked.connect(self.toggle_interaction_mode)
+        header_layout.addWidget(self.header_mode_btn)
+        
+        # Settings Button on the far right
+        self.settings_btn = QPushButton()
+        self.settings_btn.setObjectName("SettingsBtn")
+        self.settings_btn.setFixedSize(24, 24)
+        self.settings_btn.setFlat(True)
+        self.settings_btn.setToolTip("Configurações")
+        
+        is_linux = sys.platform.startswith("linux")
+        if is_linux:
+            settings_pixmap = get_tinted_icon("preferences-system-symbolic", UI_COLORS['fg_dim'])
+        else:
+            settings_pixmap = draw_custom_gear_icon(UI_COLORS['fg_dim'])
+            
+        if settings_pixmap:
+            self.settings_btn.setIcon(QIcon(settings_pixmap))
+            self.settings_btn.setIconSize(QSize(16, 16))
+        else:
+            self.settings_btn.setText("⚙")
+            self.settings_btn.setStyleSheet("QPushButton { font-size: 16px; color: " + UI_COLORS['fg_dim'] + "; }")
+            
+        self.settings_btn.clicked.connect(self.open_settings)
+        header_layout.addWidget(self.settings_btn)
+        
+        main_page_layout.addWidget(self.header_container)
+
         # Search Card
         self.search_card = QFrame()
         self.search_card.setObjectName("SearchCard")
@@ -256,38 +302,6 @@ class FastPastePopup(QWidget):
         self.search_entry.textChanged.connect(self.on_search_changed)
         search_layout.addWidget(self.search_entry)
         
-        self.settings_btn = QPushButton()
-        self.settings_btn.setFixedSize(30, 30)
-        self.settings_btn.setFlat(True)
-        self.settings_btn.setToolTip("Configurações")
-        self.settings_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: none;
-                margin: 0px;
-                padding: 0px;
-            }
-            QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.1);
-                border-radius: 4px;
-            }
-        """)
-        
-        if is_linux:
-            settings_pixmap = get_tinted_icon("preferences-system-symbolic", UI_COLORS['fg_dim'])
-        else:
-            settings_pixmap = draw_custom_gear_icon(UI_COLORS['fg_dim'])
-            
-        if settings_pixmap:
-            self.settings_btn.setIcon(QIcon(settings_pixmap))
-            self.settings_btn.setIconSize(QSize(18, 18))
-        else:
-            self.settings_btn.setText("⚙")
-            self.settings_btn.setStyleSheet(self.settings_btn.styleSheet() + "QPushButton { font-size: 16px; color: " + UI_COLORS['fg_dim'] + "; }")
-            
-        self.settings_btn.clicked.connect(self.open_settings)
-        search_layout.addWidget(self.settings_btn)
-        
         main_page_layout.addWidget(self.search_card)
 
         # List Card
@@ -314,11 +328,58 @@ class FastPastePopup(QWidget):
         self.stacked_widget.addWidget(self.settings_page)
 
     def apply_styles(self):
+        mode = settings.get('interaction_mode', 1)
+        popup_border_color = UI_COLORS['card_border']
+        
+        # Mode button highlight based on active mode
+        if mode == 2:
+            mode_border = f"1px solid {UI_COLORS['selected']}"
+            mode_color = UI_COLORS['selected']
+            mode_bg = "rgba(233, 84, 32, 0.05)"
+        else:
+            mode_border = "none"
+            mode_color = UI_COLORS['fg_dim']
+            mode_bg = "transparent"
+
         css = f"""
             #MainContainer {{
                 background-color: {UI_COLORS['card_bg']};
                 border-radius: 16px;
-                border: 1px solid {UI_COLORS['card_border']};
+                border: 1px solid {popup_border_color};
+            }}
+            #HeaderContainer {{
+                background-color: transparent;
+                border: none;
+            }}
+            #AppTitle {{
+                color: {UI_COLORS['fg']};
+                font-size: 14px;
+                font-weight: bold;
+                background: transparent;
+            }}
+            #HeaderModeBtn {{
+                background-color: {mode_bg};
+                border: {mode_border};
+                border-radius: 6px;
+                color: {mode_color};
+                font-size: 11px;
+                padding: 4px 8px;
+                text-align: center;
+                font-weight: 500;
+            }}
+            #HeaderModeBtn:hover {{
+                background-color: rgba(255, 255, 255, 0.05);
+                color: {UI_COLORS['fg']};
+            }}
+            #SettingsBtn {{
+                background-color: transparent;
+                border: none;
+                padding: 0px;
+                margin: 0px;
+                border-radius: 4px;
+            }}
+            #SettingsBtn:hover {{
+                background-color: rgba(255, 255, 255, 0.08);
             }}
             #SearchCard {{
                 background-color: rgba(45, 45, 45, 0.6);
@@ -773,25 +834,22 @@ class FastPastePopup(QWidget):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            # Apenas permite movimentar a janela no Modo 2 (CopyQ)
-            mode = settings.get('interaction_mode', 1)
-            if mode == 2:
-                clicked_widget = self.childAt(event.position().toPoint())
-                if clicked_widget not in [self.list_widget, self.search_entry] and not self.list_widget.underMouse() and not self.search_entry.underMouse():
-                    # Tenta o arraste nativo do sistema (essencial para funcionamento correto no Wayland)
-                    if self.windowHandle():
-                        self.windowHandle().startSystemMove()
-                        event.accept()
-                        return
-                    
-                    # Fallback manual para X11/Windows
-                    if hasattr(event, 'globalPosition'):
-                        self._drag_pos = event.globalPosition().toPoint()
-                    else:
-                        self._drag_pos = event.globalPos()
-                    self._drag_window_pos = self.pos()
+            clicked_widget = self.childAt(event.position().toPoint())
+            if clicked_widget not in [self.list_widget, self.search_entry] and not self.list_widget.underMouse() and not self.search_entry.underMouse():
+                # Tenta o arraste nativo do sistema (essencial para funcionamento correto no Wayland)
+                if self.windowHandle():
+                    self.windowHandle().startSystemMove()
                     event.accept()
                     return
+                
+                # Fallback manual para X11/Windows
+                if hasattr(event, 'globalPosition'):
+                    self._drag_pos = event.globalPosition().toPoint()
+                else:
+                    self._drag_pos = event.globalPos()
+                self._drag_window_pos = self.pos()
+                event.accept()
+                return
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -828,6 +886,36 @@ class FastPastePopup(QWidget):
             self.list_widget.itemDoubleClicked.connect(self.on_item_activated)
             # Reativa o arrastar e soltar (DND)
             self.list_widget.setDragEnabled(True)
+            
+        # Garante que a borda e o estilo do cabeçalho atualizem dinamicamente
+        self.apply_styles()
+        
+        # Atualiza o texto do botão do modo no header
+        self.update_header_text()
+
+    def toggle_interaction_mode(self):
+        curr_mode = settings.get('interaction_mode', 1)
+        new_mode = 2 if curr_mode == 1 else 1
+        settings.set('interaction_mode', new_mode)
+        
+        # Update settings page inputs if open
+        if hasattr(self, 'settings_page') and self.settings_page:
+            if new_mode == 1:
+                self.settings_page.mode1_radio.setChecked(True)
+            else:
+                self.settings_page.mode2_radio.setChecked(True)
+                
+        # Re-setup interaction behavior (DND, event listeners)
+        self.setup_interaction_mode()
+
+    def update_header_text(self):
+        if not hasattr(self, 'header_mode_btn') or not self.header_mode_btn:
+            return
+        mode = settings.get('interaction_mode', 1)
+        if mode == 1:
+            self.header_mode_btn.setText("⚡ Modo 1")
+        else:
+            self.header_mode_btn.setText("📌 Modo 2")
 
     def on_item_single_clicked(self, item):
         mode = settings.get('interaction_mode', 1)
@@ -837,6 +925,13 @@ class FastPastePopup(QWidget):
     def changeEvent(self, event):
         if event.type() == QEvent.Type.ActivationChange:
             if not self.isActiveWindow():
+                # Se o cursor do mouse estiver dentro dos limites da própria janela,
+                # ignora a perda de foco (evita fechar ao arrastar/clicar no header/background)
+                from PyQt6.QtGui import QCursor
+                if self.geometry().contains(QCursor.pos()):
+                    super().changeEvent(event)
+                    return
+
                 # No Modo 1 (Ditto), fecha o popup ao perder o foco (clicar fora)
                 mode = settings.get('interaction_mode', 1)
                 if mode == 1:

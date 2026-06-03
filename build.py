@@ -251,10 +251,10 @@ Description: Fast Paste Clipboard Manager
                     f.write(control_content)
                 
                 # Build DEB
-                run_command(["dpkg-deb", "--build", deb_dir, f"dist/Fast-Paste-Clipboard-Manager_{arch}.deb"])
-                print(f"[OK] Generated deb package: dist/Fast-Paste-Clipboard-Manager_{arch}.deb")
+                run_command(["dpkg-deb", "--build", deb_dir, f"dist/fast-paste_{arch}.deb"])
+                print(f"[OK] Generated deb package: dist/fast-paste_{arch}.deb")
                 print("\n[Info] To install the deb package with dependencies:")
-                print(f"   sudo apt install ./dist/Fast-Paste-Clipboard-Manager_{arch}.deb")
+                print(f"   sudo apt install ./dist/fast-paste_{arch}.deb")
                 print("[Info] To enable the background service:")
                 print("   systemctl --user enable --now fast-paste")
             except Exception as e:

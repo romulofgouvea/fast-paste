@@ -41,7 +41,7 @@ class HotkeyLineEdit(QLineEdit):
             self.setStyleSheet("background-color: #1a1a1a; color: #888888; border-color: #333333;")
         else:
             self.setText(pynput_to_qt(self.raw_hotkey))
-            self.setStyleSheet("cursor: pointer;")
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def mousePressEvent(self, event):
         if not self.recording:
@@ -59,13 +59,15 @@ class HotkeyLineEdit(QLineEdit):
     def start_recording(self):
         self.recording = True
         self.setText("Pressione o atalho...")
-        self.setStyleSheet("background-color: #3a1c1c; border: 1.5px solid #ff4444; color: #ffffff; cursor: pointer;")
+        self.setStyleSheet("background-color: #3a1c1c; border: 1.5px solid #ff4444; color: #ffffff;")
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.grabKeyboard()
 
     def stop_recording(self):
         self.recording = False
         self.releaseKeyboard()
-        self.setStyleSheet("cursor: pointer;")
+        self.setStyleSheet("")
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         if not self.raw_hotkey:
             self.setText(pynput_to_qt(settings.get('hotkey', "<ctrl>+'")))
         else:

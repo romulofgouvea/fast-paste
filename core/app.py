@@ -5,7 +5,7 @@ import time
 
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtNetwork import QLocalServer, QLocalSocket
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, QObject, pyqtSignal
 
 from configs import PID_FILE, LOG_FILE
 from core import history
@@ -13,6 +13,9 @@ from core import history
 IPC_SERVER_NAME = "FastPaste_IPC_Server"
 popup_instance = None
 clipboard_monitor = None
+
+class HotkeySignaler(QObject):
+    show_popup = pyqtSignal()
 
 def check_status():
     """Check if the daemon is running by trying to connect to the local server."""
@@ -252,7 +255,9 @@ def run_foreground():
         tray_icon.setup()
 
     # 4. Setup Global Hotkeys (Windows/Mac)
-    hotkeys = GlobalHotkeyManager(callback=show_popup_cb)
+    signaler = HotkeySignaler()
+    signaler.show_popup.connect(show_popup_cb)
+    hotkeys = GlobalHotkeyManager(callback=signaler.show_popup.emit)
     hotkeys.start()
 
     # Handle Ctrl+C gracefully in terminal

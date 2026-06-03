@@ -234,13 +234,14 @@ class FastPastePopup(QWidget):
         self.apply_styles()
         
         # Shortcuts
-        QShortcut(QKeySequence("Esc"), self, self.close_app)
-        QShortcut(QKeySequence("Del"), self, self.delete_selected)
-        QShortcut(QKeySequence("Ctrl+F"), self, self.search_entry.setFocus)
-        QShortcut(QKeySequence("Ctrl+P"), self, self.toggle_pin_selected)
+        self.shortcuts_list = []
+        self.shortcuts_list.append(QShortcut(QKeySequence("Esc"), self, self.close_app))
+        self.shortcuts_list.append(QShortcut(QKeySequence("Del"), self, self.delete_selected))
+        self.shortcuts_list.append(QShortcut(QKeySequence("Ctrl+F"), self, self.search_entry.setFocus))
+        self.shortcuts_list.append(QShortcut(QKeySequence("Ctrl+P"), self, self.toggle_pin_selected))
         
         for i in range(1, 10):
-            QShortcut(QKeySequence(f"Ctrl+{i}"), self, lambda checked=False, idx=i-1: self.paste_by_index(idx))
+            self.shortcuts_list.append(QShortcut(QKeySequence(f"Ctrl+{i}"), self, lambda checked=False, idx=i-1: self.paste_by_index(idx)))
 
         self.populate_list()
         self.setup_interaction_mode()
@@ -249,7 +250,7 @@ class FastPastePopup(QWidget):
         self.popup_server_name = f"{APP_NAME}_Popup_Server"
         self.popup_server = QLocalServer(self)
         QLocalServer.removeServer(self.popup_server_name)
-        self.popup_server.newConnection.connect(self.on_new_popup_connection)
+        self.popup_server.newConne'ction.connect(self.on_new_popup_connection)
         self.popup_server.listen(self.popup_server_name)
 
     def on_new_popup_connection(self):
@@ -694,13 +695,20 @@ class FastPastePopup(QWidget):
             self.filtered_history = history.load_history(query)
         self.populate_list()
         
+    def set_shortcuts_enabled(self, enabled):
+        if hasattr(self, 'shortcuts_list'):
+            for shortcut in self.shortcuts_list:
+                shortcut.setEnabled(enabled)
+
     def open_settings(self):
         # Switch to settings page
+        self.set_shortcuts_enabled(False)
         self.stacked_widget.setCurrentIndex(1)
         
     def close_settings(self, saved=False):
         # Switch back to main page
         self.stacked_widget.setCurrentIndex(0)
+        self.set_shortcuts_enabled(True)
         self.search_entry.setFocus()
         
         if saved:
@@ -862,6 +870,21 @@ class FastPastePopup(QWidget):
 
 
     def keyPressEvent(self, event):
+        # Se a página de configurações estiver ativa, deixamos os eventos fluírem normalmente
+        # e não executamos nenhum atalho da página de pesquisa.
+        if self.stacked_widget.currentIndex() == 1:
+            # Se o usuário pressionar Esc na tela de configurações (e não estiver gravando atalho),
+            # fechamos as configurações (cancela).
+            if event.key() == Qt.Key.Key_Escape:
+                if hasattr(self, 'settings_page') and hasattr(self.settings_page, 'hotkey_input') and self.settings_page.hotkey_input.recording:
+                    # Deixa o HotkeyLineEdit tratar o Esc para parar a gravação
+                    super().keyPressEvent(event)
+                else:
+                    self.close_settings(saved=False)
+                return
+            super().keyPressEvent(event)
+            return
+
         key = event.key()
         
         # Esc closes the window

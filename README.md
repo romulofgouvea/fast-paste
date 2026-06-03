@@ -1,16 +1,18 @@
-# ⚡ FastPaste - Gerenciador de Clipboard moderno
+# ⚡ FastPaste - Gerenciador de Clipboard Moderno
 
-O FastPaste é um gerenciador de clipboard moderno, rápido e bonito projetado para Linux (Wayland e X11), Windows e macOS. Ele armazena silenciosamente tudo o que você copia e permite pesquisar e colar instantaneamente através de um popup prático.
+O **FastPaste** é um gerenciador de área de transferência (clipboard) moderno, veloz e elegante projetado para **Linux** (compatível com Wayland e X11), **macOS** (Intel e Apple Silicon) e **Windows**. Ele roda silenciosamente em segundo plano, registrando seu histórico de cópias (textos e imagens) e permitindo que você as pesquise e cole instantaneamente em qualquer campo de texto.
 
-## ✨ Funcionalidades
+---
+
+## ✨ Funcionalidades Principais
 
 - 📋 **Monitoramento Silencioso**: Salva tudo o que você copia (textos e imagens) automaticamente.
-- 🔍 **Busca Dinâmica**: Comece a digitar para encontrar rapidamente itens antigos do seu histórico.
+- 🔍 **Busca Dinâmica**: Comece a digitar letras ou partes de datas para encontrar rapidamente itens antigos.
 - ⌨️ **Navegação por Teclado**: Use setas para navegar e Enter para colar instantaneamente.
-- 🎨 **Interface Premium**: Design escuro moderno com visual translúcido e foco automático na pesquisa.
-- 💾 **Histórico Inteligente**: Fila rotativa de histórico de até 500 itens (configurável, os itens antigos são removidos quando novos entram).
-- 📌 **Fixar Itens**: Fixe itens importantes para garantir que nunca sejam excluídos pelo limite de histórico.
-- 🚀 **Auto-Paste**: Digita automaticamente o item selecionado na posição do seu cursor de texto.
+- 🎨 **Interface Premium**: Design escuro moderno com visual translúcido e foco automático na barra de busca.
+- 💾 **Fila de Histórico Inteligente**: Fila rotativa de histórico (limite padrão de 500 itens, totalmente configurável).
+- 📌 **Fixar Itens**: Fixe itens importantes (★) para garantir que nunca sejam removidos pelo limite da fila.
+- 🚀 **Auto-Paste Inteligente**: Digita automaticamente o item selecionado na posição ativa do seu cursor de texto.
 
 ---
 
@@ -18,10 +20,10 @@ O FastPaste é um gerenciador de clipboard moderno, rápido e bonito projetado p
 
 ### 💡 Workflow do Dia a Dia
 
-1. Copie seus textos ou capture imagens normalmente usando `Ctrl+C` ou prints de tela.
-2. Abra o popup a qualquer momento usando o atalho de teclado configurado (o padrão de instalação é `Ctrl + '` ou o que você mapear nas configurações).
-3. Navegue entre os itens copiados com as setas do teclado (`↑` e `↓`) ou digite palavras para buscar.
-4. Pressione `Enter` para colar o item selecionado diretamente onde seu cursor de texto estiver piscando!
+1. **Copie normalmente** textos ou capture imagens usando `Ctrl+C` ou print de tela.
+2. **Abra o popup** a qualquer momento usando o atalho de teclado rápido (exemplo: `Ctrl + '` ou `Ctrl + Shift + V`).
+3. **Busque e navegue** usando as setas do teclado (`↑` e `↓`) ou digite letras para buscar o texto.
+4. **Pressione Enter** para colar o item selecionado de forma automática!
 
 ### ⌨️ Atalhos Disponíveis no Popup
 
@@ -31,122 +33,36 @@ O FastPaste é um gerenciador de clipboard moderno, rápido e bonito projetado p
 | `Enter` | Selecionar o item e colar automaticamente |
 | `Delete` | Excluir a cópia selecionada do histórico |
 | `Esc` | Fecha a janela do popup |
-| Digitando | Digite qualquer letra para filtrar/buscar instantaneamente |
+| Digitando | Filtra/busca itens instantaneamente |
 
 ---
 
-## 📋 Especificações Técnicas
+## 🚀 Guias de Instalação por Sistema Operacional
 
-## 📦 Pré-requisitos
+Selecione o guia específico abaixo correspondente ao seu sistema operacional para ver as instruções detalhadas de pré-requisitos, instalação, atalhos do sistema e autostart:
 
-- Python 3
-
-## 🚀 Instalação
-
-### 🛠️ Instalação Manual (Outras distribuições Linux)
-
-```bash
-# 1. Rodar o script de setup (instala dependências, cria Systemd e configura atalho)
-chmod +x scripts/setup.sh
-./scripts/setup.sh
-
-# 2. Opcionalmente verifique o status do serviço
-systemctl --user status fast-paste
-```
-
-## 📖 Uso
-
-O setup já configura o daemon via Systemd para rodar automaticamente (usando o comando `run`), que inicia o monitor de clipboard e o ícone de bandeja, além do servidor IPC.
-
-### Comandos
-
-```bash
-python3 main.py run      # Inicia o daemon com tray icon e IPC server (usado pelo Systemd)
-python3 main.py show     # Abre o popup com histórico (instância única via IPC)
-python3 main.py clear    # Limpa o histórico
-python3 main.py status   # Verifica se o daemon está ativo
-```
-
-### Atalhos no Popup
-
-| Tecla | Ação |
-|-------|------|
-| `↑` `↓` | Navegar entre itens |
-| `Enter` | Selecionar e colar |
-| `Delete` | Remover item |
-| `Esc` | Fechar popup |
-| Digitando | Filtrar/buscar |
-
-### Workflow
-
-1. O daemon já deve estar rodando (Systemd)
-2. **Copie textos normalmente** com Ctrl+C
-3. **Pressione Ctrl+'** para abrir o popup
-4. **Navegue** com as setas e **Enter** para colar
-5. Ou **busque** digitando parte do texto
-
-## 🛠️ Compilação & Instalação
-
-Siga os passos gerais abaixo para compilar o FastPaste no seu sistema e, em seguida, veja as instruções específicas do seu sistema operacional.
-
-### 1. Passos Gerais (Todas as Plataformas)
-
-1. **Instale o Python 3** no seu sistema.
-2. Abra o terminal (ou prompt de comando) na pasta do projeto e execute o script de compilação:
-   ```bash
-   python3 scripts/build.py
-   ```
-   *(O script detectará as dependências necessárias como `PyQt6`, `pynput` e `pyinstaller` e as instalará automaticamente).*
+- [🐧 Guia de Instalação no Ubuntu / Debian / Linux](readmes/ubuntu-readme.md)
+- [🍎 Guia de Instalação no macOS](readmes/mac-readme.md)
+- [🪟 Guia de Instalação no Windows](readmes/windows-readme.md)
 
 ---
 
-### 2. Instruções Específicas por Sistema
+## 🏗️ Arquitetura do Projeto
 
-#### 🐧 Ubuntu / Debian
-
-A compilação do Passo 1 gerará um pacote `.deb` em `dist/fast-paste_amd64.deb`.
-
-1. Instale o pacote `.deb` gerado resolvendo dependências de clipboard (`wl-clipboard` e `xclip`) automaticamente:
-   ```bash
-   sudo apt install ./dist/fast-paste_amd64.deb
-   ```
-2. Ative e inicie o serviço daemon em segundo plano:
-   ```bash
-   systemctl --user enable --now fast-paste
-   ```
-
-#### 🪟 Windows
-
-A compilação do Passo 1 gerará um executável portátil único em `dist/fast-paste.exe`.
-
-1. Para iniciar o monitor em segundo plano no Windows (sem abrir a janela preta do terminal):
-   ```cmd
-   pythonw main.py run
-   ```
-
-#### 🍎 macOS
-
-A compilação do Passo 1 gerará um pacote de aplicativo macOS em `dist/fast-paste.app`.
-
-1. Configure o atalho global nativo usando o aplicativo **Shortcuts (Atalhos)** vinculando a tecla de sua preferência (ex: `Cmd + Shift + V`) para executar o script do shell:
-   ```bash
-   /usr/bin/python3 /caminho/para/fast-paste/main.py show
-   ```
-
-## 🏗️ Arquitetura
+O FastPaste foi estruturado em módulos independentes utilizando **Python 3** e **PyQt6**:
 
 ```
 fast-paste/
-├── main.py          # Ponto de entrada unificado da aplicação
-├── fast_paste.py    # Wrapper de redirecionamento (retrocompatibilidade)
-├── scripts/         # Scripts de suporte (setup, build, checkup)
-│   ├── setup.sh     # Script de instalação e configuração
-│   ├── build.py     # Script para geração de builds locais
-│   └── checkup.py   # Script de diagnóstico e sintaxe do projeto
-├── README.md        # Este arquivo
+├── main.py              # Ponto de entrada unificado da aplicação
+├── fast_paste.py        # Script legada para retrocompatibilidade
+├── configs/             # Configurações globais e banco de dados
+├── core/                # Lógica de daemon, monitoramento e atalhos globais
+├── screens/             # Componentes visuais (popup, bandeja do sistema, configurações)
+├── assets/              # Ícones e imagens do aplicativo
+└── readmes/             # Guias de instalação específicos por SO
 ```
 
-- **Daemon**: Roda em background monitorando o clipboard
-- **Popup**: Janela PyQt6 com busca e navegação por teclado
-- **IPC**: Socket Unix para comunicação entre daemon e popup (Single-Instance)
-- **Storage**: SQLite na pasta temporária padrão do sistema (ex: `/tmp/fast-paste/history.db` no Linux)
+- **Daemon**: Roda em background monitorando a área de transferência.
+- **Popup**: Janela PyQt6 otimizada, focada em performance e ergonomia.
+- **IPC (Inter-Process Communication)**: Comunicação via Socket Unix/Local que garante uma única instância ativa da janela e rápida ativação.
+- **Storage**: Banco de dados leve SQLite para o histórico de cópias locais e cache seguro de imagens em disco.

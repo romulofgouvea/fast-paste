@@ -97,6 +97,11 @@ def main():
     name = "fast-paste"
     pyinstaller_args = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean"]
     
+    # Bundle assets folder
+    sep = ";" if sys.platform.startswith("win") else ":"
+    if os.path.exists("assets"):
+        pyinstaller_args.append(f"--add-data=assets{sep}assets")
+    
     # Check OS
     if sys.platform.startswith("win"):
         print("[Info] OS detected: Windows")

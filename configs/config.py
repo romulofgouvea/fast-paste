@@ -26,3 +26,13 @@ UI_COLORS = {
     "fg_dim": "#a1a1a1",                          # Texto cinza
     "shadow": "rgba(0, 0, 0, 0.4)"                # Sombra forte para destacar
 }
+
+def get_asset_path(filename):
+    """Retrieve absolute path to an asset file, handling PyInstaller packaging."""
+    import sys
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, "assets", filename)
+    # If running from source
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_dir, "assets", filename)
+

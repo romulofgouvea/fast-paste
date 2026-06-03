@@ -24,6 +24,15 @@ else
     sudo apt-get install -y wl-clipboard wtype xdotool || echo "  ⚠ Erro ao instalar dependências. Auto-paste pode não funcionar."
 fi
 
+# --- 1b. Install Python dependencies ---
+echo "Instalando dependências do Python (PyQt6, pynput)..."
+# Tenta instalar com e sem --break-system-packages para máxima compatibilidade
+pip3 install -r "$(dirname "$SCRIPT_DIR")/requirements.txt" --break-system-packages 2>/dev/null || \
+pip3 install -r "$(dirname "$SCRIPT_DIR")/requirements.txt" 2>/dev/null || \
+pip install -r "$(dirname "$SCRIPT_DIR")/requirements.txt" 2>/dev/null || \
+python3 -m pip install -r "$(dirname "$SCRIPT_DIR")/requirements.txt" --break-system-packages 2>/dev/null || \
+echo "  ⚠ Aviso: Não foi possível instalar os pacotes Python automaticamente. Verifique se PyQt6 e pynput estão instalados."
+
 # Garante permissões locais
 chmod +x "$(dirname "$SCRIPT_DIR")"/main.py "$(dirname "$SCRIPT_DIR")"/fast_paste.py "$SCRIPT_DIR"/*.py 2>/dev/null || true
 

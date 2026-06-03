@@ -50,8 +50,35 @@ def start_daemon():
 
     print("🚀 Starting background monitor...")
     
-    # Forking before Qt init on Linux/Mac
-    if os.name == 'posix':
+    if sys.platform == "darwin":
+        import subprocess
+        # On macOS, os.fork() is unsafe and crashes due to AppKit thread restrictions.
+        # We start the daemon by spawning a detached process.
+        if getattr(sys, 'frozen', False):
+            # PyInstaller binary
+            cmd = [sys.executable, "run"]
+        else:
+            # Source script
+            cmd = [sys.executable, sys.argv[0], "run"]
+            
+        os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+        log_file = open(LOG_FILE, 'a')
+        
+        subprocess.Popen(
+            cmd,
+            start_new_session=True,
+            stdout=log_file,
+            stderr=log_file,
+            stdin=subprocess.DEVNULL
+        )
+        
+        time.sleep(0.5)
+        if check_status():
+            print("✅ Monitor started successfully.")
+        return
+
+    # Forking before Qt init on Linux
+    elif os.name == 'posix':
         pid1 = os.fork()
         if pid1 > 0:
             time.sleep(0.5)

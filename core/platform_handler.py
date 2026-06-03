@@ -29,8 +29,12 @@ class InputSimulator:
                 with keyboard.pressed(Key.cmd):
                     keyboard.press('v')
                     keyboard.release('v')
-            except ImportError:
-                print("[FastPaste] pynput not installed. Cannot simulate paste on macOS.")
+            except Exception as e:
+                print(f"[FastPaste] pynput simulation failed or not installed: {e}. Falling back to AppleScript.")
+                try:
+                    subprocess.Popen(['osascript', '-e', 'tell application "System Events" to keystroke "v" using command down'])
+                except Exception as ae:
+                    print(f"[FastPaste] AppleScript fallback failed: {ae}")
                 
         elif self.os_name == "Linux":
             # Check for ydotool, wtype, or xdotool
@@ -67,8 +71,10 @@ class GlobalHotkeyManager:
                 })
                 self.listener.start()
                 print(f"[FastPaste] Global hotkey ({hotkey}) registered.")
-            except ImportError:
-                print(f"[FastPaste] pynput not installed. Global hotkeys won't work on {self.os_name}.")
+            except Exception as e:
+                print(f"[FastPaste] Could not start global hotkey listener: {e}")
+                if self.os_name == "Darwin":
+                    print("[FastPaste] On macOS, please make sure the application has Accessibility permissions enabled in System Settings.")
         elif self.os_name == "Linux":
             # On Linux Wayland, pynput doesn't work for global hotkeys without root.
             # We rely on the desktop environment shortcut calling 'main.py show'

@@ -27,6 +27,17 @@ class FastPasteTray:
         if icon.isNull():
             # If not found, create a dummy icon or use another standard one
             icon = QIcon.fromTheme("system-run")
+        
+        # If still null (e.g. on macOS or Windows), use the bundled local assets
+        if icon.isNull():
+            import os
+            from configs.config import get_asset_path
+            # Choose appropriate icon format
+            asset_file = "fast_paste.ico" if sys.platform.startswith("win") else "fast_paste.png"
+            path = get_asset_path(asset_file)
+            if os.path.exists(path):
+                icon = QIcon(path)
+                
         self.tray_icon.setIcon(icon)
         self.tray_icon.setToolTip("FastPaste Clipboard Manager")
 

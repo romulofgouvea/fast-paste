@@ -6,13 +6,43 @@ from PyQt6.QtWidgets import (
     QLineEdit, QListWidget, QListWidgetItem, QLabel, 
     QMenu, QGraphicsDropShadowEffect, QFrame, QPushButton, QStackedWidget
 )
-from PyQt6.QtCore import Qt, QSize, QEvent, QTimer, QMimeData, QUrl
+from PyQt6.QtCore import Qt, QSize, QEvent, QTimer, QMimeData, QUrl, QObject
 from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut, QDrag, QPainter, QPen, QBrush, QImage
+from PyQt6.QtNetwork import QLocalServer, QLocalSocket
 
 from core import history
 from configs.config import UI_COLORS, APP_NAME, hide_dock_icon
 from configs.settings_manager import settings
 from core.platform_handler import InputSimulator
+
+class DragEventFilter(QObject):
+    def __init__(self, list_widget):
+        super().__init__(list_widget)
+        self.list_widget = list_widget
+        self.drag_start_pos = None
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Type.MouseButtonPress:
+            if event.button() == Qt.MouseButton.LeftButton:
+                self.drag_start_pos = event.position().toPoint()
+                
+        elif event.type() == QEvent.Type.MouseMove:
+            if event.buttons() == Qt.MouseButton.LeftButton and self.drag_start_pos is not None:
+                dist = (event.position().toPoint() - self.drag_start_pos).manhattanLength()
+                if dist >= QApplication.startDragDistance():
+                    # Encontra o item da lista correspondente a este widget
+                    for i in range(self.list_widget.count()):
+                        item = self.list_widget.item(i)
+                        if self.list_widget.itemWidget(item) == obj:
+                            self.list_widget.setCurrentItem(item)
+                            self.list_widget.startDrag(Qt.DropAction.CopyAction)
+                            self.drag_start_pos = None
+                            return True
+                            
+        elif event.type() == QEvent.Type.MouseButtonRelease:
+            self.drag_start_pos = None
+            
+        return super().eventFilter(obj, event)
 
 class DraggableListWidget(QListWidget):
     def __init__(self, parent=None):
@@ -66,6 +96,24 @@ class DraggableListWidget(QListWidget):
             text_content = item_data.get("content")
             if text_content:
                 mime_data.setText(text_content)
+                
+                # Permite arrastar texto para a área de trabalho para criar um arquivo de texto
+                try:
+                    import tempfile
+                    # Sanitiza os primeiros 20 caracteres para gerar um nome de arquivo seguro
+                    safe_title = "".join([c for c in text_content[:20] if c.isalnum() or c in (' ', '_', '-')]).strip()
+                    safe_title = safe_title.replace(" ", "_")
+                    if not safe_title:
+                        safe_title = "fpaste_text"
+                    
+                    temp_dir = tempfile.gettempdir()
+                    temp_filepath = os.path.join(temp_dir, f"{safe_title}.txt")
+                    with open(temp_filepath, "w", encoding="utf-8") as f:
+                        f.write(text_content)
+                    
+                    mime_data.setUrls([QUrl.fromLocalFile(temp_filepath)])
+                except Exception as e:
+                    print(f"[FPaste] Erro ao gerar arquivo de texto temporário para drag-and-drop: {e}")
                 
                 # Ícone Visual do Arraste (pequeno card arredondado com preview de texto)
                 pixmap = QPixmap(130, 32)
@@ -166,10 +214,16 @@ class FastPastePopup(QWidget):
         self.standalone = standalone
         self.input_sim = InputSimulator()
 
+        # Servidor de instância única para o popup standalone
+        if self.standalone:
+            self.setup_single_instance_server()
+
         # Configurações da Janela
         self.setWindowTitle(APP_NAME)
         self.resize(600, 550)
+        
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
+        
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         
@@ -190,6 +244,22 @@ class FastPastePopup(QWidget):
 
         self.populate_list()
         self.setup_interaction_mode()
+
+    def setup_single_instance_server(self):
+        self.popup_server_name = f"{APP_NAME}_Popup_Server"
+        self.popup_server = QLocalServer(self)
+        QLocalServer.removeServer(self.popup_server_name)
+        self.popup_server.newConnection.connect(self.on_new_popup_connection)
+        self.popup_server.listen(self.popup_server_name)
+
+    def on_new_popup_connection(self):
+        socket = self.popup_server.nextPendingConnection()
+        if socket.waitForReadyRead(1000):
+            data = socket.readAll().data()
+            if b"CLOSE" in data:
+                self.close_app()
+        socket.disconnectFromServer()
+        socket.deleteLater()
 
     def init_ui(self):
         # Aumentar o delay e estilo da tooltip globalmente
@@ -311,12 +381,14 @@ class FastPastePopup(QWidget):
         list_layout.setContentsMargins(0, 4, 0, 4)
 
         self.list_widget = DraggableListWidget()
+        self.drag_filter = DragEventFilter(self.list_widget)
         self.list_widget.setObjectName("ListWidget")
         self.list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.list_widget.itemDoubleClicked.connect(self.on_item_activated)
         self.list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.list_widget.customContextMenuRequested.connect(self.show_context_menu)
+        self.list_widget.itemSelectionChanged.connect(self.update_selection_style)
         
         list_layout.addWidget(self.list_widget)
         main_page_layout.addWidget(self.list_card)
@@ -493,7 +565,6 @@ class FastPastePopup(QWidget):
                     icon_label.setPixmap(crop)
                     icon_label.setFixedSize(80, 45)
                 
-                # Ditto-style hover preview for images via HTML tooltip!
                 widget.setToolTip(f'<img src="{filepath}" width="300">')
                 
                 text_label = QLabel("[Imagem PNG]")
@@ -552,12 +623,12 @@ class FastPastePopup(QWidget):
             list_item.setSizeHint(widget.sizeHint())
             self.list_widget.addItem(list_item)
             self.list_widget.setItemWidget(list_item, widget)
+            widget.installEventFilter(self.drag_filter)
             
             list_item.setData(Qt.ItemDataRole.UserRole, item_data)
             
         self.list_widget.setCurrentRow(-1)
         self.search_entry.setFocus()
-        self.list_widget.itemSelectionChanged.connect(self.update_selection_style)
 
     def update_selection_style(self):
         # We manually update the background color of the selected widget
@@ -799,14 +870,30 @@ class FastPastePopup(QWidget):
             return
             
         # Seta para baixo / para cima
-        if key in (Qt.Key.Key_Down, Qt.Key.Key_Up):
-            # Se a barra de pesquisa tem o foco, passa para a lista
+        if key == Qt.Key.Key_Down:
             if self.search_entry.hasFocus():
                 self.list_widget.setFocus()
-                if self.list_widget.currentRow() < 0 and self.list_widget.count() > 0:
-                    self.list_widget.setCurrentRow(0)
-            super().keyPressEvent(event)
-            return
+                if self.list_widget.count() > 0:
+                    current = self.list_widget.currentRow()
+                    if current < 0:
+                        self.list_widget.setCurrentRow(0)
+                    else:
+                        next_row = min(current + 1, self.list_widget.count() - 1)
+                        self.list_widget.setCurrentRow(next_row)
+                event.accept()
+                return
+        elif key == Qt.Key.Key_Up:
+            if self.search_entry.hasFocus():
+                self.list_widget.setFocus()
+                if self.list_widget.count() > 0:
+                    current = self.list_widget.currentRow()
+                    if current < 0:
+                        self.list_widget.setCurrentRow(self.list_widget.count() - 1)
+                    else:
+                        prev_row = max(current - 1, 0)
+                        self.list_widget.setCurrentRow(prev_row)
+                event.accept()
+                return
             
         # Enter / Return
         if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
@@ -879,13 +966,12 @@ class FastPastePopup(QWidget):
         if mode == 1:
             # Modo 1: clique único ativa (copia/cola)
             self.list_widget.itemClicked.connect(self.on_item_single_clicked)
-            # Desativa o arrastar e soltar (DND)
-            self.list_widget.setDragEnabled(False)
         else:
             # Modo 2: duplo clique ativa (copia/cola)
             self.list_widget.itemDoubleClicked.connect(self.on_item_activated)
-            # Reativa o arrastar e soltar (DND)
-            self.list_widget.setDragEnabled(True)
+            
+        # O arrastar e soltar (DND) fica ativo em ambos os modos
+        self.list_widget.setDragEnabled(True)
             
         # Garante que a borda e o estilo do cabeçalho atualizem dinamicamente
         self.apply_styles()
@@ -932,7 +1018,6 @@ class FastPastePopup(QWidget):
                     super().changeEvent(event)
                     return
 
-                # No Modo 1 (Ditto), fecha o popup ao perder o foco (clicar fora)
                 mode = settings.get('interaction_mode', 1)
                 if mode == 1:
                     # Delay mínimo para evitar conflito se o clique for uma ação de fechar

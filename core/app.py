@@ -149,17 +149,63 @@ def restart_daemon():
         time.sleep(0.2)
     start_daemon()
 
-def show_popup():
-    if check_status():
-        socket = QLocalSocket()
-        socket.connectToServer(IPC_SERVER_NAME)
-        if socket.waitForConnected(1000):
-            socket.write(b"SHOW\n")
-            socket.waitForBytesWritten(1000)
+def run_standalone_popup():
+    # Verifica se já existe um popup aberto
+    socket = QLocalSocket()
+    socket.connectToServer(f"{APP_NAME}_Popup_Server")
+    if socket.waitForConnected(300):
+        # Já está aberto! Vamos verificar o modo de interação atual
+        from configs.settings_manager import settings
+        mode = settings.get('interaction_mode', 1)
+        
+        if mode == 1:
+            # No Modo 1 (Ditto), o atalho alterna (fecha se já estiver aberto)
+            socket.write(b"CLOSE\n")
+            socket.waitForBytesWritten(300)
             socket.disconnectFromServer()
-            return
+            sys.exit(0)
+        else:
+            # No Modo 2 (CopyQ), fechamos a janela antiga e abriremos a atual
+            # para herdar o foco imediato do atalho global sem alertas do GNOME
+            socket.write(b"CLOSE\n")
+            socket.waitForBytesWritten(300)
+            socket.disconnectFromServer()
+            # Pequena pausa para garantir a liberação do socket da janela anterior
+            time.sleep(0.08)
+
+    app = QApplication.instance()
+    if not app:
+        app = QApplication(sys.argv)
+        
+    from configs.config import hide_dock_icon
+    hide_dock_icon()
+    
+    from screens import FastPastePopup
+    popup = FastPastePopup(standalone=True)
+    popup.refresh_list()
+    popup.show()
+    popup.activateWindow()
+    popup.raise_()
+    sys.exit(app.exec())
+
+def show_popup():
+    is_wayland = os.environ.get('WAYLAND_DISPLAY') is not None or os.environ.get('XDG_SESSION_TYPE') == 'wayland'
+    if sys.platform.startswith("linux") and is_wayland:
+        # No Linux/Wayland, rodamos o popup em modo standalone no processo principal.
+        # Isso garante que a janela receba foco imediato sem o bloqueio "is ready" do GNOME Shell,
+        # e permite o drag-and-drop nativo de imagens e textos para o desktop (Wayland).
+        run_standalone_popup()
     else:
-        print(f"❌ {APP_NAME} Monitor is NOT running. Run 'python3 main.py start' to start it.")
+        if check_status():
+            socket = QLocalSocket()
+            socket.connectToServer(IPC_SERVER_NAME)
+            if socket.waitForConnected(1000):
+                socket.write(b"SHOW\n")
+                socket.waitForBytesWritten(1000)
+                socket.disconnectFromServer()
+                return
+        else:
+            print(f"❌ {APP_NAME} Monitor is NOT running. Run 'python3 main.py start' to start it.")
 
 def run_foreground():
     """Runs the main Qt application with System Tray, Clipboard Monitor, Global Hotkeys and IPC Server."""

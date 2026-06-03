@@ -351,7 +351,7 @@ class SettingsWidget(QWidget):
         autostart_layout.addWidget(self.autostart_switch)
         layout.addLayout(autostart_layout)
         
-        # 5. Modo de Interação (Ditto vs CopyQ)
+        # 5. Modo de Interação
         mode_layout = QVBoxLayout()
         mode_label = QLabel("Modo de Interação:")
         mode_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;")

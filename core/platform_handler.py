@@ -52,11 +52,72 @@ class InputSimulator:
                 print("[FastPaste] No input simulator (ydotool/wtype/xdotool) found on Linux.")
 
 
+def normalize_pynput_key(key, os_name):
+    from pynput import keyboard
+    
+    # 1. Normalize modifier keys to their generic versions (ctrl, shift, alt, cmd)
+    if key in (keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):
+        return keyboard.Key.ctrl
+    if key in (keyboard.Key.shift_l, keyboard.Key.shift_r):
+        return keyboard.Key.shift
+    if key in (keyboard.Key.alt_l, keyboard.Key.alt_r):
+        return keyboard.Key.alt
+    if key in (keyboard.Key.cmd_l, keyboard.Key.cmd_r):
+        return keyboard.Key.cmd
+        
+    # 2. Extract character if already a valid printable character
+    if hasattr(key, 'char') and key.char:
+        try:
+            if ord(key.char) >= 32:
+                return key
+        except Exception:
+            pass
+            
+    # 3. Fallbacks for common layout keys when Ctrl/modifiers are held down
+    vk = getattr(key, 'vk', None)
+    if vk is not None:
+        if os_name == "Windows":
+            # Windows Virtual Key Code mappings:
+            win_map = {
+                222: "'",
+                192: "'",  # Support both US OEM_7 and ABNT2 OEM_3 for apostrophe/quotes
+                188: ",",
+                190: ".",
+                191: "/",
+                219: "[",
+                221: "]",
+                186: ";",
+                187: "=",
+                189: "-",
+            }
+            if vk in win_map:
+                return keyboard.KeyCode(char=win_map[vk])
+        elif os_name == "Darwin":
+            # macOS Cocoa Virtual Key Code mappings:
+            mac_map = {
+                39: "'",
+                50: "'",
+                43: ",",
+                47: ".",
+                44: "/",
+                33: "[",
+                30: "]",
+                41: ";",
+                24: "=",
+                27: "-",
+            }
+            if vk in mac_map:
+                return keyboard.KeyCode(char=mac_map[vk])
+                
+    return key
+
+
 class GlobalHotkeyManager:
     def __init__(self, callback):
         self.os_name = platform.system()
         self.callback = callback
         self.listener = None
+        self.hotkey_instance = None
         
     def start(self):
         if self.os_name in ["Windows", "Darwin"]:
@@ -64,13 +125,25 @@ class GlobalHotkeyManager:
                 from pynput import keyboard
                 from configs.settings_manager import settings
                 
-                hotkey = settings.get('hotkey', "<ctrl>+'")
-                    
-                self.listener = keyboard.GlobalHotKeys({
-                    hotkey: self.callback
-                })
+                hotkey_str = settings.get('hotkey', "<ctrl>+'")
+                
+                # Parse and setup hotkey detector
+                hotkey_keys = keyboard.HotKey.parse(hotkey_str)
+                self.hotkey_instance = keyboard.HotKey(hotkey_keys, self.callback)
+                
+                def on_press(key):
+                    if self.listener and self.hotkey_instance:
+                        normalized = normalize_pynput_key(key, self.os_name)
+                        self.hotkey_instance.press(normalized)
+                        
+                def on_release(key):
+                    if self.listener and self.hotkey_instance:
+                        normalized = normalize_pynput_key(key, self.os_name)
+                        self.hotkey_instance.release(normalized)
+                
+                self.listener = keyboard.Listener(on_press=on_press, on_release=on_release)
                 self.listener.start()
-                print(f"[FastPaste] Global hotkey ({hotkey}) registered.")
+                print(f"[FastPaste] Custom global hotkey ({hotkey_str}) registered via normalized listener.")
             except Exception as e:
                 print(f"[FastPaste] Could not start global hotkey listener: {e}")
                 if self.os_name == "Darwin":
@@ -87,6 +160,7 @@ class GlobalHotkeyManager:
             except Exception:
                 pass
             self.listener = None
+            self.hotkey_instance = None
 
     def restart(self):
         """Restarts the hotkey listener with the updated configuration."""

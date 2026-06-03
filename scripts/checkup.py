@@ -2,14 +2,15 @@ import os
 import sys
 
 def main():
-    print("=== FastPaste Diagnostic Import Checkup ===")
-    
     # Ensure project root is in path
     script_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.dirname(script_dir)
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
     os.chdir(repo_root)
+
+    from configs.config import APP_NAME
+    print(f"=== {APP_NAME} Diagnostic Import Checkup ===")
     
     # Modules to check
     modules = [

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# ============================================
-# FastPaste - Cross-Platform Setup Script
-# ============================================
 import os
 import sys
 import platform
 import subprocess
 import shutil
+
+# Adiciona o diretório raiz ao path para poder importar configs.config antes do pip
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from configs.config import APP_NAME
 
 def run_cmd(args):
     try:
@@ -47,7 +48,8 @@ def install_pip_requirements():
         print("  ⚠ Aviso: Não foi possível instalar todas as dependências do Python via pip. Certifique-se de ter PyQt6 e pynput instalados.")
 
 def setup_linux():
-    print("\n🐧 Configurando ambiente Linux...")
+    app_lower = APP_NAME.lower()
+    print(f"\n🐧 Configurando ambiente Linux para {APP_NAME}...")
     
     # Install system deps
     if shutil.which("apt-get"):
@@ -65,17 +67,13 @@ def setup_linux():
     # Set permissions
     run_cmd(["chmod", "+x", main_py])
     
-    # Create data directory
-    data_dir = os.path.expanduser("~/.local/share/fast-paste")
-    os.makedirs(data_dir, exist_ok=True)
-    
     # Create desktop entry
     apps_dir = os.path.expanduser("~/.local/share/applications")
     os.makedirs(apps_dir, exist_ok=True)
-    desktop_file = os.path.join(apps_dir, "fast-paste.desktop")
+    desktop_file = os.path.join(apps_dir, f"{app_lower}.desktop")
     
     desktop_content = f"""[Desktop Entry]
-Name=FastPaste
+Name={APP_NAME}
 Comment=Clipboard History Manager
 Exec=python3 {main_py} show
 Icon=edit-paste
@@ -85,7 +83,7 @@ Categories=Utility;
 """
     with open(desktop_file, "w", encoding="utf-8") as f:
         f.write(desktop_content)
-    print("  ✅ Atalho fast-paste.desktop criado!")
+    print(f"  ✅ Atalho {app_lower}.desktop criado!")
 
     # Configure GNOME keyboard shortcut
     desktop_env = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
@@ -95,8 +93,8 @@ Categories=Utility;
         ok, current, _ = run_cmd(["gsettings", "get", "org.gnome.settings-daemon.plugins.media-keys", "custom-keybindings"])
         current = current.strip() if ok else "[]"
         
-        path = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/fast-paste/"
-        if "fast-paste" not in current:
+        path = f"/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/{app_lower}/"
+        if app_lower not in current:
             if current in ["[]", "@as []"]:
                 new_bindings = f"['{path}']"
             else:
@@ -104,7 +102,7 @@ Categories=Utility;
             run_cmd(["gsettings", "set", "org.gnome.settings-daemon.plugins.media-keys", "custom-keybindings", new_bindings])
 
         schema = "org.gnome.settings-daemon.plugins.media-keys.custom-keybinding"
-        run_cmd(["gsettings", "set", f"{schema}:{path}", "name", "FastPaste - Show Clipboard"])
+        run_cmd(["gsettings", "set", f"{schema}:{path}", "name", f"{APP_NAME} - Show Clipboard"])
         run_cmd(["gsettings", "set", f"{schema}:{path}", "command", f"python3 {main_py} show"])
         run_cmd(["gsettings", "set", f"{schema}:{path}", "binding", "<Ctrl>apostrophe"])
         print("  ✅ Atalho de teclado configurado: Ctrl + '")
@@ -116,15 +114,19 @@ Categories=Utility;
     # Configure systemd user service
     systemd_dir = os.path.expanduser("~/.config/systemd/user")
     os.makedirs(systemd_dir, exist_ok=True)
-    service_file = os.path.join(systemd_dir, "fast-paste.service")
+    service_file = os.path.join(systemd_dir, f"{app_lower}.service")
     
-    # Remove old autostart file if present
-    autostart_old = os.path.expanduser("~/.config/autostart/fast-paste-daemon.desktop")
-    if os.path.exists(autostart_old):
-        os.remove(autostart_old)
+    # Remove old autostart files if present
+    for old_name in ["fast-paste.desktop", "fast-paste.service", "fast-paste-daemon.desktop"]:
+        old_path = os.path.expanduser(f"~/.config/autostart/{old_name}")
+        if os.path.exists(old_path):
+            try:
+                os.remove(old_path)
+            except Exception:
+                pass
 
     service_content = f"""[Unit]
-Description=FastPaste Clipboard Manager Daemon
+Description={APP_NAME} Clipboard Manager Daemon
 After=graphical-session.target
 
 [Service]
@@ -139,29 +141,30 @@ WantedBy=default.target
     with open(service_file, "w", encoding="utf-8") as f:
         f.write(service_content)
         
-    print("  Configurando serviço systemd do usuário...")
+    print(f"  Configurando serviço systemd do usuário para {APP_NAME}...")
     run_cmd(["systemctl", "--user", "import-environment", "DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR"])
     run_cmd(["systemctl", "--user", "daemon-reload"])
-    run_cmd(["systemctl", "--user", "enable", "fast-paste.service"])
-    run_cmd(["systemctl", "--user", "restart", "fast-paste.service"])
-    print("  ✅ Serviço de monitoramento do clipboard iniciado via systemd!")
+    run_cmd(["systemctl", "--user", "enable", f"{app_lower}.service"])
+    run_cmd(["systemctl", "--user", "restart", f"{app_lower}.service"])
+    print(f"  ✅ Serviço de monitoramento do clipboard iniciado via systemd!")
 
 def setup_macos():
-    print("\n🍎 Configurando ambiente macOS...")
+    app_lower = APP_NAME.lower()
+    print(f"\n🍎 Configurando ambiente macOS para {APP_NAME}...")
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     main_py = os.path.join(base_dir, "main.py")
     
     # Create Launch Agent directory
     agents_dir = os.path.expanduser("~/Library/LaunchAgents")
     os.makedirs(agents_dir, exist_ok=True)
-    plist_file = os.path.join(agents_dir, "com.fastpaste.daemon.plist")
+    plist_file = os.path.join(agents_dir, f"com.{app_lower}.daemon.plist")
     
     plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.fastpaste.daemon</string>
+    <string>com.{app_lower}.daemon</string>
     <key>ProgramArguments</key>
     <array>
         <string>{sys.executable}</string>
@@ -173,9 +176,9 @@ def setup_macos():
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>{os.path.expanduser("~/Library/Logs/fast-paste.log")}</string>
+    <string>{os.path.expanduser(f"~/Library/Logs/{app_lower}.log")}</string>
     <key>StandardErrorPath</key>
-    <string>{os.path.expanduser("~/Library/Logs/fast-paste.err")}</string>
+    <string>{os.path.expanduser(f"~/Library/Logs/{app_lower}.err")}</string>
 </dict>
 </plist>
 """
@@ -191,13 +194,13 @@ def setup_macos():
     else:
         print(f"  ⚠ Aviso ao carregar serviço: {err}")
         
-    print("\n⚠️ IMPORTANTE NO macOS:")
-    print("  Como o FastPaste monitora o teclado globalmente para abrir o popup,")
+    print(f"\n⚠️ IMPORTANTE NO macOS:")
+    print(f"  Como o {APP_NAME} monitora o teclado globalmente para abrir o popup,")
     print("  você DEVE conceder permissão de 'Acessibilidade' (Accessibility)")
     print("  ao seu Terminal ou Python nas Configurações de Segurança e Privacidade do macOS.")
 
 def setup_windows():
-    print("\n🪟 Configurando ambiente Windows...")
+    print(f"\n🪟 Configurando ambiente Windows para {APP_NAME}...")
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     main_py = os.path.join(base_dir, "main.py")
     
@@ -212,7 +215,7 @@ def setup_windows():
         print("  ⚠ Pasta de Inicialização do Windows não encontrada.")
         return
         
-    lnk_path = os.path.join(startup_dir, "FastPaste.lnk")
+    lnk_path = os.path.join(startup_dir, f"{APP_NAME}.lnk")
     
     # PowerShell command to create shortcut cleanly
     ps_command = (
@@ -221,7 +224,7 @@ def setup_windows():
         f"$Shortcut.TargetPath = '{pythonw_exe}'; "
         f"$Shortcut.Arguments = '\"{main_py}\" run'; "
         f"$Shortcut.WorkingDirectory = '{base_dir}'; "
-        f"$Shortcut.Description = 'FastPaste Clipboard Manager'; "
+        f"$Shortcut.Description = '{APP_NAME} Clipboard Manager'; "
         f"$Shortcut.Save()"
     )
     
@@ -230,13 +233,13 @@ def setup_windows():
         print("  ✅ Atalho de inicialização criado na pasta Startup!")
         # Start daemon immediately
         subprocess.Popen([pythonw_exe, main_py, "run"], cwd=base_dir, close_fds=True)
-        print("  ✅ Daemon do FastPaste iniciado em segundo plano!")
+        print(f"  ✅ Daemon do {APP_NAME} iniciado em segundo plano!")
     else:
         print(f"  ⚠ Falha ao criar atalho na Inicialização: {err}")
 
 def main():
     print("==================================================")
-    print("⚡ Instalando e Configurando o FastPaste...")
+    print(f"⚡ Instalando e Configurando o {APP_NAME}...")
     print("==================================================")
     
     # 1. Install dependencies

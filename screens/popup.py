@@ -231,8 +231,8 @@ class FastPastePopup(QWidget):
         header_layout.setContentsMargins(6, 0, 6, 0)
         header_layout.setSpacing(8)
         
-        # Name of the application: FastPaste
-        self.app_title = QLabel("FastPaste")
+        # Name of the application
+        self.app_title = QLabel(APP_NAME)
         self.app_title.setObjectName("AppTitle")
         header_layout.addWidget(self.app_title)
         

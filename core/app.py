@@ -7,10 +7,10 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtNetwork import QLocalServer, QLocalSocket
 from PyQt6.QtCore import QTimer, QObject, pyqtSignal
 
-from configs import PID_FILE, LOG_FILE
+from configs import PID_FILE, LOG_FILE, APP_NAME
 from core import history
 
-IPC_SERVER_NAME = "FastPaste_IPC_Server"
+IPC_SERVER_NAME = f"{APP_NAME}_IPC_Server"
 popup_instance = None
 clipboard_monitor = None
 hotkeys_manager = None
@@ -29,25 +29,26 @@ def check_status():
 
 def start_daemon():
     if check_status():
-        print("✅ FastPaste Monitor is already running.")
+        print(f"✅ {APP_NAME} Monitor is already running.")
         return
 
     if sys.platform.startswith("linux"):
         import subprocess
-        service_file = os.path.expanduser("~/.config/systemd/user/fast-paste.service")
+        app_lower = APP_NAME.lower()
+        service_file = os.path.expanduser(f"~/.config/systemd/user/{app_lower}.service")
         if os.path.exists(service_file):
             try:
                 # Import current display environment into systemd user manager to prevent GUI/Qt connection errors
                 subprocess.run(["systemctl", "--user", "import-environment", "DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR"], check=False)
-                print("🚀 Starting FastPaste via systemd...")
-                subprocess.run(["systemctl", "--user", "start", "fast-paste.service"], check=True)
+                print(f"🚀 Starting {APP_NAME} via systemd...")
+                subprocess.run(["systemctl", "--user", "start", f"{app_lower}.service"], check=True)
                 for _ in range(15):  # 15 attempts * 0.4 seconds = 6 seconds maximum startup wait time
                     if check_status():
                         print("✅ Monitor started successfully via systemd.")
                         return
                     time.sleep(0.4)
                 print("⚠ Started service, but status check timed out.")
-                print("Hint: Run 'systemctl --user status fast-paste.service' to check for errors.")
+                print(f"Hint: Run 'systemctl --user status {app_lower}.service' to check for errors.")
                 return
             except Exception as e:
                 print(f"[Daemon] Error starting via systemd: {e}. Falling back to fork...")
@@ -113,13 +114,14 @@ def start_daemon():
 def stop_daemon():
     if sys.platform.startswith("linux"):
         import subprocess
-        service_file = os.path.expanduser("~/.config/systemd/user/fast-paste.service")
+        app_lower = APP_NAME.lower()
+        service_file = os.path.expanduser(f"~/.config/systemd/user/{app_lower}.service")
         if os.path.exists(service_file):
             try:
-                res = subprocess.run(["systemctl", "--user", "is-active", "fast-paste.service"], capture_output=True, text=True)
+                res = subprocess.run(["systemctl", "--user", "is-active", f"{app_lower}.service"], capture_output=True, text=True)
                 if res.stdout.strip() == "active":
-                    print("🛑 Stopping FastPaste via systemd...")
-                    subprocess.run(["systemctl", "--user", "stop", "fast-paste.service"], check=True)
+                    print(f"🛑 Stopping {APP_NAME} via systemd...")
+                    subprocess.run(["systemctl", "--user", "stop", f"{app_lower}.service"], check=True)
                     print("🛑 Monitor stopped via systemd.")
                     return
             except Exception as e:
@@ -138,7 +140,7 @@ def stop_daemon():
         print("🛑 Monitor stopped.")
 
 def restart_daemon():
-    print("🔄 Restarting FastPaste...")
+    print(f"🔄 Restarting {APP_NAME}...")
     stop_daemon()
     # Wait up to 5 seconds for status to become inactive
     for _ in range(25):
@@ -157,7 +159,7 @@ def show_popup():
             socket.disconnectFromServer()
             return
     else:
-        print("❌ FastPaste Monitor is NOT running. Run 'python3 main.py start' to start it.")
+        print(f"❌ {APP_NAME} Monitor is NOT running. Run 'python3 main.py start' to start it.")
 
 def run_foreground():
     """Runs the main Qt application with System Tray, Clipboard Monitor, Global Hotkeys and IPC Server."""
@@ -247,10 +249,9 @@ def run_foreground():
     clipboard_monitor.start()
 
     # 3. Setup System Tray
-    # No Linux Wayland, o QSystemTrayIcon pode criar uma janela invisível que buga a dock.
     is_wayland = os.environ.get('WAYLAND_DISPLAY') is not None
     if sys.platform.startswith('linux') and is_wayland:
-        print("[FastPaste] Wayland detectado: Desativando System Tray para evitar bugs na dock.")
+        print(f"[{APP_NAME}] Wayland detectado: Desativando System Tray para evitar bugs na dock.")
     else:
         tray_icon = FastPasteTray(on_show_callback=show_popup_cb, on_settings_callback=show_settings_cb, on_exit_callback=exit_cb)
         tray_icon.setup()
@@ -274,9 +275,9 @@ def run_foreground():
     sys.exit(app.exec())
 
 def print_usage():
-    print("""
+    print(f"""
 ╔═══════════════════════════════════════════════╗
-║         ⚡ FastPaste - Cross-Platform         ║
+║         ⚡ {APP_NAME} - Cross-Platform         ║
 ╠═══════════════════════════════════════════════╣
 ║                                               ║
 ║  Commands:                                    ║

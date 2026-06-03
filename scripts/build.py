@@ -13,6 +13,10 @@ if sys.platform.startswith("win"):
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
+# Ensure project root is in path to import config
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from configs.config import APP_NAME
+
 def run_command(command, shell=False):
     print(f"Executing: {' '.join(command) if isinstance(command, list) else command}")
     result = subprocess.run(command, shell=shell)
@@ -21,7 +25,7 @@ def run_command(command, shell=False):
         sys.exit(result.returncode)
 
 def main():
-    print("=== FastPaste Builder ===")
+    print(f"=== {APP_NAME} Builder ===")
     
     # Force working directory to project root
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -95,7 +99,7 @@ def main():
                 pass
 
     # 2. Define platform-specific options
-    name = "fast-paste"
+    name = APP_NAME.lower()
     pyinstaller_args = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean"]
     
     # Bundle assets folder
@@ -186,38 +190,38 @@ def main():
                 os.makedirs(f"{deb_dir}/usr/lib/systemd/user", exist_ok=True)
                 
                 # Copy binary
-                shutil.copy2(f"dist/{name}", f"{deb_dir}/usr/bin/fast-paste")
-                os.chmod(f"{deb_dir}/usr/bin/fast-paste", 0o755)
+                shutil.copy2(f"dist/{name}", f"{deb_dir}/usr/bin/{name}")
+                os.chmod(f"{deb_dir}/usr/bin/{name}", 0o755)
                 
                 # Copy custom icon if exists
                 if os.path.exists("assets/fast_paste.png"):
                     os.makedirs(f"{deb_dir}/usr/share/icons/hicolor/512x512/apps", exist_ok=True)
-                    shutil.copy2("assets/fast_paste.png", f"{deb_dir}/usr/share/icons/hicolor/512x512/apps/fast-paste.png")
+                    shutil.copy2("assets/fast_paste.png", f"{deb_dir}/usr/share/icons/hicolor/512x512/apps/{name}.png")
                 
                 # Create desktop entry
-                desktop_content = """[Desktop Entry]
-Name=Fast Paste Clipboard Manager
+                desktop_content = f"""[Desktop Entry]
+Name={APP_NAME} Clipboard Manager
 Comment=Clipboard History Manager
-Exec=/usr/bin/fast-paste show
-Icon=fast-paste
+Exec=/usr/bin/{name} show
+Icon={name}
 Terminal=false
 Type=Application
 Categories=Utility;
 """
-                with open(f"{deb_dir}/usr/share/applications/fast-paste.desktop", "w", encoding="utf-8") as f:
+                with open(f"{deb_dir}/usr/share/applications/{name}.desktop", "w", encoding="utf-8") as f:
                     f.write(desktop_content)
                 
                 # Create AppStream metainfo XML file (improves App Center screen metadata)
-                metainfo_content = """<?xml version="1.0" encoding="UTF-8"?>
+                metainfo_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>org.fast_paste.fast-paste</id>
+  <id>org.{name}.{name}</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
-  <name>Fast Paste Clipboard Manager</name>
+  <name>{APP_NAME} Clipboard Manager</name>
   <summary>Modern and lightweight clipboard manager for Linux</summary>
   <description>
     <p>
-      O Fast Paste Clipboard Manager é um gerenciador de área de transferência moderno, rápido e bonito projetado para Linux (Wayland e X11). Ele armazena silenciosamente tudo o que você copia e permite pesquisar e colar instantaneamente através de um popup prático.
+      O {APP_NAME} Clipboard Manager é um gerenciador de área de transferência moderno, rápido e bonito projetado para Linux (Wayland e X11). Ele armazena silenciosamente tudo o que você copia e permite pesquisar e colar instantaneamente através de um popup prático.
     </p>
     <p>Principais Funcionalidades:</p>
     <ul>
@@ -230,31 +234,31 @@ Categories=Utility;
       <li>Auto-Paste: Digita automaticamente o item selecionado na posição do seu cursor de texto.</li>
     </ul>
   </description>
-  <launchable type="desktop-id">fast-paste.desktop</launchable>
+  <launchable type="desktop-id">{name}.desktop</launchable>
   <developer_name>Stevanini</developer_name>
-  <url type="homepage">https://github.com/fast-paste/fast-paste</url>
-  <url type="bugtracker">https://github.com/fast-paste/fast-paste/issues</url>
+  <url type="homepage">https://github.com/fast-paste/{name}</url>
+  <url type="bugtracker">https://github.com/fast-paste/{name}/issues</url>
   <content_rating type="oars-1.1"/>
 </component>
 """
-                with open(f"{deb_dir}/usr/share/metainfo/org.fast_paste.fast-paste.metainfo.xml", "w", encoding="utf-8") as f:
+                with open(f"{deb_dir}/usr/share/metainfo/org.{name}.{name}.metainfo.xml", "w", encoding="utf-8") as f:
                     f.write(metainfo_content)
 
                 # Create systemd user service file
-                systemd_service = """[Unit]
-Description=FastPaste Clipboard Manager Daemon
+                systemd_service = f"""[Unit]
+Description={APP_NAME} Clipboard Manager Daemon
 After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/fast-paste run
+ExecStart=/usr/bin/{name} run
 Restart=always
 RestartSec=3
 
 [Install]
 WantedBy=default.target
 """
-                with open(f"{deb_dir}/usr/lib/systemd/user/fast-paste.service", "w", encoding="utf-8") as f:
+                with open(f"{deb_dir}/usr/lib/systemd/user/{name}.service", "w", encoding="utf-8") as f:
                     f.write(systemd_service)
                 
                 # Get architecture
@@ -265,27 +269,27 @@ WantedBy=default.target
                     pass
                 
                 # Create control file with dependencies (PEP 668/Wayland setup)
-                control_content = f"""Package: fast-paste-clipboard-manager
+                control_content = f"""Package: {name}-clipboard-manager
 Version: 1.0.0
 Section: utils
 Priority: optional
 Architecture: {arch}
 Maintainer: Stevanini <contato@stevanini.com.br>
 Depends: wl-clipboard, xclip, wtype, xdotool
-Homepage: https://github.com/fast-paste/fast-paste
-Description: Fast Paste Clipboard Manager
+Homepage: https://github.com/fast-paste/{name}
+Description: {APP_NAME} Clipboard Manager
  Standalone clipboard manager for Linux (Wayland and X11) with PyQt6.
 """
                 with open(f"{deb_dir}/DEBIAN/control", "w", encoding="utf-8") as f:
                     f.write(control_content)
                 
                 # Build DEB
-                run_command(["dpkg-deb", "--build", deb_dir, f"dist/fast-paste_{arch}.deb"])
-                print(f"[OK] Generated deb package: dist/fast-paste_{arch}.deb")
+                run_command(["dpkg-deb", "--build", deb_dir, f"dist/{name}_{arch}.deb"])
+                print(f"[OK] Generated deb package: dist/{name}_{arch}.deb")
                 print("\n[Info] To install the deb package with dependencies:")
-                print(f"   sudo apt install ./dist/fast-paste_{arch}.deb")
+                print(f"   sudo apt install ./dist/{name}_{arch}.deb")
                 print("[Info] To enable the background service:")
-                print("   systemctl --user enable --now fast-paste")
+                print(f"   systemctl --user enable --now {name}")
             except Exception as e:
                 print(f"[Warning] Failed to generate .deb package: {e}")
                 

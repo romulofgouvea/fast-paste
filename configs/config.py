@@ -1,7 +1,7 @@
 import os
 import tempfile
 
-APP_NAME = "FastPaste"
+APP_NAME = "FPaste"
 MAX_HISTORY = 500
 
 # Caminhos dos arquivos persistentes (evita perda ao reiniciar e problemas de sandbox como Snaps/Flatpaks)
@@ -19,8 +19,8 @@ LOG_FILE = os.path.join(DATA_DIR, "daemon.log")
 
 # Controle de processos (agora na pasta runtime do usuário)
 XDG_RUNTIME_DIR = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
-PID_FILE = os.path.join(XDG_RUNTIME_DIR, "fast-paste.pid")
-SOCKET_PATH = os.path.join(XDG_RUNTIME_DIR, "fast-paste.sock")
+PID_FILE = os.path.join(XDG_RUNTIME_DIR, f"{APP_NAME.lower()}.pid")
+SOCKET_PATH = os.path.join(XDG_RUNTIME_DIR, f"{APP_NAME.lower()}.sock")
 
 # Cores UI (Ubuntu Dark System Theme)
 UI_COLORS = {

@@ -1,6 +1,6 @@
-# ⚡ FastPaste - Gerenciador de Clipboard Moderno
+# ⚡ FPaste - Gerenciador de Clipboard Moderno
 
-O **FastPaste** é um gerenciador de área de transferência (clipboard) moderno, veloz e elegante projetado para **Linux** (compatível com Wayland e X11), **macOS** (Intel e Apple Silicon) e **Windows**. Ele roda silenciosamente em segundo plano, registrando seu histórico de cópias (textos e imagens) e permitindo que você as pesquise e cole instantaneamente em qualquer campo de texto.
+O **FPaste** é um gerenciador de área de transferência (clipboard) moderno, veloz e elegante projetado para **Linux** (compatível com Wayland e X11), **macOS** (Intel e Apple Silicon) e **Windows**. Ele roda silenciosamente em segundo plano, registrando seu histórico de cópias (textos e imagens) e permitindo que você as pesquise e cole instantaneamente em qualquer campo de texto.
 
 ---
 
@@ -49,12 +49,11 @@ Selecione o guia específico abaixo correspondente ao seu sistema operacional pa
 
 ## 🏗️ Arquitetura do Projeto
 
-O FastPaste foi estruturado em módulos independentes utilizando **Python 3** e **PyQt6**:
+O FPaste foi estruturado em módulos independentes utilizando **Python 3** e **PyQt6**:
 
 ```
 fast-paste/
 ├── main.py              # Ponto de entrada unificado da aplicação
-├── fast_paste.py        # Script legada para retrocompatibilidade
 ├── configs/             # Configurações globais e banco de dados
 ├── core/                # Lógica de daemon, monitoramento e atalhos globais
 ├── screens/             # Componentes visuais (popup, bandeja do sistema, configurações)

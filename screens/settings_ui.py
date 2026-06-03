@@ -7,7 +7,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPropertyAnimation, pyqtProperty
 from PyQt6.QtGui import QPainter, QColor, QBrush, QKeySequence
 
 from configs.settings_manager import settings
-from configs.config import DATA_DIR, MAX_HISTORY
+from configs.config import DATA_DIR, MAX_HISTORY, APP_NAME
 
 def pynput_to_qt(pynput_str):
     if not pynput_str:
@@ -304,7 +304,7 @@ class SettingsWidget(QWidget):
         self.open_shortcuts_btn.clicked.connect(self.open_system_shortcuts)
         
         if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):
-            self.hotkey_input.setToolTip("No Wayland, configure o atalho nas configurações do seu sistema para rodar o comando: fast-paste show")
+            self.hotkey_input.setToolTip(f"No Wayland, configure o atalho nas configurações do seu sistema para rodar o comando: {APP_NAME.lower()} show")
         else:
             self.hotkey_input.setToolTip("Clique no campo e pressione a combinação de teclas desejada (ex: Ctrl+Shift+V). Pressione Esc para cancelar.")
             
@@ -466,11 +466,11 @@ class SettingsWidget(QWidget):
                     subprocess.Popen(["xfce4-keyboard-settings"])
                 else:
                     QMessageBox.information(self, "Atalhos no Linux", 
-                        "No Linux, configure um atalho global nas configurações de teclado do seu sistema para executar o comando:\n\nfast-paste show")
+                        f"No Linux, configure um atalho global nas configurações de teclado do seu sistema para executar o comando:\n\n{APP_NAME.lower()} show")
             elif sys.platform.startswith("darwin"):
                 # macOS Keyboard Shortcuts Preference Pane
                 subprocess.Popen(["open", "x-apple.systempreferences:com.apple.preference.keyboard?shortcuts"])
             elif sys.platform.startswith("win32") or sys.platform.startswith("win"):
                 os.system("start ms-settings:keyboard")
         except Exception as e:
-            print(f"[FastPaste] Error opening system keyboard settings: {e}")
+            print(f"[{APP_NAME}] Error opening system keyboard settings: {e}")

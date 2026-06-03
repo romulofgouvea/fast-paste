@@ -2,6 +2,7 @@ import os
 import sys
 import shutil
 import subprocess
+from configs.config import APP_NAME
 
 def get_executable_command():
     if getattr(sys, 'frozen', False):
@@ -23,11 +24,12 @@ def get_executable_command():
             return [sys.executable, script_path, "run"]
 
 def is_autostart_enabled():
+    app_lower = APP_NAME.lower()
     if sys.platform.startswith("win"):
         try:
             import winreg
             key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_READ)
-            value, _ = winreg.QueryValueEx(key, "FastPaste")
+            value, _ = winreg.QueryValueEx(key, APP_NAME)
             winreg.CloseKey(key)
             return True
         except Exception:
@@ -35,26 +37,27 @@ def is_autostart_enabled():
             
     elif sys.platform.startswith("linux"):
         # Check systemd first
-        service_file = os.path.expanduser("~/.config/systemd/user/fast-paste.service")
+        service_file = os.path.expanduser(f"~/.config/systemd/user/{app_lower}.service")
         if os.path.exists(service_file):
             try:
-                res = subprocess.run(["systemctl", "--user", "is-enabled", "fast-paste.service"], capture_output=True, text=True)
+                res = subprocess.run(["systemctl", "--user", "is-enabled", f"{app_lower}.service"], capture_output=True, text=True)
                 if res.stdout.strip() == "enabled":
                     return True
             except Exception:
                 pass
         
-        autostart_file = os.path.expanduser("~/.config/autostart/fast-paste.desktop")
+        autostart_file = os.path.expanduser(f"~/.config/autostart/{app_lower}.desktop")
         return os.path.exists(autostart_file)
         
     elif sys.platform.startswith("darwin"):
-        plist_file = os.path.expanduser("~/Library/LaunchAgents/com.fastpaste.autostart.plist")
+        plist_file = os.path.expanduser(f"~/Library/LaunchAgents/com.{app_lower}.autostart.plist")
         return os.path.exists(plist_file)
         
     return False
 
 def enable_autostart():
     cmd = get_executable_command()
+    app_lower = APP_NAME.lower()
     
     if sys.platform.startswith("win"):
         try:
@@ -64,7 +67,7 @@ def enable_autostart():
             if len(cmd) > 1:
                 cmd_str += " " + " ".join(cmd[1:])
             key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_WRITE)
-            winreg.SetValueEx(key, "FastPaste", 0, winreg.REG_SZ, cmd_str)
+            winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, cmd_str)
             winreg.CloseKey(key)
             return True
         except Exception as e:
@@ -73,11 +76,11 @@ def enable_autostart():
             
     elif sys.platform.startswith("linux"):
         # Check systemd first
-        service_file = os.path.expanduser("~/.config/systemd/user/fast-paste.service")
+        service_file = os.path.expanduser(f"~/.config/systemd/user/{app_lower}.service")
         if os.path.exists(service_file):
             try:
-                subprocess.run(["systemctl", "--user", "enable", "fast-paste.service"], check=True)
-                subprocess.run(["systemctl", "--user", "start", "fast-paste.service"], check=True)
+                subprocess.run(["systemctl", "--user", "enable", f"{app_lower}.service"], check=True)
+                subprocess.run(["systemctl", "--user", "start", f"{app_lower}.service"], check=True)
                 return True
             except Exception as e:
                 print(f"[Autostart] Error enabling systemd service: {e}")
@@ -87,8 +90,8 @@ def enable_autostart():
             cmd_str = " ".join(cmd)
             desktop_content = f"""[Desktop Entry]
 Type=Application
-Name=FastPaste
-Comment=Start FastPaste Clipboard Manager on login
+Name={APP_NAME}
+Comment=Start {APP_NAME} Clipboard Manager on login
 Exec={cmd_str}
 Icon=edit-paste
 Terminal=false
@@ -96,7 +99,7 @@ Categories=Utility;
 """
             autostart_dir = os.path.expanduser("~/.config/autostart")
             os.makedirs(autostart_dir, exist_ok=True)
-            with open(os.path.join(autostart_dir, "fast-paste.desktop"), "w", encoding="utf-8") as f:
+            with open(os.path.join(autostart_dir, f"{app_lower}.desktop"), "w", encoding="utf-8") as f:
                 f.write(desktop_content)
             return True
         except Exception as e:
@@ -111,7 +114,7 @@ Categories=Utility;
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.fastpaste.autostart</string>
+    <string>com.{app_lower}.autostart</string>
     <key>ProgramArguments</key>
     <array>
         {"".join(f"<string>{arg}</string>" for arg in cmd)}
@@ -123,7 +126,7 @@ Categories=Utility;
 """
             agents_dir = os.path.expanduser("~/Library/LaunchAgents")
             os.makedirs(agents_dir, exist_ok=True)
-            with open(os.path.join(agents_dir, "com.fastpaste.autostart.plist"), "w", encoding="utf-8") as f:
+            with open(os.path.join(agents_dir, f"com.{app_lower}.autostart.plist"), "w", encoding="utf-8") as f:
                 f.write(plist_content)
             return True
         except Exception as e:
@@ -133,11 +136,12 @@ Categories=Utility;
     return False
 
 def disable_autostart():
+    app_lower = APP_NAME.lower()
     if sys.platform.startswith("win"):
         try:
             import winreg
             key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_WRITE)
-            winreg.DeleteValue(key, "FastPaste")
+            winreg.DeleteValue(key, APP_NAME)
             winreg.CloseKey(key)
             return True
         except Exception:
@@ -145,17 +149,17 @@ def disable_autostart():
             
     elif sys.platform.startswith("linux"):
         systemd_disabled = False
-        service_file = os.path.expanduser("~/.config/systemd/user/fast-paste.service")
+        service_file = os.path.expanduser(f"~/.config/systemd/user/{app_lower}.service")
         if os.path.exists(service_file):
             try:
-                subprocess.run(["systemctl", "--user", "disable", "fast-paste.service"], check=True)
-                subprocess.run(["systemctl", "--user", "stop", "fast-paste.service"], check=True)
+                subprocess.run(["systemctl", "--user", "disable", f"{app_lower}.service"], check=True)
+                subprocess.run(["systemctl", "--user", "stop", f"{app_lower}.service"], check=True)
                 systemd_disabled = True
             except Exception as e:
                 print(f"[Autostart] Error disabling systemd service: {e}")
         
         try:
-            autostart_file = os.path.expanduser("~/.config/autostart/fast-paste.desktop")
+            autostart_file = os.path.expanduser(f"~/.config/autostart/{app_lower}.desktop")
             if os.path.exists(autostart_file):
                 os.remove(autostart_file)
             return True
@@ -165,7 +169,7 @@ def disable_autostart():
             
     elif sys.platform.startswith("darwin"):
         try:
-            plist_file = os.path.expanduser("~/Library/LaunchAgents/com.fastpaste.autostart.plist")
+            plist_file = os.path.expanduser(f"~/Library/LaunchAgents/com.{app_lower}.autostart.plist")
             if os.path.exists(plist_file):
                 os.remove(plist_file)
             return True

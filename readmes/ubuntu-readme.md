@@ -1,12 +1,12 @@
-# 🐧 FastPaste - Guia de Instalação e Configuração no Ubuntu / Debian / Linux
+# 🐧 FPaste - Guia de Instalação e Configuração no Ubuntu / Debian / Linux
 
-Este guia detalha como instalar, configurar e rodar o FastPaste em sistemas baseados em Linux, abrangendo ambientes X11 e Wayland (como o Ubuntu padrão).
+Este guia detalha como instalar, configurar e rodar o FPaste em sistemas baseados em Linux, abrangendo ambientes X11 e Wayland (como o Ubuntu padrão).
 
 ---
 
 ## 🚀 Instalação
 
-Você pode instalar o FastPaste no Linux de duas formas: usando o instalador automatizado (`setup.py`) ou gerando/instalando o pacote `.deb`.
+Você pode instalar o FPaste no Linux de duas formas: usando o instalador automatizado (`setup.py`) ou gerando/instalando o pacote `.deb`.
 
 ### Método 1: Usando o Instalador Automatizado (`setup.py`)
 O instalador automatizado irá instalar as dependências do sistema, instalar os pacotes Python necessários, configurar o daemon como um serviço de usuário do Systemd e registrar o atalho global no GNOME.
@@ -18,7 +18,7 @@ O instalador automatizado irá instalar as dependências do sistema, instalar os
    ```
 3. O serviço será ativado e iniciará automaticamente. Você pode verificar seu status com:
    ```bash
-   systemctl --user status fast-paste
+   systemctl --user status fpaste
    ```
 
 ### Método 2: Instalando via Pacote `.deb` (Recomendado para Ubuntu/Debian)
@@ -28,13 +28,13 @@ Você pode gerar e instalar um pacote `.deb` nativo para facilitar o gerenciamen
    ```bash
    python3 scripts/build.py
    ```
-2. O pacote `.deb` será gerado na pasta `dist/` (ex: `dist/fast-paste_amd64.deb`). Instale-o com:
+2. O pacote `.deb` será gerado na pasta `dist/` (ex: `dist/fpaste_amd64.deb`). Instale-o com:
    ```bash
-   sudo apt install ./dist/fast-paste_amd64.deb
+   sudo apt install ./dist/fpaste_amd64.deb
    ```
 3. Ative e inicie o serviço do usuário para monitoramento em segundo plano:
    ```bash
-   systemctl --user enable --now fast-paste
+   systemctl --user enable --now fpaste
    ```
 
 ---
@@ -47,7 +47,7 @@ Você pode gerar e instalar um pacote `.deb` nativo para facilitar o gerenciamen
   - O atalho padrão configurado é **`Ctrl + '`** (Ctrl + apóstrofo).
   - Se você usa um ambiente que não seja o GNOME (ex: KDE, XFCE), configure manualmente o atalho nas Configurações de Atalhos do Sistema para executar o seguinte comando:
     ```bash
-    fast-paste show
+    fpaste show
     ```
     *(Ou `python3 /caminho/para/main.py show` se rodando a partir do código fonte).*
 
@@ -66,29 +66,29 @@ python3 main.py status   # Verifica se o daemon está em execução
 python3 main.py clear    # Limpa todo o histórico de cópias não fixadas
 ```
 
-Se tiver instalado via pacote `.deb`, os comandos acima podem ser chamados diretamente usando o executável `fast-paste`:
+Se tiver instalado via pacote `.deb`, os comandos acima podem ser chamados diretamente usando o executável `fpaste`:
 ```bash
-fast-paste show
-fast-paste status
-fast-paste clear
+fpaste show
+fpaste status
+fpaste clear
 ```
 
 ---
 
 ## 🔄 Gerenciamento do Serviço (Systemd)
 
-O serviço do FastPaste roda sob a sessão do seu próprio usuário. Você pode gerenciá-lo com os seguintes comandos:
+O serviço do FPaste roda sob a sessão do seu próprio usuário. Você pode gerenciá-lo com os seguintes comandos:
 
 ```bash
 # Verificar se o daemon está rodando
-systemctl --user status fast-paste
+systemctl --user status fpaste
 
 # Reiniciar o serviço
-systemctl --user restart fast-paste
+systemctl --user restart fpaste
 
 # Parar o serviço
-systemctl --user stop fast-paste
+systemctl --user stop fpaste
 
 # Desativar o autostart
-systemctl --user disable fast-paste
+systemctl --user disable fpaste
 ```

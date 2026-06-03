@@ -1,6 +1,6 @@
-# 🍎 FastPaste - Guia de Instalação e Configuração no macOS
+# 🍎 FPaste - Guia de Instalação e Configuração no macOS
 
-Este guia detalha como compilar, instalar e autorizar o FastPaste no macOS. 
+Este guia detalha como compilar, instalar e autorizar o FPaste no macOS. 
 
 Devido às restrições de segurança do macOS (como o Gatekeeper e o Sandbox do sistema), é importante seguir estes passos para garantir que o monitoramento em segundo plano e a colagem automática funcionem corretamente.
 
@@ -14,13 +14,13 @@ Você pode instalar as dependências do Python e configurar o serviço de inicia
    ```bash
    python3 scripts/setup.py
    ```
-2. O script instalará os pacotes necessários e registrará o FastPaste no seu sistema para iniciar automaticamente no login.
+2. O script instalará os pacotes necessários e registrará o FPaste no seu sistema para iniciar automaticamente no login.
 
 ---
 
-## 🛠️ Compilação e Geração do Executável
+## 2. Compilação e Geração do Executável
 
-Se você deseja compilar o FastPaste localmente na sua máquina para gerar o arquivo `.app` otimizado para o seu hardware (Intel ou Apple Silicon M1/M2/M3):
+Se você deseja compilar o FPaste localmente na sua máquina para gerar o arquivo `.app` otimizado para o seu hardware (Intel ou Apple Silicon M1/M2/M3):
 
 1. Certifique-se de que possui o Python 3 instalado.
 2. Execute o script de build na pasta raiz do repositório:
@@ -30,7 +30,7 @@ Se você deseja compilar o FastPaste localmente na sua máquina para gerar o arq
    *(O script irá detectar e instalar automaticamente todas as dependências necessárias, como PyQt6, pynput, pyinstaller e pillow).*
 3. O build gerará o aplicativo empacotado em:
    ```
-   dist/fast-paste.app
+   dist/fpaste.app
    ```
 
 ---
@@ -44,20 +44,20 @@ Siga os passos abaixo para liberar o aplicativo:
 ### 1. Remover a Marca de Quarentena (Gatekeeper)
 Caso você baixe uma versão pré-compilada em zip ou mova o aplicativo entre pastas, o macOS marca o arquivo como "quarentena". No terminal, remova essa marca executando:
 ```bash
-xattr -cr /caminho/para/dist/fast-paste.app
+xattr -cr /caminho/para/dist/fpaste.app
 ```
 
 ### 2. Assinar o Binário Localmente (Ad-hoc signing)
 Em Macs com chip Apple Silicon (M1, M2, M3, etc.), qualquer código nativo não assinado causa um travamento imediato (`SIGSEGV` em PAC / `__CFCheckCFInfoPACSignature`).
 Assine o aplicativo localmente de forma gratuita executando:
 ```bash
-codesign --force --deep --sign - /caminho/para/dist/fast-paste.app
+codesign --force --deep --sign - /caminho/para/dist/fpaste.app
 ```
 
 ### 3. Conceder Permissões de Acessibilidade
-Para que o FastPaste possa simular o atalho `Cmd+V` para colar os textos automaticamente para você:
+Para que o FPaste possa simular o atalho `Cmd+V` para colar os textos automaticamente para você:
 1. Vá em **Ajustes do Sistema** → **Privacidade e Segurança** → **Acessibilidade**.
-2. Clique no ícone de `+` e adicione o seu `fast-paste.app`.
+2. Clique no ícone de `+` e adicione o seu `fpaste.app`.
 3. Certifique-se de que a chave ao lado dele está ativada.
 *(Se você estiver executando o código fonte diretamente no terminal via `python3`, você precisará conceder essa permissão ao seu aplicativo de Terminal, ex: Terminal.app ou iTerm.app).*
 
@@ -75,10 +75,10 @@ Caso queira desativar o monitoramento de atalho em Python e usar o sistema nativ
 3. Coloque o comando para abrir o popup:
    ```bash
    # Se estiver usando o executável compilado:
-   /caminho/para/fast-paste.app/Contents/MacOS/fast-paste show
+   /caminho/para/fpaste.app/Contents/MacOS/fpaste show
    
    # Ou se estiver usando o código fonte:
-   /usr/bin/python3 /caminho/para/fast-paste/main.py show
+   /usr/bin/python3 /caminho/para/fpaste/main.py show
    ```
 4. Na barra lateral direita do aplicativo Atalhos, adicione um atalho de teclado rápido de sua preferência (exemplo: `Cmd + Shift + V` ou `Cmd + '`).
 
@@ -86,6 +86,6 @@ Caso queira desativar o monitoramento de atalho em Python e usar o sistema nativ
 
 ## 🔄 Inicialização com o Sistema (Autostart)
 
-O FastPaste suporta inicialização automática no login do macOS usando um `LaunchAgent` do sistema.
-- Para ativar o autostart, abra o popup do FastPaste, clique no botão de **Configurações (⚙)** e ative a chave **"Iniciar automaticamente com o sistema"**.
-- Isso criará um arquivo `com.fastpaste.autostart.plist` em `~/Library/LaunchAgents/` que iniciará o monitor em background em todos os logins.
+O FPaste suporta inicialização automática no login do macOS usando um `LaunchAgent` do sistema.
+- Para ativar o autostart, abra o popup do FPaste, clique no botão de **Configurações (⚙)** e ative a chave **"Iniciar automaticamente com o sistema"**.
+- Isso criará um arquivo `com.fpaste.autostart.plist` em `~/Library/LaunchAgents/` que iniciará o monitor em background em todos os logins.

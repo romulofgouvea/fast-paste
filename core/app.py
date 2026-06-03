@@ -270,6 +270,12 @@ def run_foreground():
             clipboard_monitor.force_check()
             
         if popup_instance and popup_instance.isVisible():
+            # Se estiver na página de configurações, não fecha a janela.
+            # Apenas traz ela de volta para o foco do usuário.
+            if hasattr(popup_instance, 'stacked_widget') and popup_instance.stacked_widget.currentIndex() == 1:
+                popup_instance.activateWindow()
+                popup_instance.raise_()
+                return
             popup_instance.close()
             return
             

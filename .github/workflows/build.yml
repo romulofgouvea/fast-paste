@@ -32,7 +32,7 @@ jobs:
           
       - name: Build binary and package .deb
         run: |
-          xvfb-run -a python build.py
+          xvfb-run -a python scripts/build.py
           
       - name: Upload .deb to Release
         uses: softprops/action-gh-release@v2
@@ -55,7 +55,7 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller pillow
       - name: Build binary
-        run: python build.py
+        run: python scripts/build.py
       - name: Upload .exe to Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
@@ -78,7 +78,7 @@ jobs:
           pip install pyinstaller pillow
       - name: Build binary
         run: |
-          python build.py
+          python scripts/build.py
           cd dist
           zip -r fast-paste.app.zip fast-paste.app
       - name: Upload .app to Release

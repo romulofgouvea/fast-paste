@@ -58,7 +58,7 @@ class GlobalHotkeyManager:
         if self.os_name in ["Windows", "Darwin"]:
             try:
                 from pynput import keyboard
-                from settings_manager import settings
+                from configs.settings_manager import settings
                 
                 hotkey = settings.get('hotkey', '<ctrl>+<shift>+v')
                     
@@ -71,8 +71,8 @@ class GlobalHotkeyManager:
                 print(f"[FastPaste] pynput not installed. Global hotkeys won't work on {self.os_name}.")
         elif self.os_name == "Linux":
             # On Linux Wayland, pynput doesn't work for global hotkeys without root.
-            # We rely on the desktop environment shortcut calling 'fast_paste.py show'
-            print("[FastPaste] Linux detected. Please bind a shortcut in your Desktop Environment to run 'python3 fast_paste.py show'.")
+            # We rely on the desktop environment shortcut calling 'main.py show'
+            print("[FastPaste] Linux detected. Please bind a shortcut in your Desktop Environment to run 'python3 main.py show'.")
             
     def stop(self):
         if self.listener:

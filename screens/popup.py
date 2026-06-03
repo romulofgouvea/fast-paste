@@ -9,9 +9,9 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QSize, QEvent, QTimer
 from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut
 
-import history
-from config import UI_COLORS, APP_NAME
-from platform_handler import InputSimulator
+from core import history
+from configs.config import UI_COLORS, APP_NAME
+from core.platform_handler import InputSimulator
 
 def get_tinted_icon(icon_name, color_hex):
     from PyQt6.QtGui import QPainter
@@ -172,7 +172,7 @@ class FastPastePopup(QWidget):
         main_page_layout.addWidget(self.list_card)
         
         # Settings Page
-        from settings_ui import SettingsWidget
+        from screens.settings_ui import SettingsWidget
         self.settings_page = SettingsWidget(self)
         self.settings_page.settings_closed.connect(self.close_settings)
         self.stacked_widget.addWidget(self.settings_page)

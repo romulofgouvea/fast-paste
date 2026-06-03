@@ -12,12 +12,12 @@ def get_executable_command():
             return [exe, "run"]
     else:
         script_path = os.path.abspath(sys.argv[0])
-        # If running from fast_paste.py script
-        if script_path.endswith("fast_paste.py"):
+        # If running from main.py script
+        if script_path.endswith("main.py"):
             return [sys.executable, script_path, "run"]
         else:
             # Fallback to current folder script
-            fallback = os.path.join(os.path.dirname(script_path), "fast_paste.py")
+            fallback = os.path.join(os.path.dirname(script_path), "main.py")
             if os.path.exists(fallback):
                 return [sys.executable, fallback, "run"]
             return [sys.executable, script_path, "run"]

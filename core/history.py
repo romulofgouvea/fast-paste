@@ -2,8 +2,8 @@ import sqlite3
 import os
 import hashlib
 import time
-from config import DB_FILE, IMAGES_DIR, DATA_DIR, MAX_HISTORY
-from settings_manager import settings
+from configs.config import DB_FILE, IMAGES_DIR, DATA_DIR, MAX_HISTORY
+from configs.settings_manager import settings
 
 def get_db_path():
     path = settings.get('db_path', DATA_DIR)

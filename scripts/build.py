@@ -23,6 +23,12 @@ def run_command(command, shell=False):
 def main():
     print("=== FastPaste Builder ===")
     
+    # Force working directory to project root
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(script_dir)
+    os.chdir(repo_root)
+    print(f"[Info] Running from root folder: {os.getcwd()}")
+    
     # 1. Verify and install dependencies
     deps = {
         "PyQt6": "PyQt6",
@@ -52,13 +58,15 @@ def main():
                 installed = True
                 break
             except (subprocess.CalledProcessError, FileNotFoundError):
-                # 2. Try with --break-system-packages (workaround for PEP 668 in newer Ubuntu/Debian)
-                try:
-                    subprocess.run(cmd_base + ["install"] + missing_packages + ["--break-system-packages"], check=True)
-                    installed = True
-                    break
-                except (subprocess.CalledProcessError, FileNotFoundError):
-                    pass
+                pass
+                
+            # 2. Try with system package bypass
+            try:
+                subprocess.run(cmd_base + ["install"] + missing_packages + ["--break-system-packages"], check=True)
+                installed = True
+                break
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                pass
         
         if not installed:
             print(f"\n[Error] pip is not available or failed to install dependencies: {missing_packages}")
@@ -73,15 +81,15 @@ def main():
     else:
         print("[OK] All dependencies are already installed (PyQt6, pynput, pyinstaller).")
 
-    # Generate .ico for Windows if Pillow is available and fast_paste.png exists
-    if os.path.exists("fast_paste.png"):
-        ico_path = "fast_paste.ico"
+    # Generate .ico for Windows if Pillow is available and assets/fast_paste.png exists
+    if os.path.exists("assets/fast_paste.png"):
+        ico_path = "assets/fast_paste.ico"
         if not os.path.exists(ico_path):
             try:
                 from PIL import Image
-                img = Image.open("fast_paste.png")
+                img = Image.open("assets/fast_paste.png")
                 img.save(ico_path, format="ICO", sizes=[(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)])
-                print("[OK] Generated fast_paste.ico for Windows.")
+                print("[OK] Generated assets/fast_paste.ico for Windows.")
             except Exception as e:
                 pass
 
@@ -97,25 +105,25 @@ def main():
             "--windowed",
             f"--name={name}",
         ])
-        if os.path.exists("fast_paste.ico"):
-            pyinstaller_args.append("--icon=fast_paste.ico")
-        pyinstaller_args.append("fast_paste.py")
+        if os.path.exists("assets/fast_paste.ico"):
+            pyinstaller_args.append("--icon=assets/fast_paste.ico")
+        pyinstaller_args.append("main.py")
     elif sys.platform.startswith("darwin"):
         print("[Info] OS detected: macOS")
         pyinstaller_args.extend([
             "--windowed",
             f"--name={name}",
         ])
-        if os.path.exists("fast_paste.png"):
-            pyinstaller_args.append("--icon=fast_paste.png")
-        pyinstaller_args.append("fast_paste.py")
+        if os.path.exists("assets/fast_paste.png"):
+            pyinstaller_args.append("--icon=assets/fast_paste.png")
+        pyinstaller_args.append("main.py")
     else:
         print("[Info] OS detected: Linux")
         pyinstaller_args.extend([
             "--onefile",
             "--windowed",
             f"--name={name}",
-            "fast_paste.py"
+            "main.py"
         ])
 
     # 3. Clean previous build artifacts
@@ -161,9 +169,9 @@ def main():
                 os.chmod(f"{deb_dir}/usr/bin/fast-paste", 0o755)
                 
                 # Copy custom icon if exists
-                if os.path.exists("fast_paste.png"):
+                if os.path.exists("assets/fast_paste.png"):
                     os.makedirs(f"{deb_dir}/usr/share/icons/hicolor/512x512/apps", exist_ok=True)
-                    shutil.copy2("fast_paste.png", f"{deb_dir}/usr/share/icons/hicolor/512x512/apps/fast-paste.png")
+                    shutil.copy2("assets/fast_paste.png", f"{deb_dir}/usr/share/icons/hicolor/512x512/apps/fast-paste.png")
                 
                 # Create desktop entry
                 desktop_content = """[Desktop Entry]

@@ -1,5 +1,5 @@
 import sys
-import history
+from core import history
 
 def main():
     """Lê da entrada padrão (injetada pelo wl-paste) e salva no histórico SQLite."""

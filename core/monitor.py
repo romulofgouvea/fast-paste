@@ -8,7 +8,7 @@ import shutil
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QImage, QClipboard
 from PyQt6.QtCore import QBuffer, QIODevice
-import history
+from core import history
 
 class ClipboardMonitor:
     def __init__(self):

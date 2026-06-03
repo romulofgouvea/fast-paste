@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import sys
 import signal
@@ -8,10 +7,12 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtNetwork import QLocalServer, QLocalSocket
 from PyQt6.QtCore import QTimer
 
-from config import PID_FILE, LOG_FILE
-import history
+from configs import PID_FILE, LOG_FILE
+from core import history
 
 IPC_SERVER_NAME = "FastPaste_IPC_Server"
+popup_instance = None
+clipboard_monitor = None
 
 def check_status():
     """Check if the daemon is running by trying to connect to the local server."""
@@ -32,14 +33,17 @@ def start_daemon():
         service_file = os.path.expanduser("~/.config/systemd/user/fast-paste.service")
         if os.path.exists(service_file):
             try:
+                # Import current display environment into systemd user manager to prevent GUI/Qt connection errors
+                subprocess.run(["systemctl", "--user", "import-environment", "DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR"], check=False)
                 print("🚀 Starting FastPaste via systemd...")
                 subprocess.run(["systemctl", "--user", "start", "fast-paste.service"], check=True)
-                for _ in range(5):
+                for _ in range(15):  # 15 attempts * 0.4 seconds = 6 seconds maximum startup wait time
                     if check_status():
                         print("✅ Monitor started successfully via systemd.")
                         return
-                    time.sleep(0.2)
+                    time.sleep(0.4)
                 print("⚠ Started service, but status check timed out.")
+                print("Hint: Run 'systemctl --user status fast-paste.service' to check for errors.")
                 return
             except Exception as e:
                 print(f"[Daemon] Error starting via systemd: {e}. Falling back to fork...")
@@ -72,7 +76,7 @@ def start_daemon():
         run_foreground()
     else:
         # On Windows, we instruct the user to use pythonw or run directly
-        print("To run in background on Windows, use: pythonw fast_paste.py run")
+        print("To run in background on Windows, use: pythonw main.py run")
         run_foreground()
 
 def stop_daemon():
@@ -112,13 +116,12 @@ def show_popup():
             socket.disconnectFromServer()
             return
     else:
-        print("❌ FastPaste Monitor is NOT running. Run 'python3 fast_paste.py start' to start it.")
-
-
-popup_instance = None
+        print("❌ FastPaste Monitor is NOT running. Run 'python3 main.py start' to start it.")
 
 def run_foreground():
     """Runs the main Qt application with System Tray, Clipboard Monitor, Global Hotkeys and IPC Server."""
+    global popup_instance, clipboard_monitor
+    
     # Ensure a QApplication instance exists
     app = QApplication.instance()
     if not app:
@@ -127,10 +130,8 @@ def run_foreground():
     # Prevent app from quitting when popup is closed
     app.setQuitOnLastWindowClosed(False)
 
-    import monitor
-    import tray
-    import popup
-    from platform_handler import GlobalHotkeyManager
+    from core import ClipboardMonitor, GlobalHotkeyManager
+    from screens import FastPasteTray, FastPastePopup
 
     # 1. Setup IPC Server
     server = QLocalServer()
@@ -140,7 +141,7 @@ def run_foreground():
     def get_or_create_popup():
         global popup_instance
         if not popup_instance:
-            popup_instance = popup.FastPastePopup(standalone=False)
+            popup_instance = FastPastePopup(standalone=False)
             def on_destroyed():
                 global popup_instance
                 popup_instance = None
@@ -194,8 +195,7 @@ def run_foreground():
         QApplication.quit()
 
     # 2. Start Clipboard Monitor
-    global clipboard_monitor
-    clipboard_monitor = monitor.ClipboardMonitor()
+    clipboard_monitor = ClipboardMonitor()
     clipboard_monitor.start()
 
     # 3. Setup System Tray
@@ -204,7 +204,7 @@ def run_foreground():
     if sys.platform.startswith('linux') and is_wayland:
         print("[FastPaste] Wayland detectado: Desativando System Tray para evitar bugs na dock.")
     else:
-        tray_icon = tray.FastPasteTray(on_show_callback=show_popup_cb, on_settings_callback=show_settings_cb, on_exit_callback=exit_cb)
+        tray_icon = FastPasteTray(on_show_callback=show_popup_cb, on_settings_callback=show_settings_cb, on_exit_callback=exit_cb)
         tray_icon.setup()
 
     # 4. Setup Global Hotkeys (Windows/Mac)
@@ -223,7 +223,6 @@ def run_foreground():
     # Exec Event Loop
     sys.exit(app.exec())
 
-
 def print_usage():
     print("""
 ╔═══════════════════════════════════════════════╗
@@ -241,7 +240,7 @@ def print_usage():
 ╚═══════════════════════════════════════════════╝
 """)
 
-if __name__ == "__main__":
+def main():
     if len(sys.argv) < 2:
         if sys.platform.startswith("win") or sys.platform.startswith("darwin"):
             if check_status():

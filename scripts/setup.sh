@@ -12,7 +12,7 @@ echo "╚═══════════════════════�
 echo ""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FAST_PASTE_PY="$SCRIPT_DIR/fast_paste.py"
+MAIN_PY="$(dirname "$SCRIPT_DIR")/main.py"
 
 # --- 1. Install system dependencies ---
 echo "[1/4] Instalando dependências do sistema..."
@@ -25,7 +25,7 @@ else
 fi
 
 # Garante permissões locais
-chmod +x "$SCRIPT_DIR"/*.py
+chmod +x "$(dirname "$SCRIPT_DIR")"/main.py "$(dirname "$SCRIPT_DIR")"/fast_paste.py "$SCRIPT_DIR"/*.py 2>/dev/null || true
 
 # --- 2. Create data directory ---
 echo "[2/4] Criando diretório de dados..."
@@ -39,7 +39,7 @@ cat > ~/.local/share/applications/fast-paste.desktop << EOF
 [Desktop Entry]
 Name=FastPaste
 Comment=Clipboard History Manager
-Exec=python3 $FAST_PASTE_PY show
+Exec=python3 $MAIN_PY show
 Icon=edit-paste
 Terminal=false
 Type=Application
@@ -78,7 +78,7 @@ if echo "$DESKTOP" | grep -qi "gnome\|ubuntu"; then
     SCHEMA_PATH="$KEYBINDING_PATH"
 
     gsettings set "$SCHEMA:$SCHEMA_PATH" name "FastPaste - Show Clipboard"
-    gsettings set "$SCHEMA:$SCHEMA_PATH" command "python3 $FAST_PASTE_PY show"
+    gsettings set "$SCHEMA:$SCHEMA_PATH" command "python3 $MAIN_PY show"
     gsettings set "$SCHEMA:$SCHEMA_PATH" binding "<Ctrl>apostrophe"
 
     echo "  ✅ Atalho configurado: Ctrl + '"
@@ -115,7 +115,7 @@ After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 $FAST_PASTE_PY run
+ExecStart=/usr/bin/python3 $MAIN_PY run
 Restart=always
 RestartSec=3
 

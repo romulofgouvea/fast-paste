@@ -47,8 +47,8 @@ O FastPaste é um gerenciador de clipboard moderno, rápido e bonito projetado p
 
 ```bash
 # 1. Rodar o script de setup (instala dependências, cria Systemd e configura atalho)
-chmod +x setup.sh
-./setup.sh
+chmod +x scripts/setup.sh
+./scripts/setup.sh
 
 # 2. Opcionalmente verifique o status do serviço
 systemctl --user status fast-paste
@@ -61,10 +61,10 @@ O setup já configura o daemon via Systemd para rodar automaticamente (usando o 
 ### Comandos
 
 ```bash
-python3 fast_paste.py run      # Inicia o daemon com tray icon e IPC server (usado pelo Systemd)
-python3 fast_paste.py show     # Abre o popup com histórico (instância única via IPC)
-python3 fast_paste.py clear    # Limpa o histórico
-python3 fast_paste.py status   # Verifica se o daemon está ativo
+python3 main.py run      # Inicia o daemon com tray icon e IPC server (usado pelo Systemd)
+python3 main.py show     # Abre o popup com histórico (instância única via IPC)
+python3 main.py clear    # Limpa o histórico
+python3 main.py status   # Verifica se o daemon está ativo
 ```
 
 ### Atalhos no Popup
@@ -94,7 +94,7 @@ Siga os passos gerais abaixo para compilar o FastPaste no seu sistema e, em segu
 1. **Instale o Python 3** no seu sistema.
 2. Abra o terminal (ou prompt de comando) na pasta do projeto e execute o script de compilação:
    ```bash
-   python3 build.py
+   python3 scripts/build.py
    ```
    *(O script detectará as dependências necessárias como `PyQt6`, `pynput` e `pyinstaller` e as instalará automaticamente).*
 
@@ -121,7 +121,7 @@ A compilação do Passo 1 gerará um executável portátil único em `dist/fast-
 
 1. Para iniciar o monitor em segundo plano no Windows (sem abrir a janela preta do terminal):
    ```cmd
-   pythonw fast_paste.py run
+   pythonw main.py run
    ```
 
 #### 🍎 macOS
@@ -130,17 +130,20 @@ A compilação do Passo 1 gerará um pacote de aplicativo macOS em `dist/fast-pa
 
 1. Configure o atalho global nativo usando o aplicativo **Shortcuts (Atalhos)** vinculando a tecla de sua preferência (ex: `Cmd + Shift + V`) para executar o script do shell:
    ```bash
-   /usr/bin/python3 /caminho/para/fast-paste/fast_paste.py show
+   /usr/bin/python3 /caminho/para/fast-paste/main.py show
    ```
 
 ## 🏗️ Arquitetura
 
 ```
 fast-paste/
-├── fast_paste.py    # Aplicação principal (daemon, ipc + popup)
-├── setup.sh         # Script de instalação e configuração
-├── build.py         # Script para geração de builds locais
-└── README.md        # Este arquivo
+├── main.py          # Ponto de entrada unificado da aplicação
+├── fast_paste.py    # Wrapper de redirecionamento (retrocompatibilidade)
+├── scripts/         # Scripts de suporte (setup, build, checkup)
+│   ├── setup.sh     # Script de instalação e configuração
+│   ├── build.py     # Script para geração de builds locais
+│   └── checkup.py   # Script de diagnóstico e sintaxe do projeto
+├── README.md        # Este arquivo
 ```
 
 - **Daemon**: Roda em background monitorando o clipboard

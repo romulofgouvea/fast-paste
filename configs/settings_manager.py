@@ -1,6 +1,6 @@
 import os
 import json
-from config import DATA_DIR, MAX_HISTORY
+from configs.config import DATA_DIR, MAX_HISTORY
 
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 

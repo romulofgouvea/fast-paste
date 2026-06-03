@@ -1,7 +1,7 @@
 import sys
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QApplication
 from PyQt6.QtGui import QIcon, QAction
-import history
+from core import history
 
 class FastPasteTray:
     def __init__(self, on_show_callback, on_settings_callback, on_exit_callback):
@@ -14,7 +14,7 @@ class FastPasteTray:
         # We need a QApplication instance to run QSystemTrayIcon
         app = QApplication.instance()
         if not app:
-            # Should not happen as we start QApplication in fast_paste.py
+            # Should not happen as we start QApplication in main.py
             print("[FastPaste] QApplication not found for tray icon.")
             return
 
@@ -33,8 +33,8 @@ class FastPasteTray:
         # Context Menu
         self.menu = QMenu()
         
-        from popup import get_tinted_icon
-        from config import UI_COLORS
+        from screens.popup import get_tinted_icon
+        from configs.config import UI_COLORS
         
         # Helper para evitar travamentos se o ícone não existir
         def make_icon(name):

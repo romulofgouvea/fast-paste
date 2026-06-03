@@ -6,8 +6,8 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
 from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPropertyAnimation, pyqtProperty, QEasingCurve
 from PyQt6.QtGui import QPainter, QColor, QBrush
 
-from settings_manager import settings
-from config import DATA_DIR, MAX_HISTORY
+from configs.settings_manager import settings
+from configs.config import DATA_DIR, MAX_HISTORY
 
 class SwitchButton(QAbstractButton):
     def __init__(self, parent=None):
@@ -140,7 +140,7 @@ class SettingsWidget(QWidget):
         
         if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):
             self.hotkey_input.setReadOnly(True)
-            self.hotkey_input.setToolTip("No Wayland, defina o atalho nas configurações do seu sistema operacional\npara rodar o comando: python3 fast_paste.py show")
+            self.hotkey_input.setToolTip("No Wayland, defina o atalho nas configurações do seu sistema operacional\npara rodar o comando: python3 main.py show")
             self.hotkey_input.setText("Configurar no Ubuntu (GNOME)")
         else:
             self.hotkey_input.setToolTip("Exemplo: <ctrl>+<shift>+v (Padrão Windows/Mac)")
@@ -177,7 +177,7 @@ class SettingsWidget(QWidget):
         self.autostart_switch.setToolTip("Inicia o monitor de clipboard automaticamente ao fazer login no sistema.")
         
         try:
-            import autostart
+            from core import autostart
             self.autostart_switch.setChecked(autostart.is_autostart_enabled())
         except Exception as e:
             print(f"[Settings] Error checking autostart state: {e}")
@@ -247,7 +247,7 @@ class SettingsWidget(QWidget):
 
         # Configurar Autostart (Iniciar com o sistema)
         try:
-            import autostart
+            from core import autostart
             if self.autostart_switch.isChecked():
                 autostart.enable_autostart()
             else:

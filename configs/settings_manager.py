@@ -16,6 +16,8 @@ class SettingsManager:
     def _load(self):
         self.settings = {
             "max_history": MAX_HISTORY,
+            "retention_days": 30,
+            "theme_color": "#FF7A00",
             "hotkey": "<ctrl>+'",
             "hotkey_mac_key_code": None,
             "db_path": DATA_DIR,

@@ -2,12 +2,99 @@ import sys
 import os
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QSpinBox, QLineEdit, QPushButton, QFileDialog, QMessageBox, QCheckBox,
-                             QAbstractButton, QSizePolicy, QRadioButton, QButtonGroup)
+                             QAbstractButton, QSizePolicy, QRadioButton, QButtonGroup, QDialog)
 from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPropertyAnimation, pyqtProperty, QEasingCurve
 from PyQt6.QtGui import QPainter, QColor, QBrush, QKeySequence
 
 from configs.settings_manager import settings
-from configs.config import DATA_DIR, MAX_HISTORY, APP_NAME
+from configs.config import DATA_DIR, MAX_HISTORY, APP_NAME, UI_COLORS
+
+class CustomModal(QDialog):
+    def __init__(self, parent=None, title="", text="", is_input=False, input_password=False):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setFixedWidth(420)
+        
+        self.container = QWidget(self)
+        self.container.setObjectName("ModalContainer")
+        
+        self.setStyleSheet(f"""
+            QWidget#ModalContainer {{
+                background-color: {UI_COLORS.get('card_bg', 'rgba(36, 36, 36, 0.98)')};
+                border: 1px solid {UI_COLORS.get('card_border', 'rgba(60, 60, 60, 0.8)')};
+                border-radius: 12px;
+            }}
+            QLabel {{ color: {UI_COLORS.get('fg', '#ffffff')}; font-size: 14px; background: transparent; }}
+            QLabel#Title {{ font-weight: bold; font-size: 16px; margin-bottom: 4px; }}
+            QPushButton {{ 
+                background-color: #3a3a3a; color: #ffffff; padding: 8px 16px; 
+                border-radius: 6px; border: 1px solid #5a5a5a; font-size: 13px; 
+            }}
+            QPushButton:hover {{ background-color: #4a4a4a; }}
+            QPushButton#primary {{ background-color: {UI_COLORS.get('selected', '#FF7A00')}; border: none; font-weight: bold; }}
+            QPushButton#primary:hover {{ background-color: {UI_COLORS.get('selected', '#FF7A00')}; opacity: 0.8; }}
+            QLineEdit {{
+                background-color: rgba(20, 20, 20, 0.6); border: 1px solid #444;
+                border-radius: 6px; padding: 8px; color: #ffffff; font-size: 14px;
+                selection-background-color: {UI_COLORS.get('selected', '#FF7A00')};
+            }}
+            QLineEdit:focus {{ border: 1px solid {UI_COLORS.get('selected', '#FF7A00')}; }}
+        """)
+        
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.addWidget(self.container)
+        
+        layout = QVBoxLayout(self.container)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(16)
+        
+        title_label = QLabel(title)
+        title_label.setObjectName("Title")
+        layout.addWidget(title_label)
+        
+        text_label = QLabel(text)
+        text_label.setWordWrap(True)
+        layout.addWidget(text_label)
+        
+        self.input_field = None
+        if is_input:
+            self.input_field = QLineEdit()
+            if input_password:
+                self.input_field.setEchoMode(QLineEdit.EchoMode.Password)
+            layout.addWidget(self.input_field)
+            self.input_field.setFocus()
+            
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch(1)
+        
+        if is_input:
+            btn_cancel = QPushButton("Cancelar")
+            btn_cancel.clicked.connect(self.reject)
+            btn_layout.addWidget(btn_cancel)
+            
+        btn_ok = QPushButton("OK")
+        btn_ok.setObjectName("primary")
+        btn_ok.clicked.connect(self.accept)
+        btn_layout.addWidget(btn_ok)
+        
+        layout.addLayout(btn_layout)
+        
+    def textValue(self):
+        return self.input_field.text() if self.input_field else ""
+        
+    @classmethod
+    def show_message(cls, parent, title, text):
+        dialog = cls(parent, title, text)
+        dialog.exec()
+        
+    @classmethod
+    def get_text(cls, parent, title, label, is_password=False):
+        dialog = cls(parent, title, label, is_input=True, input_password=is_password)
+        ok = dialog.exec() == QDialog.DialogCode.Accepted
+        return dialog.textValue(), ok
 
 def pynput_to_qt(pynput_str):
     if not pynput_str:
@@ -177,7 +264,8 @@ class SwitchButton(QAbstractButton):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Track parameters
-        track_color = QColor("#e95420") if self.isChecked() else QColor("#444444")
+        from configs.config import UI_COLORS
+        track_color = QColor(UI_COLORS.get('selected', '#FF7A00')) if self.isChecked() else QColor("#444444")
         painter.setBrush(QBrush(track_color))
         painter.setPen(Qt.PenStyle.NoPen)
         
@@ -218,89 +306,112 @@ class SettingsWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         
+        from configs.config import UI_COLORS
+        accent_color = UI_COLORS.get('selected', '#FF7A00')
+        
         # Apply dark theme stylesheet to match popup
-        self.setStyleSheet("""
-            QWidget {
+        self.setStyleSheet(f"""
+            QWidget {{
                 background-color: transparent;
                 color: #ffffff;
-            }
-            QLabel {
+            }}
+            QLabel {{
                 color: #ffffff;
                 font-size: 13px;
-            }
-            QLineEdit, QSpinBox {
+            }}
+            QLineEdit, QSpinBox {{
                 background-color: #2c2c2c;
                 color: #ffffff;
                 border: 1px solid #4a4a4a;
                 border-radius: 4px;
                 padding: 5px;
                 font-size: 13px;
-                selection-background-color: #e95420;
-            }
-            QLineEdit:focus, QSpinBox:focus {
-                border: 1px solid #e95420;
-            }
-            QPushButton {
+                selection-background-color: {accent_color};
+            }}
+            QLineEdit:focus, QSpinBox:focus {{
+                border: 1px solid {accent_color};
+            }}
+            QPushButton {{
                 background-color: #3a3a3a;
                 color: #ffffff;
                 border: 1px solid #5a5a5a;
                 border-radius: 4px;
                 padding: 6px 12px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: #4a4a4a;
-            }
-            QPushButton#saveButton {
-                background-color: #e95420;
+            }}
+            QPushButton#saveButton {{
+                background-color: {accent_color};
                 border: None;
-            }
-            QPushButton#saveButton:hover {
-                background-color: #ff6b36;
-            }
-            QCheckBox {
+            }}
+            QPushButton#saveButton:hover {{
+                background-color: {accent_color};
+                opacity: 0.8;
+            }}
+            QCheckBox {{
                 color: #ffffff;
                 font-size: 13px;
-            }
-            QRadioButton {
+            }}
+            QRadioButton {{
                 color: #ffffff;
                 font-size: 13px;
                 spacing: 8px;
-            }
-            QRadioButton:hover {
-                color: #ff855c;
-            }
-            QRadioButton::indicator {
+            }}
+            QRadioButton:hover {{
+                color: {accent_color};
+            }}
+            QRadioButton::indicator {{
                 width: 16px;
                 height: 16px;
                 border-radius: 9px;
                 border: 2px solid #5a5a5a;
                 background-color: #2c2c2c;
-            }
-            QRadioButton::indicator:hover {
-                border-color: #e95420;
-            }
-            QRadioButton::indicator:checked {
-                border: 2px solid #e95420;
-                background-color: #e95420;
-            }
+            }}
+            QRadioButton::indicator:hover {{
+                border-color: {accent_color};
+            }}
+            QRadioButton::indicator:checked {{
+                border: 2px solid {accent_color};
+                background-color: {accent_color};
+            }}
         """)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
 
-        # 1. Configuração da quantidade de cópias (Fila)
-        hist_layout = QHBoxLayout()
-        hist_label = QLabel("Limite de histórico (Cópias não fixadas):")
+        # 1. Configuração da quantidade de cópias e Retenção
+        hist_layout = QVBoxLayout()
+        hist_label = QLabel("Retenção de Histórico (Itens não fixados):")
+        hist_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;")
+        hist_layout.addWidget(hist_label)
+        
+        # Limite de itens
+        limit_layout = QHBoxLayout()
+        limit_label = QLabel("Limite máximo de itens:")
         self.hist_spin = QSpinBox()
         self.hist_spin.setRange(10, 5000)
         self.hist_spin.setValue(settings.get('max_history', MAX_HISTORY))
         self.hist_spin.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
-        self.hist_spin.setFixedWidth(120)
-        self.hist_spin.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.hist_spin.setToolTip("Quando atingir este limite, a cópia mais antiga será excluída (fila).")
-        hist_layout.addWidget(hist_label)
-        hist_layout.addWidget(self.hist_spin)
-        hist_layout.addStretch(1)
+        self.hist_spin.setFixedWidth(80)
+        limit_layout.addWidget(limit_label)
+        limit_layout.addWidget(self.hist_spin)
+        limit_layout.addStretch(1)
+        
+        # Retenção em dias
+        days_layout = QHBoxLayout()
+        days_label = QLabel("Apagar automaticamente após (dias):")
+        self.days_spin = QSpinBox()
+        self.days_spin.setRange(1, 365)
+        self.days_spin.setValue(settings.get('retention_days', 30))
+        self.days_spin.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
+        self.days_spin.setFixedWidth(80)
+        days_layout.addWidget(days_label)
+        days_layout.addWidget(self.days_spin)
+        days_layout.addStretch(1)
+        
+        hist_layout.addLayout(limit_layout)
+        hist_layout.addLayout(days_layout)
         layout.addLayout(hist_layout)
 
         # 2. Configuração de Hotkey
@@ -321,6 +432,47 @@ class SettingsWidget(QWidget):
         hotkey_layout.addWidget(self.hotkey_input)
         hotkey_layout.addWidget(self.open_shortcuts_btn)
         layout.addLayout(hotkey_layout)
+
+        # 2.5 Tema / Cores
+        theme_layout = QHBoxLayout()
+        theme_label = QLabel("Cor do Tema:")
+        self.theme_btn_group = QButtonGroup(self)
+        
+        colors = [
+            ("#FF7A00", "Laranja Inter"),
+            ("#e95420", "Ubuntu Orange"),
+            ("#0078D7", "Azul Windows"),
+            ("#10B981", "Verde Esmeralda"),
+            ("#8B5CF6", "Roxo Violeta")
+        ]
+        
+        theme_options_layout = QHBoxLayout()
+        current_theme = settings.get("theme_color", "#FF7A00").upper()
+        
+        for i, (hex_code, name) in enumerate(colors):
+            btn = QRadioButton()
+            btn.setToolTip(name)
+            # Style the radio indicator to show the color
+            btn.setStyleSheet(f"""
+                QRadioButton::indicator {{
+                    width: 20px; height: 20px; border-radius: 11px;
+                    background-color: {hex_code}; border: 2px solid transparent;
+                }}
+                QRadioButton::indicator:checked {{
+                    border: 2px solid #ffffff;
+                }}
+            """)
+            if hex_code.upper() == current_theme:
+                btn.setChecked(True)
+            self.theme_btn_group.addButton(btn, i)
+            # Save the hex code dynamically as property
+            btn.setProperty("theme_hex", hex_code)
+            theme_options_layout.addWidget(btn)
+            
+        theme_options_layout.addStretch(1)
+        theme_layout.addWidget(theme_label)
+        theme_layout.addLayout(theme_options_layout)
+        layout.addLayout(theme_layout)
 
         # 3. Caminho do banco de dados
         db_layout = QVBoxLayout()
@@ -390,6 +542,46 @@ class SettingsWidget(QWidget):
         mode_layout.addLayout(mode_options_layout)
         layout.addLayout(mode_layout)
         
+        # 6. Variáveis / Snippets
+        vars_layout = QVBoxLayout()
+        vars_label = QLabel("Variáveis (Snippets de Texto):")
+        vars_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;")
+        
+        vars_btn_layout = QHBoxLayout()
+        self.manage_vars_btn = QPushButton("Gerenciar Variáveis")
+        self.manage_vars_btn.setToolTip("Criar atalhos de texto rápidos que podem ser buscados com o prefixo '/'.")
+        self.manage_vars_btn.clicked.connect(self.open_variables_manager)
+        
+        vars_btn_layout.addWidget(self.manage_vars_btn)
+        vars_btn_layout.addStretch(1)
+        
+        vars_layout.addWidget(vars_label)
+        vars_layout.addLayout(vars_btn_layout)
+        layout.addLayout(vars_layout)
+        
+        # 7. Backup e Restauração
+        backup_layout = QVBoxLayout()
+        backup_label = QLabel("Backup e Segurança:")
+        backup_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;")
+        
+        backup_buttons_layout = QHBoxLayout()
+        
+        self.export_btn = QPushButton("Exportar Histórico")
+        self.export_btn.setToolTip("Exportar todos os itens e imagens protegidos com senha.")
+        self.export_btn.clicked.connect(self.export_backup)
+        
+        self.import_btn = QPushButton("Importar Histórico")
+        self.import_btn.setToolTip("Importar dados de um arquivo de backup.")
+        self.import_btn.clicked.connect(self.import_backup)
+        
+        backup_buttons_layout.addWidget(self.export_btn)
+        backup_buttons_layout.addWidget(self.import_btn)
+        backup_buttons_layout.addStretch(1)
+        
+        backup_layout.addWidget(backup_label)
+        backup_layout.addLayout(backup_buttons_layout)
+        layout.addLayout(backup_layout)
+
         # Info text
         info = QLabel("Dica: Itens fixados (★) nunca são excluídos automaticamente.")
         info.setStyleSheet("color: #a1a1a1; font-style: italic;")
@@ -437,11 +629,17 @@ class SettingsWidget(QWidget):
     def save_settings(self):
         # Validação
         if not os.path.exists(self.db_input.text()):
-            QMessageBox.warning(self, "Erro", "A pasta selecionada para o banco de dados não existe.")
+            CustomModal.show_message(self, "Erro", "A pasta selecionada para o banco de dados não existe.")
             return
 
         # Salvar
         settings.set('max_history', self.hist_spin.value())
+        settings.set('retention_days', self.days_spin.value())
+        
+        selected_theme_btn = self.theme_btn_group.checkedButton()
+        if selected_theme_btn:
+            settings.set('theme_color', selected_theme_btn.property("theme_hex"))
+            
         settings.set('db_path', self.db_input.text())
         settings.set('interaction_mode', self.mode_group.checkedId())
         
@@ -462,7 +660,57 @@ class SettingsWidget(QWidget):
         except Exception as e:
             print(f"[Settings] Error saving autostart setting: {e}")
             
-        self.settings_closed.emit(True)
+        from configs.config import UI_COLORS
+        from PyQt6.QtWidgets import QDialog, QApplication
+        
+        dialog = QDialog(self)
+        dialog.setWindowTitle("FastPaste")
+        dialog.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        dialog.setFixedWidth(480)  # Make it narrower than popup
+        dialog.setStyleSheet(f"""
+            QDialog {{ background-color: {UI_COLORS.get('card_bg', '#242424')}; border: 1px solid {UI_COLORS.get('card_border', '#3c3c3c')}; border-radius: 8px; }}
+            QLabel {{ color: {UI_COLORS.get('fg', '#ffffff')}; font-size: 14px; }}
+            QPushButton {{ background-color: #3a3a3a; color: #ffffff; padding: 8px 16px; border-radius: 4px; border: 1px solid #5a5a5a; font-size: 13px; }}
+            QPushButton:hover {{ background-color: #4a4a4a; }}
+            QPushButton#primary {{ background-color: {UI_COLORS.get('selected', '#FF7A00')}; border: none; font-weight: bold; }}
+            QPushButton#primary:hover {{ opacity: 0.8; }}
+        """)
+        
+        d_layout = QVBoxLayout(dialog)
+        d_layout.setContentsMargins(20, 24, 20, 20)
+        d_layout.setSpacing(20)
+        
+        msg_label = QLabel("Configurações salvas com sucesso!\n\nPara aplicar o novo Tema em toda a interface, o aplicativo precisa ser reiniciado.")
+        msg_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        d_layout.addWidget(msg_label)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch(1)
+        
+        btn_later = QPushButton("Mais Tarde")
+        btn_later.clicked.connect(dialog.reject)
+        
+        btn_restart = QPushButton("Reiniciar Agora")
+        btn_restart.setObjectName("primary")
+        btn_restart.clicked.connect(dialog.accept)
+        
+        btn_layout.addWidget(btn_later)
+        btn_layout.addWidget(btn_restart)
+        d_layout.addLayout(btn_layout)
+        
+        result = dialog.exec()
+        
+        if result == QDialog.DialogCode.Accepted:
+            import subprocess
+            import os
+            if getattr(sys, 'frozen', False):
+                cmd = [sys.executable, "show"]
+            else:
+                cmd = [sys.executable, sys.argv[0], "show"]
+            subprocess.Popen(cmd)
+            os._exit(0)
+        else:
+            self.settings_closed.emit(True)
 
     def open_system_shortcuts(self):
         import shutil
@@ -476,7 +724,7 @@ class SettingsWidget(QWidget):
                 elif shutil.which("xfce4-keyboard-settings"):
                     subprocess.Popen(["xfce4-keyboard-settings"])
                 else:
-                    QMessageBox.information(self, "Atalhos no Linux", 
+                    CustomModal.show_message(self, "Atalhos no Linux", 
                         f"No Linux, configure um atalho global nas configurações de teclado do seu sistema para executar o comando:\n\n{APP_NAME.lower()} show")
             elif sys.platform.startswith("darwin"):
                 # macOS Keyboard Shortcuts Preference Pane
@@ -485,3 +733,50 @@ class SettingsWidget(QWidget):
                 os.system("start ms-settings:keyboard")
         except Exception as e:
             print(f"[{APP_NAME}] Error opening system keyboard settings: {e}")
+
+    def open_variables_manager(self):
+        from screens.variables_ui import VariablesManagerDialog
+        dialog = VariablesManagerDialog(self)
+        dialog.exec()
+
+    def export_backup(self):
+        from PyQt6.QtWidgets import QFileDialog
+        from core import history
+        
+        password, ok = CustomModal.get_text(self, "Exportar Backup", "Digite uma senha para proteger o backup (mínimo 6 caracteres):", is_password=True)
+        
+        if not ok or len(password) < 6:
+            if ok:
+                CustomModal.show_message(self, APP_NAME, "A senha deve ter pelo menos 6 caracteres.")
+            return
+            
+        import datetime
+        date_str = datetime.datetime.now().strftime("%Y%m%d")
+        default_filename = f"{APP_NAME.lower().replace(' ', '_')}_backup_{date_str}.fpb"
+        
+        filepath, _ = QFileDialog.getSaveFileName(self, "Salvar Backup", default_filename, f"{APP_NAME} Backup (*.fpb)")
+        if filepath:
+            try:
+                history.export_backup(filepath, password)
+                CustomModal.show_message(self, APP_NAME, "Backup exportado com sucesso e protegido com senha.")
+            except Exception as e:
+                CustomModal.show_message(self, APP_NAME, f"Falha ao exportar backup: {e}")
+
+    def import_backup(self):
+        from PyQt6.QtWidgets import QFileDialog
+        from core import history
+        
+        filepath, _ = QFileDialog.getOpenFileName(self, "Selecionar Backup", "", f"{APP_NAME} Backup (*.fpb)")
+        if filepath:
+            password, ok = CustomModal.get_text(self, "Importar Backup", "Digite a senha do arquivo de backup:", is_password=True)
+            
+            if not ok or not password:
+                return
+                
+            success = history.import_backup(filepath, password)
+            
+            if success:
+                CustomModal.show_message(self, APP_NAME, "Histórico importado com sucesso!")
+                self.settings_closed.emit(True) # Força recarregar UI do popup
+            else:
+                CustomModal.show_message(self, APP_NAME, "Falha ao importar.\nVerifique se a senha está correta ou se o arquivo está corrompido.")

@@ -40,20 +40,26 @@ def init_db():
     conn.close()
 
 def cleanup_history(conn):
-    """Remove os registros mais antigos não fixados além do limite MAX_HISTORY, limpando também arquivos de imagem."""
+    """Remove os registros mais antigos não fixados além do limite MAX_HISTORY e expira por tempo."""
     cursor = conn.cursor()
+    
+    retention_days = settings.get('retention_days', 30)
+    cutoff_time = time.time() - (retention_days * 86400)
     
     # 1. Identifica e deleta arquivos de imagem correspondentes aos registros a serem apagados
     cursor.execute("""
         SELECT content FROM clipboard_history 
         WHERE type = 'image' 
           AND is_pinned = 0 
-          AND id NOT IN (
-              SELECT id FROM clipboard_history 
-              ORDER by is_pinned DESC, created_at DESC 
-              LIMIT ?
+          AND (
+              created_at < ? 
+              OR id NOT IN (
+                  SELECT id FROM clipboard_history 
+                  ORDER by is_pinned DESC, created_at DESC 
+                  LIMIT ?
+              )
           )
-    """, (settings.get('max_history', MAX_HISTORY),))
+    """, (cutoff_time, settings.get('max_history', MAX_HISTORY)))
     
     files_to_delete = [row[0] for row in cursor.fetchall()]
     for filepath in files_to_delete:
@@ -67,17 +73,26 @@ def cleanup_history(conn):
     cursor.execute("""
         DELETE FROM clipboard_history 
         WHERE is_pinned = 0 
-          AND id NOT IN (
-              SELECT id FROM clipboard_history 
-              ORDER BY is_pinned DESC, created_at DESC 
-              LIMIT ?
+          AND (
+              created_at < ?
+              OR id NOT IN (
+                  SELECT id FROM clipboard_history 
+                  ORDER BY is_pinned DESC, created_at DESC 
+                  LIMIT ?
+              )
           )
-    """, (settings.get('max_history', MAX_HISTORY),))
+    """, (cutoff_time, settings.get('max_history', MAX_HISTORY)))
 
 def add_text(text):
     """Adiciona um novo texto ao histórico, tratando duplicatas consecutivas e gerais."""
     if not text or not text.strip():
         return
+
+    from core.variables import load_variables
+    vars_dict = load_variables()
+    for v in vars_dict.values():
+        if v.get('is_secret') and v.get('value') == text:
+            return # Não salva variáveis secretas no histórico
 
     init_db()
     hash_val = hashlib.sha256(text.encode('utf-8')).hexdigest()
@@ -272,3 +287,114 @@ def clear():
     cursor.execute("DELETE FROM clipboard_history WHERE is_pinned = 0")
     conn.commit()
     conn.close()
+
+def export_backup(filepath: str, password: str):
+    """Exporta o banco e as imagens descriptografados para um arquivo JSON criptografado com senha."""
+    import json
+    import base64
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.backends import default_backend
+    from cryptography.fernet import Fernet
+    
+    history_items = load_history()
+    
+    export_data = []
+    for item in history_items:
+        export_item = {
+            "type": item["type"],
+            "is_pinned": int(item["is_pinned"]),
+            "created_at": item["created_at"]
+        }
+        if item["type"] == "text":
+            export_item["content"] = item["content"]
+        elif item["type"] == "image":
+            img_data = get_image_bytes(item["content"])
+            if img_data:
+                export_item["content"] = base64.b64encode(img_data).decode('utf-8')
+            else:
+                continue
+        export_data.append(export_item)
+        
+    json_str = json.dumps(export_data)
+    
+    salt = os.urandom(16)
+    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000, backend=default_backend())
+    key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+    f = Fernet(key)
+    
+    encrypted_data = f.encrypt(json_str.encode('utf-8'))
+    
+    with open(filepath, 'wb') as f_out:
+        f_out.write(salt + encrypted_data)
+
+def import_backup(filepath: str, password: str) -> bool:
+    """Importa o backup. Descriptografa com a senha, faz parse do JSON e mescla no banco."""
+    import json
+    import base64
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.backends import default_backend
+    from cryptography.fernet import Fernet
+    from cryptography.fernet import InvalidToken
+    
+    try:
+        with open(filepath, 'rb') as f_in:
+            data = f_in.read()
+            
+        salt = data[:16]
+        encrypted_data = data[16:]
+        
+        kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000, backend=default_backend())
+        key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+        f = Fernet(key)
+        
+        try:
+            json_str = f.decrypt(encrypted_data).decode('utf-8')
+        except InvalidToken:
+            return False # Senha incorreta
+            
+        import_data = json.loads(json_str)
+        
+        init_db()
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        for item in import_data:
+            if item["type"] == "text":
+                hash_val = hashlib.sha256(item["content"].encode('utf-8')).hexdigest()
+                cursor.execute("SELECT id FROM clipboard_history WHERE hash = ?", (hash_val,))
+                if not cursor.fetchone():
+                    from core import crypto
+                    enc_text = crypto.encrypt_text(item["content"])
+                    cursor.execute("""
+                        INSERT INTO clipboard_history (type, content, hash, is_pinned, created_at)
+                        VALUES ('text', ?, ?, ?, ?)
+                    """, (enc_text, hash_val, item["is_pinned"], item["created_at"]))
+            
+            elif item["type"] == "image":
+                img_data = base64.b64decode(item["content"])
+                hash_val = hashlib.sha256(img_data).hexdigest()
+                cursor.execute("SELECT id FROM clipboard_history WHERE hash = ?", (hash_val,))
+                if not cursor.fetchone():
+                    filename = f"{hash_val}.png"
+                    img_filepath = os.path.join(get_images_path(), filename)
+                    try:
+                        from core import crypto
+                        encrypted_bytes = crypto.encrypt_bytes(img_data)
+                        with open(img_filepath, 'wb') as f_img:
+                            f_img.write(encrypted_bytes)
+                        
+                        cursor.execute("""
+                            INSERT INTO clipboard_history (type, content, hash, is_pinned, created_at)
+                            VALUES ('image', ?, ?, ?, ?)
+                        """, (img_filepath, hash_val, item["is_pinned"], item["created_at"]))
+                    except Exception as e:
+                        print(f"Error saving imported image: {e}")
+                        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Import error: {e}")
+        return False

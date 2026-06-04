@@ -28,11 +28,16 @@ UI_COLORS = {
     "card_bg": "rgba(36, 36, 36, 0.98)",          # Fundo escuro (Yaru Dark)
     "card_border": "rgba(60, 60, 60, 0.8)",       # Borda sutil escura
     "hover": "rgba(50, 50, 50, 0.8)",             # Hover suave
-    "selected": "rgba(233, 84, 32, 0.9)",         # Seleção (Ubuntu Orange)
+    "selected": "#FF7A00",                        # Seleção (Banco Inter Orange)
     "fg": "#ffffff",                              # Texto branco
     "fg_dim": "#a1a1a1",                          # Texto cinza
     "shadow": "rgba(0, 0, 0, 0.4)"                # Sombra forte para destacar
 }
+
+def apply_theme_color(color_hex):
+    """Updates the accent color dynamically."""
+    if color_hex:
+        UI_COLORS['selected'] = color_hex
 
 def get_asset_path(filename):
     """Retrieve absolute path to an asset file, handling PyInstaller packaging."""

@@ -244,6 +244,10 @@ class FastPastePopup(QWidget):
         self.filtered_history = list(self.full_history)
         self._window_position_initialized = False
 
+        from configs.config import apply_theme_color
+        from configs.settings_manager import settings
+        apply_theme_color(settings.get("theme_color"))
+
         self.init_ui()
         self.apply_styles()
         
@@ -556,7 +560,39 @@ class FastPastePopup(QWidget):
             self.list_widget.addItem(item)
             return
 
+        import datetime
+        today = datetime.datetime.now().date()
+        yesterday = today - datetime.timedelta(days=1)
+        
+        last_group_name = ""
+
         for idx, item_data in enumerate(self.filtered_history):
+            # Lógica de Agrupamento
+            if item_data.get("is_variable"):
+                group_name = "🔧 Variáveis (Snippets)"
+            elif item_data.get("is_pinned"):
+                group_name = "📌 Fixados"
+            else:
+                item_date = datetime.datetime.fromtimestamp(item_data["created_at"]).date()
+                if item_date == today:
+                    group_name = "Hoje"
+                elif item_date == yesterday:
+                    group_name = "Ontem"
+                else:
+                    group_name = item_date.strftime("%d/%m/%Y")
+                    
+            if group_name != last_group_name:
+                last_group_name = group_name
+                header_item = QListWidgetItem()
+                header_item.setFlags(Qt.ItemFlag.NoItemFlags)
+                
+                header_widget = QLabel(group_name)
+                header_widget.setStyleSheet(f"color: {UI_COLORS.get('selected', '#FF7A00')}; font-weight: bold; font-size: 11px; padding: 8px 12px 2px 12px; letter-spacing: 1px;")
+                
+                header_item.setSizeHint(QSize(200, 26))
+                self.list_widget.addItem(header_item)
+                self.list_widget.setItemWidget(header_item, header_widget)
+
             widget = QWidget()
             widget.setObjectName("CardItem")
             h_layout = QHBoxLayout(widget)
@@ -568,17 +604,33 @@ class FastPastePopup(QWidget):
             if item_data["type"] == "text":
                 content_str = item_data["content"]
                 
-                # Use system icons like GTK did
-                icon_name = "web-browser-symbolic" if content_str.startswith(("http://", "https://", "www.")) else "text-x-generic-symbolic"
-                pixmap = get_tinted_icon(icon_name, UI_COLORS['fg_dim'])
-                
-                if pixmap:
-                    icon_label.setPixmap(pixmap)
+                if item_data.get("is_variable"):
+                    icon_name = "preferences-system-symbolic"
+                    pixmap = get_tinted_icon(icon_name, UI_COLORS.get('selected', '#FF7A00'))
+                    if pixmap:
+                        icon_label.setPixmap(pixmap)
+                    else:
+                        icon_label.setText("🔧")
+                        icon_label.setStyleSheet(f"color: {UI_COLORS.get('selected', '#FF7A00')}; font-size: 16px; background: transparent;")
+                    
+                    if item_data.get("is_secret"):
+                        preview = f"/{item_data['var_name']} → [Conteúdo Secreto]"
+                    else:
+                        preview = f"/{item_data['var_name']} → {content_str.replace(chr(10), '  ')}"
                 else:
-                    icon_label.setText("🌐" if icon_name == "web-browser-symbolic" else "📄")
-                    icon_label.setStyleSheet(f"font-size: 16px; color: {UI_COLORS['fg_dim']}; background: transparent;")
-                
-                preview = content_str.replace('\n', '  ')
+                    # Use system icons like GTK did
+                    is_link = content_str.startswith(("http://", "https://", "www."))
+                    icon_name = "web-browser-symbolic" if is_link else "text-x-generic-symbolic"
+                    icon_color = "#4da6ff" if is_link else UI_COLORS['fg_dim']
+                    pixmap = get_tinted_icon(icon_name, icon_color)
+                    
+                    if pixmap:
+                        icon_label.setPixmap(pixmap)
+                    else:
+                        icon_label.setText("🔗" if is_link else "📄")
+                        icon_label.setStyleSheet(f"font-size: 16px; color: {icon_color}; background: transparent;")
+                    preview = content_str.replace('\n', '  ')
+                    
                 if len(preview) > 50:
                     preview = preview[:47] + "..."
                 
@@ -632,15 +684,16 @@ class FastPastePopup(QWidget):
             r_layout.setSpacing(8)
 
 
-            if item_data["is_pinned"]:
+            if item_data.get("is_pinned") and not item_data.get("is_variable"):
                 pin = QLabel("📌")
                 pin.setStyleSheet("background: transparent; font-size: 12px;")
                 r_layout.addWidget(pin)
                 
-            dt = datetime.datetime.fromtimestamp(item_data["created_at"])
-            time_lbl = QLabel(dt.strftime("%H:%M"))
-            time_lbl.setObjectName("TimestampLabel")
-            r_layout.addWidget(time_lbl)
+            if not item_data.get("is_variable"):
+                dt = datetime.datetime.fromtimestamp(item_data["created_at"])
+                time_lbl = QLabel(dt.strftime("%H:%M"))
+                time_lbl.setObjectName("TimestampLabel")
+                r_layout.addWidget(time_lbl)
 
             h_layout.addWidget(right_widget)
 
@@ -742,6 +795,24 @@ class FastPastePopup(QWidget):
         if not query:
             self.full_history = history.load_history()
             self.filtered_history = list(self.full_history)
+        elif query.startswith('/'):
+            from core.variables import load_variables
+            vars_dict = load_variables()
+            search_key = query[1:].lower()
+            self.filtered_history = []
+            for k, v in vars_dict.items():
+                val_str = v.get("value", "")
+                if search_key in k.lower() or search_key in val_str.lower():
+                    self.filtered_history.append({
+                        'id': f"var_{k}",
+                        'type': 'text',
+                        'content': val_str,
+                        'is_pinned': 0,
+                        'created_at': 0,
+                        'is_variable': True,
+                        'var_name': k,
+                        'is_secret': v.get("is_secret", False)
+                    })
         else:
             self.filtered_history = history.load_history(query)
         self.populate_list()
@@ -845,64 +916,68 @@ class FastPastePopup(QWidget):
         item = self.list_widget.itemAt(pos)
         if not item: return
         
-        idx = self.list_widget.row(item)
-        if 0 <= idx < len(self.filtered_history):
-            item_data = self.filtered_history[idx]
+        item_data = item.data(Qt.ItemDataRole.UserRole)
+        if not item_data or not isinstance(item_data, dict) or item_data.get('is_variable'):
+            return
             
-            menu = QMenu(self)
-            menu.setStyleSheet(f"""
-                QMenu {{
-                    background-color: {UI_COLORS['card_bg']};
-                    color: {UI_COLORS['fg']};
-                    border: 1px solid {UI_COLORS['card_border']};
-                    border-radius: 4px;
-                    padding: 4px;
-                }}
-                QMenu::item {{
-                    padding: 6px 24px 6px 8px;
-                    border-radius: 4px;
-                }}
-                QMenu::item:selected {{
-                    background-color: {UI_COLORS['hover']};
-                }}
-            """)
-            
-            is_pinned = item_data.get("is_pinned")
-            pin_text = "Desafixar" if is_pinned else "Fixar"
-            pin_pixmap = get_tinted_icon("emblem-favorite-symbolic" if is_pinned else "bookmark-new-symbolic", UI_COLORS['fg_dim'])
-            pin_action = menu.addAction(QIcon(pin_pixmap) if pin_pixmap else QIcon(), pin_text)
-            
-            del_pixmap = get_tinted_icon("edit-delete-symbolic", UI_COLORS['fg_dim'])
-            if not del_pixmap:
-                del_pixmap = get_tinted_icon("user-trash-symbolic", UI_COLORS['fg_dim'])
-            delete_action = menu.addAction(QIcon(del_pixmap) if del_pixmap else QIcon(), "Remover")
-            
-            menu.addSeparator()
-            clear_pixmap = get_tinted_icon("edit-clear-all-symbolic", UI_COLORS['fg_dim'])
-            clear_action = menu.addAction(QIcon(clear_pixmap) if clear_pixmap else QIcon(), "Limpar Histórico")
-            
-            action = menu.exec(self.list_widget.mapToGlobal(pos))
-            if action == pin_action:
-                history.toggle_pin(item_data["id"])
-                self.refresh_list()
-            elif action == delete_action:
-                history.delete_item(item_data["id"])
-                self.refresh_list()
-            elif action == clear_action:
-                history.clear()
-                self.refresh_list()
+        menu = QMenu(self)
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {UI_COLORS['card_bg']};
+                color: {UI_COLORS['fg']};
+                border: 1px solid {UI_COLORS['card_border']};
+                border-radius: 4px;
+                padding: 4px;
+            }}
+            QMenu::item {{
+                padding: 6px 24px 6px 8px;
+                border-radius: 4px;
+            }}
+            QMenu::item:selected {{
+                background-color: {UI_COLORS['hover']};
+            }}
+        """)
+        
+        is_pinned = item_data.get("is_pinned")
+        pin_text = "Desafixar" if is_pinned else "Fixar"
+        pin_pixmap = get_tinted_icon("emblem-favorite-symbolic" if is_pinned else "bookmark-new-symbolic", UI_COLORS['fg_dim'])
+        pin_action = menu.addAction(QIcon(pin_pixmap) if pin_pixmap else QIcon(), pin_text)
+        
+        del_pixmap = get_tinted_icon("edit-delete-symbolic", UI_COLORS['fg_dim'])
+        if not del_pixmap:
+            del_pixmap = get_tinted_icon("user-trash-symbolic", UI_COLORS['fg_dim'])
+        delete_action = menu.addAction(QIcon(del_pixmap) if del_pixmap else QIcon(), "Remover")
+        
+        menu.addSeparator()
+        clear_pixmap = get_tinted_icon("edit-clear-all-symbolic", UI_COLORS['fg_dim'])
+        clear_action = menu.addAction(QIcon(clear_pixmap) if clear_pixmap else QIcon(), "Limpar Histórico")
+        
+        action = menu.exec(self.list_widget.mapToGlobal(pos))
+        if action == pin_action:
+            history.toggle_pin(item_data["id"])
+            self.refresh_list()
+        elif action == delete_action:
+            history.delete_item(item_data["id"])
+            self.refresh_list()
+        elif action == clear_action:
+            history.clear()
+            self.refresh_list()
 
     def toggle_pin_selected(self):
-        row = self.list_widget.currentRow()
-        if 0 <= row < len(self.filtered_history):
-            history.toggle_pin(self.filtered_history[row]["id"])
-            self.refresh_list()
+        item = self.list_widget.currentItem()
+        if item:
+            item_data = item.data(Qt.ItemDataRole.UserRole)
+            if item_data and not item_data.get('is_variable'):
+                history.toggle_pin(item_data["id"])
+                self.refresh_list()
 
     def delete_selected(self):
-        row = self.list_widget.currentRow()
-        if 0 <= row < len(self.filtered_history):
-            history.delete_item(self.filtered_history[row]["id"])
-            self.refresh_list()
+        item = self.list_widget.currentItem()
+        if item:
+            item_data = item.data(Qt.ItemDataRole.UserRole)
+            if item_data and not item_data.get('is_variable'):
+                history.delete_item(item_data["id"])
+                self.refresh_list()
 
     def refresh_list(self):
         self.on_search_changed(self.search_entry.text())

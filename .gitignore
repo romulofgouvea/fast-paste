@@ -13,3 +13,5 @@ ENV/
 dist/*
 build/*
 *.spec
+
+.vscode/

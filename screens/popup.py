@@ -866,7 +866,7 @@ class FastPastePopup(QWidget):
         if item_data:
             self.paste_item(item_data)
 
-    def paste_item(self, item_data):
+    def paste_item(self, item_data, simulate_paste=True, close_window=True):
         import subprocess
         import shutil
         
@@ -910,7 +910,8 @@ class FastPastePopup(QWidget):
             except Exception as e:
                 print(f"[FastPaste] Erro ao copiar imagem: {e}")
         
-        self.close_app(simulate_paste=True)
+        if close_window:
+            self.close_app(simulate_paste=simulate_paste)
 
     def show_context_menu(self, pos):
         item = self.list_widget.itemAt(pos)
@@ -1083,6 +1084,14 @@ class FastPastePopup(QWidget):
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             clicked_widget = self.childAt(event.position().toPoint())
+            
+            if settings.get('interaction_mode', 1) == 1:
+                # Em Modo 1, clique fora dos elementos interativos fecha a janela
+                interactive = [self.search_entry, self.header_mode_btn, self.settings_btn]
+                if clicked_widget not in interactive and not self.search_entry.underMouse():
+                    self.close_app()
+                    return
+            
             if clicked_widget not in [self.list_widget, self.search_entry] and not self.list_widget.underMouse() and not self.search_entry.underMouse():
                 # Tenta o arraste nativo do sistema (essencial para funcionamento correto no Wayland)
                 if self.windowHandle():
@@ -1124,11 +1133,12 @@ class FastPastePopup(QWidget):
             pass
             
         mode = settings.get('interaction_mode', 1)
-        if mode == 1:
-            # Modo 1: clique único ativa (copia/cola)
-            self.list_widget.itemClicked.connect(self.on_item_single_clicked)
-        else:
-            # Modo 2: duplo clique ativa (copia/cola)
+        
+        # Ambos os modos usam o clique único (Modo 1 copia e cola; Modo 2 apenas copia)
+        self.list_widget.itemClicked.connect(self.on_item_single_clicked)
+        
+        if mode != 1:
+            # Modo 2: duplo clique ativa (copia e cola)
             self.list_widget.itemDoubleClicked.connect(self.on_item_activated)
             
         # O arrastar e soltar (DND) fica ativo em ambos os modos
@@ -1166,8 +1176,17 @@ class FastPastePopup(QWidget):
 
     def on_item_single_clicked(self, item):
         mode = settings.get('interaction_mode', 1)
+        item_data = item.data(Qt.ItemDataRole.UserRole)
+        
         if mode == 1:
-            self.on_item_activated(item)
+            if not item_data:
+                # Clicked a header (which has no data) -> Close
+                self.close_app()
+                return
+            self.paste_item(item_data, simulate_paste=True, close_window=True)
+        else:
+            if not item_data: return
+            self.paste_item(item_data, simulate_paste=False, close_window=False)
 
     def changeEvent(self, event):
         if event.type() == QEvent.Type.ActivationChange:

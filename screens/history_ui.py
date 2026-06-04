@@ -1197,16 +1197,15 @@ class FastPastePopup(QWidget):
     def changeEvent(self, event):
         if event.type() == QEvent.Type.ActivationChange:
             if not self.isActiveWindow():
-                # Se o cursor do mouse estiver dentro dos limites da própria janela,
-                # ignora a perda de foco (evita fechar ao arrastar/clicar no header/background)
-                from PyQt6.QtGui import QCursor
-                if self.geometry().contains(QCursor.pos()):
+                active_win = QApplication.activeWindow()
+                # Se a nova janela ativa for nossa (ou um modal filho), não fecha
+                if active_win and (active_win == self or self.isAncestorOf(active_win)):
                     super().changeEvent(event)
                     return
 
                 mode = settings.get('interaction_mode', 1)
                 if mode == 1:
-                    # Delay mínimo para evitar conflito se o clique for uma ação de fechar
+                    # Delay mínimo para evitar conflito
                     QTimer.singleShot(100, self.close)
         super().changeEvent(event)
 

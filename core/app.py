@@ -190,7 +190,7 @@ def run_standalone_popup():
     from configs.config import hide_dock_icon
     hide_dock_icon()
     
-    from screens import FastPastePopup
+    from screens.history_ui import FastPastePopup
     popup = FastPastePopup(standalone=True)
     popup.refresh_list()
     popup.show()

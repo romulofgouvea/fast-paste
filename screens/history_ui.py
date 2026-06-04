@@ -947,11 +947,14 @@ class FastPastePopup(QWidget):
         del_pixmap = get_tinted_icon("edit-delete-symbolic", UI_COLORS['fg_dim'])
         if not del_pixmap:
             del_pixmap = get_tinted_icon("user-trash-symbolic", UI_COLORS['fg_dim'])
-        delete_action = menu.addAction(QIcon(del_pixmap) if del_pixmap else QIcon(), "Remover")
+        delete_action = menu.addAction(QIcon(del_pixmap) if del_pixmap else QIcon(), "Apagar")
         
-        menu.addSeparator()
-        clear_pixmap = get_tinted_icon("edit-clear-all-symbolic", UI_COLORS['fg_dim'])
-        clear_action = menu.addAction(QIcon(clear_pixmap) if clear_pixmap else QIcon(), "Limpar Histórico")
+        edit_action = None
+        if item_data.get("type") == "text":
+            edit_pixmap = get_tinted_icon("document-edit-symbolic", UI_COLORS['fg_dim'])
+            if not edit_pixmap:
+                edit_pixmap = get_tinted_icon("accessories-text-editor-symbolic", UI_COLORS['fg_dim'])
+            edit_action = menu.addAction(QIcon(edit_pixmap) if edit_pixmap else QIcon(), "Editar")
         
         action = menu.exec(self.list_widget.mapToGlobal(pos))
         if action == pin_action:
@@ -960,9 +963,12 @@ class FastPastePopup(QWidget):
         elif action == delete_action:
             history.delete_item(item_data["id"])
             self.refresh_list()
-        elif action == clear_action:
-            history.clear()
-            self.refresh_list()
+        elif edit_action and action == edit_action:
+            from screens.settings_ui import CustomModal
+            new_text, ok = CustomModal.get_text(self, "Editar Texto", "Edite o conteúdo:", default_text=item_data["content"])
+            if ok and new_text and new_text != item_data["content"]:
+                history.edit_text(item_data["id"], new_text)
+                self.refresh_list()
 
     def toggle_pin_selected(self):
         item = self.list_widget.currentItem()

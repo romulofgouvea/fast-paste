@@ -10,7 +10,7 @@ from configs.settings_manager import settings
 from configs.config import DATA_DIR, MAX_HISTORY, APP_NAME, UI_COLORS
 
 class CustomModal(QDialog):
-    def __init__(self, parent=None, title="", text="", is_input=False, input_password=False):
+    def __init__(self, parent=None, title="", text="", is_input=False, input_password=False, default_input=""):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
@@ -59,31 +59,35 @@ class CustomModal(QDialog):
         text_label.setWordWrap(True)
         layout.addWidget(text_label)
         
-        self.input_field = None
         if is_input:
             self.input_field = QLineEdit()
             if input_password:
                 self.input_field.setEchoMode(QLineEdit.EchoMode.Password)
+            if default_input:
+                self.input_field.setText(default_input)
             layout.addWidget(self.input_field)
-            self.input_field.setFocus()
             
         btn_layout = QHBoxLayout()
         btn_layout.addStretch(1)
         
-        if is_input:
-            btn_cancel = QPushButton("Cancelar")
-            btn_cancel.clicked.connect(self.reject)
-            btn_layout.addWidget(btn_cancel)
+        cancel_btn = QPushButton("Cancelar")
+        cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(cancel_btn)
             
-        btn_ok = QPushButton("OK")
-        btn_ok.setObjectName("primary")
-        btn_ok.clicked.connect(self.accept)
-        btn_layout.addWidget(btn_ok)
+        ok_btn = QPushButton("OK")
+        ok_btn.setObjectName("primary")
+        ok_btn.clicked.connect(self.accept)
+        btn_layout.addWidget(ok_btn)
         
         layout.addLayout(btn_layout)
         
+        if is_input:
+            self.input_field.setFocus()
+        
     def textValue(self):
-        return self.input_field.text() if self.input_field else ""
+        if hasattr(self, 'input_field'):
+            return self.input_field.text()
+        return ""
         
     @classmethod
     def show_message(cls, parent, title, text):
@@ -91,8 +95,8 @@ class CustomModal(QDialog):
         dialog.exec()
         
     @classmethod
-    def get_text(cls, parent, title, label, is_password=False):
-        dialog = cls(parent, title, label, is_input=True, input_password=is_password)
+    def get_text(cls, parent, title, label, is_password=False, default_text=""):
+        dialog = cls(parent, title, label, is_input=True, input_password=is_password, default_input=default_text)
         ok = dialog.exec() == QDialog.DialogCode.Accepted
         return dialog.textValue(), ok
 
@@ -566,11 +570,11 @@ class SettingsWidget(QWidget):
         
         backup_buttons_layout = QHBoxLayout()
         
-        self.export_btn = QPushButton("Exportar Histórico")
-        self.export_btn.setToolTip("Exportar todos os itens e imagens protegidos com senha.")
+        self.export_btn = QPushButton("Exportar Backup")
+        self.export_btn.setToolTip("Exportar todos os dados do aplicativo para um arquivo ZIP.")
         self.export_btn.clicked.connect(self.export_backup)
         
-        self.import_btn = QPushButton("Importar Histórico")
+        self.import_btn = QPushButton("Importar Backup")
         self.import_btn.setToolTip("Importar dados de um arquivo de backup.")
         self.import_btn.clicked.connect(self.import_backup)
         
@@ -743,22 +747,15 @@ class SettingsWidget(QWidget):
         from PyQt6.QtWidgets import QFileDialog
         from core import history
         
-        password, ok = CustomModal.get_text(self, "Exportar Backup", "Digite uma senha para proteger o backup (mínimo 6 caracteres):", is_password=True)
-        
-        if not ok or len(password) < 6:
-            if ok:
-                CustomModal.show_message(self, APP_NAME, "A senha deve ter pelo menos 6 caracteres.")
-            return
-            
         import datetime
         date_str = datetime.datetime.now().strftime("%Y%m%d")
-        default_filename = f"{APP_NAME.lower().replace(' ', '_')}_backup_{date_str}.fpb"
+        default_filename = f"{APP_NAME.lower().replace(' ', '_')}_backup_{date_str}.zip"
         
-        filepath, _ = QFileDialog.getSaveFileName(self, "Salvar Backup", default_filename, f"{APP_NAME} Backup (*.fpb)")
+        filepath, _ = QFileDialog.getSaveFileName(self, "Salvar Backup", default_filename, f"{APP_NAME} Backup (*.zip)")
         if filepath:
             try:
-                history.export_backup(filepath, password)
-                CustomModal.show_message(self, APP_NAME, "Backup exportado com sucesso e protegido com senha.")
+                history.export_backup(filepath)
+                CustomModal.show_message(self, APP_NAME, "Backup exportado com sucesso!")
             except Exception as e:
                 CustomModal.show_message(self, APP_NAME, f"Falha ao exportar backup: {e}")
 
@@ -766,17 +763,12 @@ class SettingsWidget(QWidget):
         from PyQt6.QtWidgets import QFileDialog
         from core import history
         
-        filepath, _ = QFileDialog.getOpenFileName(self, "Selecionar Backup", "", f"{APP_NAME} Backup (*.fpb)")
+        filepath, _ = QFileDialog.getOpenFileName(self, "Selecionar Backup", "", f"{APP_NAME} Backup (*.zip)")
         if filepath:
-            password, ok = CustomModal.get_text(self, "Importar Backup", "Digite a senha do arquivo de backup:", is_password=True)
-            
-            if not ok or not password:
-                return
-                
-            success = history.import_backup(filepath, password)
+            success = history.import_backup(filepath)
             
             if success:
-                CustomModal.show_message(self, APP_NAME, "Histórico importado com sucesso!")
+                CustomModal.show_message(self, APP_NAME, "Backup importado com sucesso!")
                 self.settings_closed.emit(True) # Força recarregar UI do popup
             else:
-                CustomModal.show_message(self, APP_NAME, "Falha ao importar.\nVerifique se a senha está correta ou se o arquivo está corrompido.")
+                CustomModal.show_message(self, APP_NAME, "Falha ao importar.\nVerifique se o arquivo zip é válido ou está corrompido.")

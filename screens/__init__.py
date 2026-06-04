@@ -1,4 +1,4 @@
-from .popup import FastPastePopup, get_tinted_icon
+from .history_ui import FastPastePopup, get_tinted_icon
 from .settings_ui import SettingsWidget
 from .tray import FastPasteTray
 

@@ -19,8 +19,10 @@ def automate():
     print("Filtered History Texts:", [item['content'] for item in popup.filtered_history])
     
     # Try deleting index 0
-    print("Calling delete_item(0)...")
-    popup.delete_item(0)
+    print("Calling history.delete_item...")
+    item_id = popup.filtered_history[0]["id"]
+    history.delete_item(item_id)
+    popup.refresh_list()
     
     print("Filtered History IDs after:", [item['id'] for item in popup.filtered_history])
     print("Filtered History Texts after:", [item['content'] for item in popup.filtered_history])

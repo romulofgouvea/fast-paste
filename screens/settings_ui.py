@@ -2,15 +2,16 @@ import sys
 import os
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QSpinBox, QLineEdit, QPushButton, QFileDialog, QMessageBox, QCheckBox,
-                             QAbstractButton, QSizePolicy, QRadioButton, QButtonGroup, QDialog)
+                             QAbstractButton, QSizePolicy, QRadioButton, QButtonGroup, QDialog,
+                             QScrollArea, QFrame)
 from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPropertyAnimation, pyqtProperty, QEasingCurve
 from PyQt6.QtGui import QPainter, QColor, QBrush, QKeySequence
 
 from configs.settings_manager import settings
-from configs.config import DATA_DIR, MAX_HISTORY, APP_NAME, UI_COLORS
+from configs.config import DATA_DIR, MAX_HISTORY, APP_NAME, UI_COLORS, DEFAULT_SETTINGS
 
 class CustomModal(QDialog):
-    def __init__(self, parent=None, title="", text="", is_input=False, input_password=False, default_input=""):
+    def __init__(self, parent=None, title="", text="", is_input=False, input_password=False, default_input="", show_cancel=False):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
@@ -53,10 +54,13 @@ class CustomModal(QDialog):
         
         title_label = QLabel(title)
         title_label.setObjectName("Title")
+        title_label.setWordWrap(True)
+        title_label.setFixedWidth(372)
         layout.addWidget(title_label)
         
         text_label = QLabel(text)
         text_label.setWordWrap(True)
+        text_label.setFixedWidth(372)
         layout.addWidget(text_label)
         
         if is_input:
@@ -70,9 +74,10 @@ class CustomModal(QDialog):
         btn_layout = QHBoxLayout()
         btn_layout.addStretch(1)
         
-        cancel_btn = QPushButton("Cancelar")
-        cancel_btn.clicked.connect(self.reject)
-        btn_layout.addWidget(cancel_btn)
+        if show_cancel:
+            cancel_btn = QPushButton("Cancelar")
+            cancel_btn.clicked.connect(self.reject)
+            btn_layout.addWidget(cancel_btn)
             
         ok_btn = QPushButton("OK")
         ok_btn.setObjectName("primary")
@@ -91,12 +96,17 @@ class CustomModal(QDialog):
         
     @classmethod
     def show_message(cls, parent, title, text):
-        dialog = cls(parent, title, text)
+        dialog = cls(parent, title, text, show_cancel=False)
         dialog.exec()
         
     @classmethod
+    def confirm(cls, parent, title, text):
+        dialog = cls(parent, title, text, show_cancel=True)
+        return dialog.exec() == QDialog.DialogCode.Accepted
+        
+    @classmethod
     def get_text(cls, parent, title, label, is_password=False, default_text=""):
-        dialog = cls(parent, title, label, is_input=True, input_password=is_password, default_input=default_text)
+        dialog = cls(parent, title, label, is_input=True, input_password=is_password, default_input=default_text, show_cancel=True)
         ok = dialog.exec() == QDialog.DialogCode.Accepted
         return dialog.textValue(), ok
 
@@ -125,8 +135,8 @@ class HotkeyLineEdit(QLineEdit):
         self.setReadOnly(True)
         self.setPlaceholderText("Clique para gravar...")
         self.recording = False
-        self.raw_hotkey = settings.get('hotkey', "<ctrl>+'")
-        self.native_mac_key_code = settings.get('hotkey_mac_key_code')
+        self.raw_hotkey = settings.get('hotkey', DEFAULT_SETTINGS['hotkey'])
+        self.native_mac_key_code = settings.get('hotkey_mac_key_code', DEFAULT_SETTINGS['hotkey_mac_key_code'])
         
         if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):
             self.setText("Configurado no Sistema")
@@ -166,7 +176,7 @@ class HotkeyLineEdit(QLineEdit):
         self.setStyleSheet("")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         if not self.raw_hotkey:
-            self.setText(pynput_to_qt(settings.get('hotkey', "<ctrl>+'")))
+            self.setText(pynput_to_qt(settings.get('hotkey', DEFAULT_SETTINGS['hotkey'])))
         else:
             self.setText(pynput_to_qt(self.raw_hotkey))
 
@@ -322,6 +332,7 @@ class SettingsWidget(QWidget):
             QLabel {{
                 color: #ffffff;
                 font-size: 13px;
+                background: transparent;
             }}
             QLineEdit, QSpinBox {{
                 background-color: #2c2c2c;
@@ -361,6 +372,7 @@ class SettingsWidget(QWidget):
                 color: #ffffff;
                 font-size: 13px;
                 spacing: 8px;
+                background: transparent;
             }}
             QRadioButton:hover {{
                 color: {accent_color};
@@ -379,50 +391,74 @@ class SettingsWidget(QWidget):
                 border: 2px solid {accent_color};
                 background-color: {accent_color};
             }}
+            QFrame.SectionCard {{
+                background-color: rgba(45, 45, 45, 0.35);
+                border: 1px solid rgba(80, 80, 80, 0.25);
+                border-radius: 12px;
+            }}
         """)
 
-        layout = QVBoxLayout(self)
-        layout.setSpacing(15)
+        from core import general_settings, history_settings, data_settings
 
-        # 1. Configuração da quantidade de cópias e Retenção
-        hist_layout = QVBoxLayout()
-        hist_label = QLabel("Retenção de Histórico (Itens não fixados):")
-        hist_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;")
-        hist_layout.addWidget(hist_label)
-        
-        # Limite de itens
-        limit_layout = QHBoxLayout()
-        limit_label = QLabel("Limite máximo de itens:")
-        self.hist_spin = QSpinBox()
-        self.hist_spin.setRange(10, 5000)
-        self.hist_spin.setValue(settings.get('max_history', MAX_HISTORY))
-        self.hist_spin.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
-        self.hist_spin.setFixedWidth(80)
-        limit_layout.addWidget(limit_label)
-        limit_layout.addWidget(self.hist_spin)
-        limit_layout.addStretch(1)
-        
-        # Retenção em dias
-        days_layout = QHBoxLayout()
-        days_label = QLabel("Apagar automaticamente após (dias):")
-        self.days_spin = QSpinBox()
-        self.days_spin.setRange(1, 365)
-        self.days_spin.setValue(settings.get('retention_days', 30))
-        self.days_spin.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
-        self.days_spin.setFixedWidth(80)
-        days_layout.addWidget(days_label)
-        days_layout.addWidget(self.days_spin)
-        days_layout.addStretch(1)
-        
-        hist_layout.addLayout(limit_layout)
-        hist_layout.addLayout(days_layout)
-        layout.addLayout(hist_layout)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
 
-        # 2. Configuração de Hotkey
+        # Scroll Area for sections
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+            QScrollBar:vertical {
+                border: none;
+                background: rgba(0, 0, 0, 0.2);
+                width: 6px;
+                border-radius: 3px;
+            }
+            QScrollBar::handle:vertical {
+                background: #555555;
+                border-radius: 3px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #888888;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+        """)
+
+        scroll_content = QWidget()
+        scroll_content.setObjectName("ScrollContent")
+        scroll_content.setStyleSheet("QWidget#ScrollContent { background: transparent; }")
+        
+        layout = QVBoxLayout(scroll_content)
+        layout.setSpacing(14)
+        layout.setContentsMargins(0, 0, 4, 0)
+
+        # 1. Geral Section Card
+        geral_card = QFrame()
+        geral_card.setObjectName("GeralCard")
+        geral_card.setFrameShape(QFrame.Shape.NoFrame)
+        geral_card.setProperty("class", "SectionCard")
+        geral_card.setStyleSheet("QFrame#GeralCard { background-color: rgba(45, 45, 45, 0.3); border: 1px solid rgba(80, 80, 80, 0.2); border-radius: 12px; }")
+        
+        geral_layout = QVBoxLayout(geral_card)
+        geral_layout.setContentsMargins(14, 14, 14, 14)
+        geral_layout.setSpacing(12)
+        
+        geral_header = QLabel("Geral")
+        geral_header.setStyleSheet(f"font-weight: bold; font-size: 14px; color: {accent_color};")
+        geral_layout.addWidget(geral_header)
+        
+        # Row 1: Global hotkey
         hotkey_layout = QHBoxLayout()
         hotkey_label = QLabel("Atalho Global:")
         self.hotkey_input = HotkeyLineEdit()
-        
         self.open_shortcuts_btn = QPushButton("Configurar no Sistema")
         self.open_shortcuts_btn.setToolTip("Abre o painel do sistema operacional para configurar atalhos globais.")
         self.open_shortcuts_btn.clicked.connect(self.open_system_shortcuts)
@@ -435,28 +471,23 @@ class SettingsWidget(QWidget):
         hotkey_layout.addWidget(hotkey_label)
         hotkey_layout.addWidget(self.hotkey_input)
         hotkey_layout.addWidget(self.open_shortcuts_btn)
-        layout.addLayout(hotkey_layout)
+        geral_layout.addLayout(hotkey_layout)
 
-        # 2.5 Tema / Cores
+        # Row 2: Theme color
         theme_layout = QHBoxLayout()
         theme_label = QLabel("Cor do Tema:")
         self.theme_btn_group = QButtonGroup(self)
-        
         colors = [
-            ("#FF7A00", "Laranja Inter"),
             ("#e95420", "Ubuntu Orange"),
             ("#0078D7", "Azul Windows"),
             ("#10B981", "Verde Esmeralda"),
             ("#8B5CF6", "Roxo Violeta")
         ]
-        
         theme_options_layout = QHBoxLayout()
-        current_theme = settings.get("theme_color", "#FF7A00").upper()
-        
+        current_theme = general_settings.get_theme_color().upper()
         for i, (hex_code, name) in enumerate(colors):
             btn = QRadioButton()
             btn.setToolTip(name)
-            # Style the radio indicator to show the color
             btn.setStyleSheet(f"""
                 QRadioButton::indicator {{
                     width: 20px; height: 20px; border-radius: 11px;
@@ -469,132 +500,167 @@ class SettingsWidget(QWidget):
             if hex_code.upper() == current_theme:
                 btn.setChecked(True)
             self.theme_btn_group.addButton(btn, i)
-            # Save the hex code dynamically as property
             btn.setProperty("theme_hex", hex_code)
             theme_options_layout.addWidget(btn)
-            
         theme_options_layout.addStretch(1)
         theme_layout.addWidget(theme_label)
         theme_layout.addLayout(theme_options_layout)
-        layout.addLayout(theme_layout)
+        geral_layout.addLayout(theme_layout)
 
-        # 3. Caminho do banco de dados
-        db_layout = QVBoxLayout()
-        db_label = QLabel("Pasta do Banco de Dados:")
-        
-        db_input_layout = QHBoxLayout()
-        self.db_input = QLineEdit()
-        self.db_input.setText(settings.get('db_path', DATA_DIR))
-        self.db_input.setReadOnly(True) # Para forçar uso do dialog
-        
-        db_browse_btn = QPushButton("Procurar...")
-        db_browse_btn.clicked.connect(self.browse_db_path)
-        
-        db_input_layout.addWidget(self.db_input)
-        db_input_layout.addWidget(db_browse_btn)
-        
-        db_layout.addWidget(db_label)
-        db_layout.addLayout(db_input_layout)
-        layout.addLayout(db_layout)
-
-        # 4. Iniciar com o sistema (Autostart)
+        # Row 3: Autostart
         autostart_layout = QHBoxLayout()
         autostart_label = QLabel("Iniciar automaticamente com o sistema")
-        autostart_label.setToolTip("Inicia o monitor de clipboard automaticamente ao fazer login no sistema.")
-        
         self.autostart_switch = SwitchButton()
-        self.autostart_switch.setToolTip("Inicia o monitor de clipboard automaticamente ao fazer login no sistema.")
-        
-        try:
-            from core import autostart
-            self.autostart_switch.setChecked(autostart.is_autostart_enabled())
-        except Exception as e:
-            print(f"[Settings] Error checking autostart state: {e}")
-            
+        self.autostart_switch.setChecked(general_settings.is_autostart_enabled())
         autostart_layout.addWidget(autostart_label)
         autostart_layout.addStretch(1)
         autostart_layout.addWidget(self.autostart_switch)
-        layout.addLayout(autostart_layout)
-        
-        # 5. Modo de Interação
+        geral_layout.addLayout(autostart_layout)
+
+        # Row 4: Interaction Mode
         mode_layout = QVBoxLayout()
         mode_label = QLabel("Modo de Interação:")
-        mode_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;")
-        
         mode_options_layout = QHBoxLayout()
         self.mode_group = QButtonGroup(self)
-        
         self.mode1_radio = QRadioButton("Modo 1 (Clique único)")
         self.mode1_radio.setToolTip("Clique único copia/cola e fecha o popup. Fecha ao perder o foco (clicar fora).")
         self.mode2_radio = QRadioButton("Modo 2 (Drag Drop)")
         self.mode2_radio.setToolTip("Clique duplo copia/cola. Permite arrastar itens e mover a janela. Fica aberto ao clicar fora.")
-        
         self.mode_group.addButton(self.mode1_radio, 1)
         self.mode_group.addButton(self.mode2_radio, 2)
-        
-        current_mode = settings.get('interaction_mode', 1)
+        current_mode = general_settings.get_interaction_mode()
         if current_mode == 1:
             self.mode1_radio.setChecked(True)
         else:
             self.mode2_radio.setChecked(True)
-            
         mode_options_layout.addWidget(self.mode1_radio)
         mode_options_layout.addWidget(self.mode2_radio)
         mode_options_layout.addStretch(1)
-        
         mode_layout.addWidget(mode_label)
         mode_layout.addLayout(mode_options_layout)
-        layout.addLayout(mode_layout)
+        geral_layout.addLayout(mode_layout)
+
+        layout.addWidget(geral_card)
+
+        # 2. Histórico Section Card
+        hist_card = QFrame()
+        hist_card.setObjectName("HistCard")
+        hist_card.setFrameShape(QFrame.Shape.NoFrame)
+        hist_card.setStyleSheet("QFrame#HistCard { background-color: rgba(45, 45, 45, 0.3); border: 1px solid rgba(80, 80, 80, 0.2); border-radius: 12px; }")
         
-        # 6. Variáveis / Snippets
-        vars_layout = QVBoxLayout()
-        vars_label = QLabel("Variáveis (Snippets de Texto):")
-        vars_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;")
+        hist_layout = QVBoxLayout(hist_card)
+        hist_layout.setContentsMargins(14, 14, 14, 14)
+        hist_layout.setSpacing(12)
         
-        vars_btn_layout = QHBoxLayout()
+        hist_header = QLabel("Histórico")
+        hist_header.setStyleSheet(f"font-weight: bold; font-size: 14px; color: {accent_color};")
+        hist_layout.addWidget(hist_header)
+        
+        # Row 1: Limit maximum items
+        limit_layout = QHBoxLayout()
+        limit_label = QLabel("Limite máximo de itens:")
+        self.hist_spin = QSpinBox()
+        self.hist_spin.setRange(10, 5000)
+        self.hist_spin.setValue(history_settings.get_max_history())
+        self.hist_spin.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
+        self.hist_spin.setFixedWidth(80)
+        limit_layout.addWidget(limit_label)
+        limit_layout.addWidget(self.hist_spin)
+        limit_layout.addStretch(1)
+        hist_layout.addLayout(limit_layout)
+        
+        # Row 2: Delete automatically after X days
+        days_layout = QHBoxLayout()
+        days_label = QLabel("Apagar automaticamente após (dias):")
+        self.days_spin = QSpinBox()
+        self.days_spin.setRange(1, 365)
+        self.days_spin.setValue(history_settings.get_retention_days())
+        self.days_spin.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
+        self.days_spin.setFixedWidth(80)
+        days_layout.addWidget(days_label)
+        days_layout.addWidget(self.days_spin)
+        days_layout.addStretch(1)
+        hist_layout.addLayout(days_layout)
+        
+        # Row 3: Manage variables
+        vars_layout = QHBoxLayout()
+        vars_label = QLabel("Variáveis (Snippets):")
         self.manage_vars_btn = QPushButton("Gerenciar Variáveis")
-        self.manage_vars_btn.setToolTip("Criar atalhos de texto rápidos que podem ser buscados com o prefixo '/'.")
         self.manage_vars_btn.clicked.connect(self.open_variables_manager)
-        
-        vars_btn_layout.addWidget(self.manage_vars_btn)
-        vars_btn_layout.addStretch(1)
-        
         vars_layout.addWidget(vars_label)
-        vars_layout.addLayout(vars_btn_layout)
-        layout.addLayout(vars_layout)
+        vars_layout.addWidget(self.manage_vars_btn)
+        vars_layout.addStretch(1)
+        hist_layout.addLayout(vars_layout)
+
+        layout.addWidget(hist_card)
+
+        # 3. Dados Section Card
+        data_card = QFrame()
+        data_card.setObjectName("DataCard")
+        data_card.setFrameShape(QFrame.Shape.NoFrame)
+        data_card.setStyleSheet("QFrame#DataCard { background-color: rgba(45, 45, 45, 0.3); border: 1px solid rgba(80, 80, 80, 0.2); border-radius: 12px; }")
         
-        # 7. Backup e Restauração
-        backup_layout = QVBoxLayout()
-        backup_label = QLabel("Backup e Segurança:")
-        backup_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;")
+        data_layout = QVBoxLayout(data_card)
+        data_layout.setContentsMargins(14, 14, 14, 14)
+        data_layout.setSpacing(12)
         
-        backup_buttons_layout = QHBoxLayout()
+        data_header = QLabel("Dados")
+        data_header.setStyleSheet(f"font-weight: bold; font-size: 14px; color: {accent_color};")
+        data_layout.addWidget(data_header)
         
-        self.export_btn = QPushButton("Exportar Backup")
-        self.export_btn.setToolTip("Exportar todos os dados do aplicativo para um arquivo ZIP.")
+        # Row 1: Database folder path
+        db_path_layout = QVBoxLayout()
+        db_label = QLabel("Pasta do Banco de Dados:")
+        db_input_layout = QHBoxLayout()
+        self.db_input = QLineEdit()
+        self.db_input.setText(data_settings.get_db_path())
+        self.db_input.setReadOnly(True)
+        db_browse_btn = QPushButton("Procurar...")
+        db_browse_btn.clicked.connect(self.browse_db_path)
+        db_input_layout.addWidget(self.db_input)
+        db_input_layout.addWidget(db_browse_btn)
+        db_path_layout.addWidget(db_label)
+        db_path_layout.addLayout(db_input_layout)
+        data_layout.addLayout(db_path_layout)
+        
+        # Row 2: Backup actions
+        actions_layout = QHBoxLayout()
+        self.export_btn = QPushButton("Exportar Bkp")
         self.export_btn.clicked.connect(self.export_backup)
-        
-        self.import_btn = QPushButton("Importar Backup")
-        self.import_btn.setToolTip("Importar dados de um arquivo de backup.")
+        self.import_btn = QPushButton("Importar Bkp")
         self.import_btn.clicked.connect(self.import_backup)
+        actions_layout.addWidget(self.export_btn)
+        actions_layout.addWidget(self.import_btn)
+        actions_layout.addStretch(1)
+        data_layout.addLayout(actions_layout)
         
-        backup_buttons_layout.addWidget(self.export_btn)
-        backup_buttons_layout.addWidget(self.import_btn)
-        backup_buttons_layout.addStretch(1)
+        # Spacer
+        data_layout.addSpacing(12)
         
-        backup_layout.addWidget(backup_label)
-        backup_layout.addLayout(backup_buttons_layout)
-        layout.addLayout(backup_layout)
+        # Row 3: Limpar Tudo (Centered and last in the section)
+        clear_layout = QHBoxLayout()
+        self.clear_db_btn = QPushButton("Limpar Tudo")
+        self.clear_db_btn.setStyleSheet("background-color: #5c1d1d; border: 1px solid #7d2626; padding: 8px 24px;")
+        self.clear_db_btn.clicked.connect(self.clear_database_action)
+        
+        clear_layout.addStretch(1)
+        clear_layout.addWidget(self.clear_db_btn)
+        clear_layout.addStretch(1)
+        data_layout.addLayout(clear_layout)
 
-        # Info text
+        layout.addWidget(data_card)
+
+        scroll_area.setWidget(scroll_content)
+        main_layout.addWidget(scroll_area)
+
+        # Tip label
         info = QLabel("Dica: Itens fixados (★) nunca são excluídos automaticamente.")
-        info.setStyleSheet("color: #a1a1a1; font-style: italic;")
-        layout.addWidget(info)
-        
-        layout.addStretch(1)
+        info.setStyleSheet("color: #a1a1a1; font-style: italic; margin-left: 5px;")
+        main_layout.addWidget(info)
 
-        # Botões Salvar / Cancelar
+        # Save/Cancel bottom button layout
         btn_layout = QHBoxLayout()
+        btn_layout.setContentsMargins(5, 5, 5, 5)
         btn_layout.addStretch(1)
         
         cancel_btn = QPushButton("Cancelar")
@@ -606,12 +672,10 @@ class SettingsWidget(QWidget):
         
         btn_layout.addWidget(cancel_btn)
         btn_layout.addWidget(save_btn)
-        
-        layout.addLayout(btn_layout)
+        main_layout.addLayout(btn_layout)
 
     def browse_db_path(self):
-        # Workaround for Wayland: Hide the stays-on-top parent window 
-        # so the modal file dialog can actually be seen!
+        # Workaround for Wayland: Hide parent stays-on-top window
         parent_window = self.window()
         was_visible = parent_window.isVisible()
         if was_visible:
@@ -632,45 +696,44 @@ class SettingsWidget(QWidget):
 
     def save_settings(self):
         # Validação
-        if not os.path.exists(self.db_input.text()):
+        db_path = self.db_input.text()
+        if not os.path.exists(db_path):
             CustomModal.show_message(self, "Erro", "A pasta selecionada para o banco de dados não existe.")
             return
 
-        # Salvar
-        settings.set('max_history', self.hist_spin.value())
-        settings.set('retention_days', self.days_spin.value())
+        # Prepare settings dictionary for batch save
+        new_settings = {
+            'max_history': self.hist_spin.value(),
+            'retention_days': self.days_spin.value(),
+            'db_path': db_path,
+            'interaction_mode': self.mode_group.checkedId()
+        }
         
         selected_theme_btn = self.theme_btn_group.checkedButton()
         if selected_theme_btn:
-            settings.set('theme_color', selected_theme_btn.property("theme_hex"))
+            new_settings['theme_color'] = selected_theme_btn.property("theme_hex")
             
-        settings.set('db_path', self.db_input.text())
-        settings.set('interaction_mode', self.mode_group.checkedId())
-        
         # No linux (wayland) não tentamos salvar o hotkey do campo read-only
         if not (sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY')):
             if hasattr(self.hotkey_input, 'raw_hotkey'):
-                settings.set('hotkey', self.hotkey_input.raw_hotkey)
+                new_settings['hotkey'] = self.hotkey_input.raw_hotkey
             if sys.platform == "darwin" and hasattr(self.hotkey_input, 'native_mac_key_code'):
-                settings.set('hotkey_mac_key_code', self.hotkey_input.native_mac_key_code)
+                new_settings['hotkey_mac_key_code'] = self.hotkey_input.native_mac_key_code
+
+        # Batch save
+        settings.update_settings(new_settings)
 
         # Configurar Autostart (Iniciar com o sistema)
-        try:
-            from core import autostart
-            if self.autostart_switch.isChecked():
-                autostart.enable_autostart()
-            else:
-                autostart.disable_autostart()
-        except Exception as e:
-            print(f"[Settings] Error saving autostart setting: {e}")
+        from core import general_settings
+        general_settings.set_autostart_enabled(self.autostart_switch.isChecked())
             
         from configs.config import UI_COLORS
-        from PyQt6.QtWidgets import QDialog, QApplication
+        from PyQt6.QtWidgets import QDialog
         
         dialog = QDialog(self)
         dialog.setWindowTitle("FastPaste")
         dialog.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        dialog.setFixedWidth(480)  # Make it narrower than popup
+        dialog.setFixedWidth(480)
         dialog.setStyleSheet(f"""
             QDialog {{ background-color: {UI_COLORS.get('card_bg', '#242424')}; border: 1px solid {UI_COLORS.get('card_border', '#3c3c3c')}; border-radius: 8px; }}
             QLabel {{ color: {UI_COLORS.get('fg', '#ffffff')}; font-size: 14px; }}
@@ -706,7 +769,6 @@ class SettingsWidget(QWidget):
         
         if result == QDialog.DialogCode.Accepted:
             import subprocess
-            import os
             if getattr(sys, 'frozen', False):
                 cmd = [sys.executable, "show"]
             else:
@@ -731,7 +793,6 @@ class SettingsWidget(QWidget):
                     CustomModal.show_message(self, "Atalhos no Linux", 
                         f"No Linux, configure um atalho global nas configurações de teclado do seu sistema para executar o comando:\n\n{APP_NAME.lower()} show")
             elif sys.platform.startswith("darwin"):
-                # macOS Keyboard Shortcuts Preference Pane
                 subprocess.Popen(["open", "x-apple.systempreferences:com.apple.preference.keyboard?shortcuts"])
             elif sys.platform.startswith("win32") or sys.platform.startswith("win"):
                 os.system("start ms-settings:keyboard")
@@ -743,10 +804,37 @@ class SettingsWidget(QWidget):
         dialog = VariablesManagerDialog(self)
         dialog.exec()
 
+    def clear_database_action(self):
+        confirmed = CustomModal.confirm(
+            self, 
+            "Limpar Tudo", 
+            "Atenção: Isso apagará TODOS os dados permanentemente (histórico, itens fixados, imagens, variáveis e redefinirá as configurações para o padrão).\n\nDeseja continuar?"
+        )
+        if confirmed:
+            from core import data_settings
+            data_settings.clear_all_data()
+            CustomModal.show_message(self, APP_NAME, "Todos os dados foram excluídos e as configurações voltaram ao padrão!\nO aplicativo será reiniciado.")
+            
+            import subprocess
+            if getattr(sys, 'frozen', False):
+                cmd = [sys.executable, "show"]
+            else:
+                cmd = [sys.executable, sys.argv[0], "show"]
+            subprocess.Popen(cmd)
+            os._exit(0)
+
     def export_backup(self):
         from PyQt6.QtWidgets import QFileDialog
-        from core import history
+        from core import data_settings
         
+        password, ok = CustomModal.get_text(self, "Exportar Backup", "Digite uma senha para proteger o backup (mínimo 6 caracteres):", is_password=True)
+        if not ok:
+            return
+            
+        if len(password) < 6:
+            CustomModal.show_message(self, APP_NAME, "A senha deve ter pelo menos 6 caracteres.")
+            return
+            
         import datetime
         date_str = datetime.datetime.now().strftime("%Y%m%d")
         default_filename = f"{APP_NAME.lower().replace(' ', '_')}_backup_{date_str}.zip"
@@ -754,21 +842,30 @@ class SettingsWidget(QWidget):
         filepath, _ = QFileDialog.getSaveFileName(self, "Salvar Backup", default_filename, f"{APP_NAME} Backup (*.zip)")
         if filepath:
             try:
-                history.export_backup(filepath)
-                CustomModal.show_message(self, APP_NAME, "Backup exportado com sucesso!")
+                data_settings.export_backup_zip(filepath, password)
+                CustomModal.show_message(self, APP_NAME, "Backup exportado com sucesso e protegido com senha!")
             except Exception as e:
                 CustomModal.show_message(self, APP_NAME, f"Falha ao exportar backup: {e}")
 
     def import_backup(self):
         from PyQt6.QtWidgets import QFileDialog
-        from core import history
+        from core import data_settings
         
         filepath, _ = QFileDialog.getOpenFileName(self, "Selecionar Backup", "", f"{APP_NAME} Backup (*.zip)")
         if filepath:
-            success = history.import_backup(filepath)
-            
+            password, ok = CustomModal.get_text(self, "Importar Backup", "Digite a senha do arquivo de backup:", is_password=True)
+            if not ok or not password:
+                return
+                
+            success = data_settings.import_backup_zip(filepath, password)
             if success:
-                CustomModal.show_message(self, APP_NAME, "Backup importado com sucesso!")
-                self.settings_closed.emit(True) # Força recarregar UI do popup
+                CustomModal.show_message(self, APP_NAME, "Backup importado com sucesso!\nO aplicativo será reiniciado para aplicar as mudanças.")
+                import subprocess
+                if getattr(sys, 'frozen', False):
+                    cmd = [sys.executable, "show"]
+                else:
+                    cmd = [sys.executable, sys.argv[0], "show"]
+                subprocess.Popen(cmd)
+                os._exit(0)
             else:
-                CustomModal.show_message(self, APP_NAME, "Falha ao importar.\nVerifique se o arquivo zip é válido ou está corrompido.")
+                CustomModal.show_message(self, APP_NAME, "Falha ao importar.\nVerifique se a senha está correta ou se o arquivo está corrompido.")

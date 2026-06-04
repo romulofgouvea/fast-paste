@@ -4,7 +4,8 @@ import datetime
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
     QLineEdit, QListWidget, QListWidgetItem, QLabel, 
-    QMenu, QGraphicsDropShadowEffect, QFrame, QPushButton, QStackedWidget
+    QMenu, QGraphicsDropShadowEffect, QFrame, QPushButton, QStackedWidget,
+    QSizeGrip
 )
 from PyQt6.QtCore import Qt, QSize, QEvent, QTimer, QMimeData, QUrl, QObject
 from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut, QDrag, QPainter, QPen, QBrush, QImage, QPainterPath, QRegion
@@ -233,7 +234,13 @@ class FastPastePopup(QWidget):
 
         # Configurações da Janela
         self.setWindowTitle(APP_NAME)
-        self.resize(600, 550)
+        
+        from configs.settings_manager import settings
+        from configs.config import DEFAULT_SETTINGS
+        saved_width = settings.get("window_width", DEFAULT_SETTINGS["window_width"])
+        saved_height = settings.get("window_height", DEFAULT_SETTINGS["window_height"])
+        self.resize(saved_width, saved_height)
+        self.setMinimumSize(DEFAULT_SETTINGS["window_width"], DEFAULT_SETTINGS["window_height"])
         
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
         
@@ -244,9 +251,8 @@ class FastPastePopup(QWidget):
         self.filtered_history = list(self.full_history)
         self._window_position_initialized = False
 
-        from configs.config import apply_theme_color
-        from configs.settings_manager import settings
-        apply_theme_color(settings.get("theme_color"))
+        from configs.config import apply_theme_color, DEFAULT_SETTINGS
+        apply_theme_color(settings.get("theme_color", DEFAULT_SETTINGS["theme_color"]))
 
         self.init_ui()
         self.apply_styles()
@@ -263,6 +269,11 @@ class FastPastePopup(QWidget):
 
         self.populate_list()
         self.setup_interaction_mode()
+
+        # Inicializa o SizeGrip para redimensionar a janela
+        self.size_grip = QSizeGrip(self)
+        self.size_grip.setFixedSize(20, 20)
+        self.size_grip.setStyleSheet("background-color: transparent;")
 
     def update_window_mask(self):
         radius = self.WINDOW_RADIUS
@@ -947,21 +958,34 @@ class FastPastePopup(QWidget):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.update_window_mask()
+        
+        # Posiciona o size grip no canto inferior direito
+        if hasattr(self, 'size_grip'):
+            self.size_grip.setGeometry(self.width() - 20, self.height() - 20, 20, 20)
+            
+        # Salva o novo tamanho nas configurações se for diferente
+        from configs.settings_manager import settings
+        new_width = self.width()
+        new_height = self.height()
+        if new_width >= 600 and new_height >= 550:
+            if settings.get("window_width") != new_width or settings.get("window_height") != new_height:
+                settings.settings["window_width"] = new_width
+                settings.settings["window_height"] = new_height
+                settings.save()
 
 
 
     def keyPressEvent(self, event):
         # Se a página de configurações estiver ativa, deixamos os eventos fluírem normalmente
         # e não executamos nenhum atalho da página de pesquisa.
+        # Bloqueamos fechar via Esc.
         if self.stacked_widget.currentIndex() == 1:
-            # Se o usuário pressionar Esc na tela de configurações (e não estiver gravando atalho),
-            # fechamos as configurações (cancela).
             if event.key() == Qt.Key.Key_Escape:
                 if hasattr(self, 'settings_page') and hasattr(self.settings_page, 'hotkey_input') and self.settings_page.hotkey_input.recording:
                     # Deixa o HotkeyLineEdit tratar o Esc para parar a gravação
                     super().keyPressEvent(event)
                 else:
-                    self.close_settings(saved=False)
+                    event.accept()  # Consome o evento para bloquear o fechamento/retorno
                 return
             super().keyPressEvent(event)
             return
@@ -978,34 +1002,43 @@ class FastPastePopup(QWidget):
             if self.search_entry.hasFocus():
                 self.list_widget.setFocus()
                 if self.list_widget.count() > 0:
-                    current = self.list_widget.currentRow()
-                    if current < 0:
-                        self.list_widget.setCurrentRow(0)
-                    else:
-                        next_row = min(current + 1, self.list_widget.count() - 1)
-                        self.list_widget.setCurrentRow(next_row)
+                    # Sempre seleciona o primeiro item selecionável (pula cabeçalhos) quando vem da pesquisa
+                    for i in range(self.list_widget.count()):
+                        item = self.list_widget.item(i)
+                        if item and (item.flags() & Qt.ItemFlag.ItemIsSelectable):
+                            self.list_widget.setCurrentRow(i)
+                            break
                 event.accept()
                 return
         elif key == Qt.Key.Key_Up:
             if self.search_entry.hasFocus():
                 self.list_widget.setFocus()
                 if self.list_widget.count() > 0:
-                    current = self.list_widget.currentRow()
-                    if current < 0:
-                        self.list_widget.setCurrentRow(self.list_widget.count() - 1)
-                    else:
-                        prev_row = max(current - 1, 0)
-                        self.list_widget.setCurrentRow(prev_row)
+                    # Sempre seleciona o último item selecionável quando vem da pesquisa
+                    for i in range(self.list_widget.count() - 1, -1, -1):
+                        item = self.list_widget.item(i)
+                        if item and (item.flags() & Qt.ItemFlag.ItemIsSelectable):
+                            self.list_widget.setCurrentRow(i)
+                            break
                 event.accept()
                 return
             
         # Enter / Return
         if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            row = self.list_widget.currentRow()
-            if row >= 0:
-                self.paste_by_index(row)
+            item = self.list_widget.currentItem()
+            if item:
+                item_data = item.data(Qt.ItemDataRole.UserRole)
+                if item_data:
+                    self.paste_item(item_data)
             elif self.list_widget.count() > 0:
-                self.paste_by_index(0)
+                # Se não houver item explicitamente selecionado, pega o primeiro item selecionável
+                for i in range(self.list_widget.count()):
+                    item = self.list_widget.item(i)
+                    if item and (item.flags() & Qt.ItemFlag.ItemIsSelectable):
+                        item_data = item.data(Qt.ItemDataRole.UserRole)
+                        if item_data:
+                            self.paste_item(item_data)
+                            break
             return
 
         # Digitação vai direto para a barra de pesquisa
@@ -1014,6 +1047,13 @@ class FastPastePopup(QWidget):
             self.search_entry.insert(event.text())
             
         super().keyPressEvent(event)
+
+    def closeEvent(self, event):
+        # Se a página de configurações estiver ativa, não permite fechar a janela do app
+        if self.stacked_widget.currentIndex() == 1:
+            event.ignore()
+        else:
+            super().closeEvent(event)
 
     def close_app(self, simulate_paste=False):
         self.close()
@@ -1136,6 +1176,11 @@ class FastPastePopup(QWidget):
                 active_win = QApplication.activeWindow()
                 # Se a nova janela ativa for nossa (ou um modal filho), não fecha
                 if active_win and (active_win == self or self.isAncestorOf(active_win)):
+                    super().changeEvent(event)
+                    return
+
+                # Se a página de configurações estiver ativa, não fecha por perda de foco
+                if self.stacked_widget.currentIndex() == 1:
                     super().changeEvent(event)
                     return
 

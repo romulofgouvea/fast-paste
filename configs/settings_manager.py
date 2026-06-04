@@ -1,6 +1,6 @@
 import os
 import json
-from configs.config import DATA_DIR, MAX_HISTORY
+from configs.config import DATA_DIR, MAX_HISTORY, DEFAULT_SETTINGS
 
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 
@@ -14,15 +14,10 @@ class SettingsManager:
         return cls._instance
 
     def _load(self):
-        self.settings = {
-            "max_history": MAX_HISTORY,
-            "retention_days": 30,
-            "theme_color": "#FF7A00",
-            "hotkey": "<ctrl>+'",
-            "hotkey_mac_key_code": None,
-            "db_path": DATA_DIR,
-            "interaction_mode": 1
-        }
+        self.load()
+
+    def load(self):
+        self.settings = DEFAULT_SETTINGS.copy()
         
         if os.path.exists(SETTINGS_FILE):
             try:
@@ -41,10 +36,16 @@ class SettingsManager:
             print(f"[FastPaste] Error saving settings: {e}")
 
     def get(self, key, default=None):
+        if default is None:
+            default = DEFAULT_SETTINGS.get(key)
         return self.settings.get(key, default)
 
     def set(self, key, value):
         self.settings[key] = value
+        self.save()
+
+    def update_settings(self, new_settings: dict):
+        self.settings.update(new_settings)
         self.save()
 
 # Global instance for easy access

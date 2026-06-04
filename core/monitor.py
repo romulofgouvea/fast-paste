@@ -27,7 +27,7 @@ class ClipboardMonitor:
     def start(self):
         self.running = True
         
-        is_wayland = os.environ.get('WAYLAND_DISPLAY') is not None
+        is_wayland = os.environ.get('WAYLAND_DISPLAY') is not None or os.environ.get('XDG_SESSION_TYPE') == 'wayland'
         has_wl = shutil.which('wl-paste') is not None
 
         if sys.platform.startswith('linux') and is_wayland and has_wl:
@@ -56,7 +56,7 @@ class ClipboardMonitor:
 
     def force_check(self):
         """Força uma verificação imediata para evitar delay ao abrir o popup"""
-        is_wayland = os.environ.get('WAYLAND_DISPLAY') is not None
+        is_wayland = os.environ.get('WAYLAND_DISPLAY') is not None or os.environ.get('XDG_SESSION_TYPE') == 'wayland'
         if sys.platform.startswith('linux') and is_wayland:
             self._do_linux_check()
         else:

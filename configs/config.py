@@ -28,10 +28,22 @@ UI_COLORS = {
     "card_bg": "rgba(36, 36, 36, 0.98)",          # Fundo escuro (Yaru Dark)
     "card_border": "rgba(60, 60, 60, 0.8)",       # Borda sutil escura
     "hover": "rgba(50, 50, 50, 0.8)",             # Hover suave
-    "selected": "#FF7A00",                        # Seleção (Banco Inter Orange)
+    "selected": "#e95420",                        # Seleção (Ubuntu Orange)
     "fg": "#ffffff",                              # Texto branco
     "fg_dim": "#a1a1a1",                          # Texto cinza
     "shadow": "rgba(0, 0, 0, 0.4)"                # Sombra forte para destacar
+}
+
+DEFAULT_SETTINGS = {
+    "max_history": MAX_HISTORY,
+    "retention_days": 30,
+    "theme_color": "#e95420",
+    "hotkey": "<ctrl>+'",
+    "hotkey_mac_key_code": None,
+    "db_path": DATA_DIR,
+    "interaction_mode": 1,
+    "window_width": 550,
+    "window_height": 700
 }
 
 def apply_theme_color(color_hex):

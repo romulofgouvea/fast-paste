@@ -307,78 +307,48 @@ def clear():
     conn.commit()
     conn.close()
 
-def export_backup(filepath: str):
-    """Exporta todo o diretório de dados para um arquivo ZIP padrão."""
-    import zipfile
-    import os
-    from configs.config import DATA_DIR
-    
-    with zipfile.ZipFile(filepath, 'w', zipfile.ZIP_DEFLATED) as zf:
-        for root, dirs, files in os.walk(DATA_DIR):
-            for file in files:
-                # Evita fazer backup de sockets e PIDs se existirem na pasta
-                if file.endswith('.sock') or file.endswith('.pid'):
-                    continue
-                file_path = os.path.join(root, file)
-                arcname = os.path.relpath(file_path, DATA_DIR)
-                zf.write(file_path, arcname)
-
-def import_backup(filepath: str) -> bool:
-    """Importa o backup extraindo o ZIP padrão sobre o diretório de dados."""
-    import zipfile
-    import os
-    import shutil
-    from configs.config import DATA_DIR
-    
-    try:
-        with zipfile.ZipFile(filepath, 'r') as zf:
-            # Extrai para temp dir primeiro
-            import tempfile
-            with tempfile.TemporaryDirectory() as tmpdir:
-                zf.extractall(tmpdir)
-                
-                # Move tudo para o DATA_DIR, sobrescrevendo
-                for item in os.listdir(tmpdir):
-                    s = os.path.join(tmpdir, item)
-                    d = os.path.join(DATA_DIR, item)
-                    if os.path.isdir(s):
-                        if os.path.exists(d):
-                            shutil.rmtree(d)
-                        shutil.copytree(s, d)
-                    else:
-                        # Backup the current file just in case? No, it's a restore.
-                        shutil.copy2(s, d)
-                        
-        # Força o settings_manager a recarregar as novas settings recém-copiadas
-        from configs.settings_manager import settings
-        settings.load()
-        return True
-    except Exception as e:
-        print(f"Import error: {e}")
-        return False
 
 def copy_item_to_clipboard(item_data):
     """Copia o conteúdo do item para a área de transferência do sistema (com suporte a Wayland/X11 e fallback)."""
     import subprocess
     import shutil
+    import sys
     
+    is_wayland = sys.platform.startswith('linux') and (os.environ.get('WAYLAND_DISPLAY') is not None or os.environ.get('XDG_SESSION_TYPE') == 'wayland')
     has_wl = shutil.which('wl-copy') is not None
     has_xclip = shutil.which('xclip') is not None
     
     if item_data["type"] == "text":
         text = item_data["content"]
         try:
-            if has_wl:
-                proc = subprocess.Popen(['wl-copy'], stdin=subprocess.PIPE)
-                proc.communicate(text.encode('utf-8'))
-            elif has_xclip:
-                proc = subprocess.Popen(['xclip', '-selection', 'clipboard'], stdin=subprocess.PIPE)
-                proc.communicate(text.encode('utf-8'))
-            else:
+            success = False
+            # 1. Tenta wl-copy se estiver no Wayland
+            if is_wayland and has_wl:
+                try:
+                    proc = subprocess.Popen(['wl-copy'], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                    proc.communicate(text.encode('utf-8'))
+                    if proc.returncode == 0:
+                        success = True
+                except Exception as e:
+                    print(f"[FastPaste] wl-copy falhou: {e}")
+            
+            # 2. Tenta xclip como fallback ou se não estiver no Wayland
+            if not success and has_xclip:
+                try:
+                    proc = subprocess.Popen(['xclip', '-selection', 'clipboard'], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                    proc.communicate(text.encode('utf-8'))
+                    if proc.returncode == 0:
+                        success = True
+                except Exception as e:
+                    print(f"[FastPaste] xclip falhou: {e}")
+            
+            # 3. Fallback final usando clipboard do PyQt6
+            if not success:
                 from PyQt6.QtWidgets import QApplication
                 app = QApplication.instance()
                 if app:
                     app.clipboard().setText(text)
+            
             add_text(text)
         except Exception as e:
             print(f"[FastPaste] Erro ao copiar texto: {e}")
@@ -390,13 +360,29 @@ def copy_item_to_clipboard(item_data):
             if not img_data:
                 raise Exception("Não foi possível carregar os bytes da imagem (provavelmente apagada ou corrompida).")
                 
-            if has_wl:
-                proc = subprocess.Popen(['wl-copy', '--type', 'image/png'], stdin=subprocess.PIPE)
-                proc.communicate(img_data)
-            elif has_xclip:
-                proc = subprocess.Popen(['xclip', '-selection', 'clipboard', '-t', 'image/png'], stdin=subprocess.PIPE)
-                proc.communicate(img_data)
-            else:
+            success = False
+            # 1. Tenta wl-copy se estiver no Wayland
+            if is_wayland and has_wl:
+                try:
+                    proc = subprocess.Popen(['wl-copy', '--type', 'image/png'], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                    proc.communicate(img_data)
+                    if proc.returncode == 0:
+                        success = True
+                except Exception as e:
+                    print(f"[FastPaste] wl-copy imagem falhou: {e}")
+            
+            # 2. Tenta xclip como fallback ou se não estiver no Wayland
+            if not success and has_xclip:
+                try:
+                    proc = subprocess.Popen(['xclip', '-selection', 'clipboard', '-t', 'image/png'], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                    proc.communicate(img_data)
+                    if proc.returncode == 0:
+                        success = True
+                except Exception as e:
+                    print(f"[FastPaste] xclip imagem falhou: {e}")
+            
+            # 3. Fallback final usando clipboard do PyQt6
+            if not success:
                 from PyQt6.QtWidgets import QApplication
                 from PyQt6.QtGui import QPixmap
                 app = QApplication.instance()
@@ -404,6 +390,7 @@ def copy_item_to_clipboard(item_data):
                     pixmap = QPixmap()
                     pixmap.loadFromData(img_data)
                     app.clipboard().setImage(pixmap.toImage())
+                    
             add_image(img_data)
         except Exception as e:
             print(f"[FastPaste] Erro ao copiar imagem: {e}")

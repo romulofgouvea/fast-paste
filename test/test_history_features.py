@@ -132,6 +132,50 @@ def run_tests():
         assert len(deleted_items) == 0, "Delete item failed"
         print("✓ Delete item passed")
 
+    def test_copy():
+        print("\n--- Testing Copy to Clipboard ---")
+        popup.search_entry.clear()
+        popup.refresh_list()
+        
+        assert len(popup.filtered_history) > 0, "No items in history for copy test"
+        target_item = popup.filtered_history[-1]
+        original_content = target_item["content"]
+        
+        import unittest.mock as mock
+        with mock.patch('subprocess.Popen') as mock_popen:
+            mock_proc = mock.MagicMock()
+            mock_proc.returncode = 0
+            mock_proc.communicate.return_value = (b"", b"")
+            mock_popen.return_value = mock_proc
+            
+            history.copy_item_to_clipboard(target_item)
+            
+            popup.refresh_list()
+            new_top_item = popup.filtered_history[0]
+            assert new_top_item["content"] == original_content, f"Expected top item to be {original_content}, got {new_top_item['content']}"
+            
+        print("✓ Copy to clipboard test passed")
+
+    def test_key_navigation():
+        print("\n--- Testing Arrow Key Navigation (Skipping Headers) ---")
+        popup.search_entry.clear()
+        popup.search_entry.setFocus()
+        popup.refresh_list()
+        
+        from PyQt6.QtGui import QKeyEvent
+        
+        assert popup.list_widget.count() > 1, "List too short to test navigation"
+        
+        # Simula o pressionamento da seta para baixo
+        event_down = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Down, Qt.KeyboardModifier.NoModifier)
+        popup.keyPressEvent(event_down)
+        
+        current_row = popup.list_widget.currentRow()
+        assert current_row >= 0, "No item selected on Down press"
+        selected_item = popup.list_widget.item(current_row)
+        assert selected_item.flags() & Qt.ItemFlag.ItemIsSelectable, "Header/Separator selected instead of clipboard item!"
+        print(f"✓ Arrow navigation correctly selected selectable row {current_row}")
+
     def test_modes():
         print("\n--- Testing Interaction Modes ---")
         # Mode 1: Single click copies and closes
@@ -155,6 +199,8 @@ def run_tests():
         test_search()
         test_config_click()
         test_edit_pin_delete()
+        test_copy()
+        test_key_navigation()
         test_modes()
         print("\n🎉 ALL TESTS PASSED SUCCESSFULLY! 🎉")
     except AssertionError as e:

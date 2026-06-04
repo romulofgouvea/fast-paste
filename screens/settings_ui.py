@@ -22,7 +22,7 @@ def pynput_to_qt(pynput_str):
         elif part == "<alt>":
             qt_parts.append("Alt")
         elif part == "<cmd>":
-            qt_parts.append("Meta")
+            qt_parts.append("Cmd")
         else:
             clean = part.replace('<', '').replace('>', '')
             qt_parts.append(clean.upper() if len(clean) == 1 else clean.capitalize())
@@ -35,6 +35,7 @@ class HotkeyLineEdit(QLineEdit):
         self.setPlaceholderText("Clique para gravar...")
         self.recording = False
         self.raw_hotkey = settings.get('hotkey', "<ctrl>+'")
+        self.native_mac_key_code = settings.get('hotkey_mac_key_code')
         
         if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):
             self.setText("Configurado no Sistema")
@@ -44,12 +45,15 @@ class HotkeyLineEdit(QLineEdit):
             self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def mousePressEvent(self, event):
+        if self.recording:
+            event.accept()
+            return
         if not self.recording:
             if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):
                 super().mousePressEvent(event)
                 return
             self.start_recording()
-        super().mousePressEvent(event)
+        event.accept()
 
     def focusOutEvent(self, event):
         if self.recording:
@@ -57,6 +61,8 @@ class HotkeyLineEdit(QLineEdit):
         super().focusOutEvent(event)
 
     def start_recording(self):
+        import core.app
+        core.app.pause_hotkeys()
         self.recording = True
         self.setText("Pressione o atalho...")
         self.setStyleSheet("background-color: #3a1c1c; border: 1.5px solid #ff4444; color: #ffffff;")
@@ -137,6 +143,9 @@ class HotkeyLineEdit(QLineEdit):
         pynput_parts.append(pynput_key)
 
         self.raw_hotkey = "+".join(pynput_parts)
+        native_virtual_key = event.nativeVirtualKey() or event.nativeScanCode()
+        if native_virtual_key:
+            self.native_mac_key_code = native_virtual_key
         self.setText("+".join(parts))
         self.stop_recording()
 
@@ -440,6 +449,8 @@ class SettingsWidget(QWidget):
         if not (sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY')):
             if hasattr(self.hotkey_input, 'raw_hotkey'):
                 settings.set('hotkey', self.hotkey_input.raw_hotkey)
+            if sys.platform == "darwin" and hasattr(self.hotkey_input, 'native_mac_key_code'):
+                settings.set('hotkey_mac_key_code', self.hotkey_input.native_mac_key_code)
 
         # Configurar Autostart (Iniciar com o sistema)
         try:

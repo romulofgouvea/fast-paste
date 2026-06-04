@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QMenu, QGraphicsDropShadowEffect, QFrame, QPushButton, QStackedWidget
 )
 from PyQt6.QtCore import Qt, QSize, QEvent, QTimer, QMimeData, QUrl, QObject
-from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut, QDrag, QPainter, QPen, QBrush, QImage
+from PyQt6.QtGui import QIcon, QPixmap, QColor, QKeySequence, QShortcut, QDrag, QPainter, QPen, QBrush, QImage, QPainterPath, QRegion
 from PyQt6.QtNetwork import QLocalServer, QLocalSocket
 
 from core import history
@@ -217,6 +217,10 @@ def get_tinted_icon(icon_name, color_hex):
     return pixmap
 
 class FastPastePopup(QWidget):
+    WINDOW_RADIUS = 16
+    WINDOW_PADDING = 28
+    WINDOW_OPEN_Y_OFFSET = -28
+
     def __init__(self, standalone=True):
         super().__init__()
         hide_dock_icon()
@@ -238,6 +242,7 @@ class FastPastePopup(QWidget):
         
         self.full_history = history.load_history()
         self.filtered_history = list(self.full_history)
+        self._window_position_initialized = False
 
         self.init_ui()
         self.apply_styles()
@@ -254,6 +259,34 @@ class FastPastePopup(QWidget):
 
         self.populate_list()
         self.setup_interaction_mode()
+
+    def update_window_mask(self):
+        radius = self.WINDOW_RADIUS
+        path = QPainterPath()
+        rect = self.rect()
+        path.addRoundedRect(
+            rect.x(),
+            rect.y(),
+            rect.width(),
+            rect.height(),
+            radius,
+            radius,
+        )
+        self.setMask(QRegion(path.toFillPolygon().toPolygon()))
+
+    def ensure_initial_position(self):
+        if self._window_position_initialized:
+            return
+
+        screen = self.windowHandle().screen() if self.windowHandle() else QApplication.primaryScreen()
+        if not screen:
+            return
+
+        available = screen.availableGeometry()
+        x = available.x() + (available.width() - self.width()) // 2
+        y = available.y() + (available.height() - self.height()) // 2 + self.WINDOW_OPEN_Y_OFFSET
+        self.move(x, y)
+        self._window_position_initialized = True
 
     def setup_single_instance_server(self):
         self.popup_server_name = f"{APP_NAME}_Popup_Server"
@@ -282,7 +315,12 @@ class FastPastePopup(QWidget):
         QApplication.instance().setStyleSheet("QToolTip { color: #ffffff; background-color: #2a2a2a; border: 1px solid #4a4a4a; border-radius: 4px; padding: 4px; font-size: 13px; }")
         # Layout Principal da Janela
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(15, 15, 15, 15)
+        main_layout.setContentsMargins(
+            self.WINDOW_PADDING,
+            self.WINDOW_PADDING,
+            self.WINDOW_PADDING,
+            self.WINDOW_PADDING + 50,
+        )
         main_layout.setSpacing(0)
 
         # Main Container (Substitui o main_box do GTK3)
@@ -295,9 +333,9 @@ class FastPastePopup(QWidget):
 
         # Sombra idêntica ao GTK3
         shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(30)
-        shadow.setColor(QColor(0, 0, 0, 80))
-        shadow.setOffset(0, 10)
+        shadow.setBlurRadius(20)
+        shadow.setColor(QColor(0, 0, 0, 68))
+        shadow.setOffset(0, 1)
         self.container.setGraphicsEffect(shadow)
         
         self.stacked_widget = QStackedWidget()
@@ -714,11 +752,15 @@ class FastPastePopup(QWidget):
                 shortcut.setEnabled(enabled)
 
     def open_settings(self):
+        import core.app
+        core.app.pause_hotkeys()
         # Switch to settings page
         self.set_shortcuts_enabled(False)
         self.stacked_widget.setCurrentIndex(1)
         
     def close_settings(self, saved=False):
+        import core.app
+        core.app.resume_hotkeys()
         # Switch back to main page
         self.stacked_widget.setCurrentIndex(0)
         self.set_shortcuts_enabled(True)
@@ -879,8 +921,14 @@ class FastPastePopup(QWidget):
         # Always open at page 0 (search and list) instead of settings
         self.stacked_widget.setCurrentIndex(0)
         self.search_entry.setFocus()
+        QTimer.singleShot(0, self.update_window_mask)
+        QTimer.singleShot(0, self.ensure_initial_position)
         
         super().showEvent(event)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.update_window_mask()
 
 
 

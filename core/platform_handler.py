@@ -187,9 +187,20 @@ class GlobalHotkeyManager:
         self.callback = callback
         self.listener = None
         self.hotkey_instance = None
+        self.backend = None
         
     def start(self):
-        if self.os_name in ["Windows", "Darwin"]:
+        if self.os_name == "Darwin":
+            try:
+                from core.macos_hotkeys import CarbonHotkeyManager
+                if not isinstance(self.backend, CarbonHotkeyManager):
+                    self.backend = CarbonHotkeyManager(self.callback)
+                self.backend.start()
+                return
+            except Exception as e:
+                print(f"[FastPaste] Native macOS hotkey registration failed, falling back to pynput: {e}")
+
+        if self.os_name == "Windows":
             try:
                 from pynput import keyboard
                 from configs.settings_manager import settings
@@ -249,14 +260,18 @@ class GlobalHotkeyManager:
                 print(f"[FastPaste] Custom global hotkey ({hotkey_str}) registered via normalized listener (suppression enabled on Windows).")
             except Exception as e:
                 print(f"[FastPaste] Could not start global hotkey listener: {e}")
-                if self.os_name == "Darwin":
-                    print("[FastPaste] On macOS, please make sure the application has Accessibility permissions enabled in System Settings.")
         elif self.os_name == "Linux":
             # On Linux Wayland, pynput doesn't work for global hotkeys without root.
             # We rely on the desktop environment shortcut calling 'main.py show'
             print("[FastPaste] Linux detected. Please bind a shortcut in your Desktop Environment to run 'python3 main.py show'.")
             
     def stop(self):
+        if self.backend:
+            try:
+                self.backend.stop()
+            except Exception:
+                pass
+            self.backend = None
         if self.listener:
             try:
                 self.listener.stop()

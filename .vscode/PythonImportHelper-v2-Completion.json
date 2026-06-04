@@ -1,0 +1,1968 @@
+[
+    {
+        "label": "os",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "os",
+        "description": "os",
+        "detail": "os",
+        "documentation": {}
+    },
+    {
+        "label": "tempfile",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "tempfile",
+        "description": "tempfile",
+        "detail": "tempfile",
+        "documentation": {}
+    },
+    {
+        "label": "sys",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "sys",
+        "description": "sys",
+        "detail": "sys",
+        "documentation": {}
+    },
+    {
+        "label": "json",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "json",
+        "description": "json",
+        "detail": "json",
+        "documentation": {}
+    },
+    {
+        "label": "DATA_DIR",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "MAX_HISTORY",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "APP_NAME",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "DATA_DIR",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "DB_FILE",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "IMAGES_DIR",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "DATA_DIR",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "MAX_HISTORY",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "UI_COLORS",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "APP_NAME",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "hide_dock_icon",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "DATA_DIR",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "MAX_HISTORY",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "APP_NAME",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "UI_COLORS",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "APP_NAME",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "get_asset_path",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "APP_NAME",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "APP_NAME",
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "isExtraImport": true,
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "signal",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "signal",
+        "description": "signal",
+        "detail": "signal",
+        "documentation": {}
+    },
+    {
+        "label": "time",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "time",
+        "description": "time",
+        "detail": "time",
+        "documentation": {}
+    },
+    {
+        "label": "QApplication",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QApplication",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QApplication",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QWidget",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QVBoxLayout",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QHBoxLayout",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QLineEdit",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QListWidget",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QListWidgetItem",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QLabel",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QMenu",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QGraphicsDropShadowEffect",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QFrame",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QPushButton",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QStackedWidget",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QWidget",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QVBoxLayout",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QHBoxLayout",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QLabel",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QSpinBox",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QLineEdit",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QPushButton",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QFileDialog",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QMessageBox",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QCheckBox",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QAbstractButton",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QSizePolicy",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QRadioButton",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QButtonGroup",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QSystemTrayIcon",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QMenu",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QApplication",
+        "importPath": "PyQt6.QtWidgets",
+        "description": "PyQt6.QtWidgets",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtWidgets",
+        "documentation": {}
+    },
+    {
+        "label": "QLocalServer",
+        "importPath": "PyQt6.QtNetwork",
+        "description": "PyQt6.QtNetwork",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtNetwork",
+        "documentation": {}
+    },
+    {
+        "label": "QLocalSocket",
+        "importPath": "PyQt6.QtNetwork",
+        "description": "PyQt6.QtNetwork",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtNetwork",
+        "documentation": {}
+    },
+    {
+        "label": "QLocalServer",
+        "importPath": "PyQt6.QtNetwork",
+        "description": "PyQt6.QtNetwork",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtNetwork",
+        "documentation": {}
+    },
+    {
+        "label": "QLocalSocket",
+        "importPath": "PyQt6.QtNetwork",
+        "description": "PyQt6.QtNetwork",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtNetwork",
+        "documentation": {}
+    },
+    {
+        "label": "QTimer",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "QObject",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "pyqtSignal",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "QBuffer",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "QIODevice",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "Qt",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "QSize",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "QEvent",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "QTimer",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "QMimeData",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "QUrl",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "QObject",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "Qt",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "pyqtSignal",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "QSize",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "QPropertyAnimation",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "pyqtProperty",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "QEasingCurve",
+        "importPath": "PyQt6.QtCore",
+        "description": "PyQt6.QtCore",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtCore",
+        "documentation": {}
+    },
+    {
+        "label": "PID_FILE",
+        "importPath": "configs",
+        "description": "configs",
+        "isExtraImport": true,
+        "detail": "configs",
+        "documentation": {}
+    },
+    {
+        "label": "LOG_FILE",
+        "importPath": "configs",
+        "description": "configs",
+        "isExtraImport": true,
+        "detail": "configs",
+        "documentation": {}
+    },
+    {
+        "label": "APP_NAME",
+        "importPath": "configs",
+        "description": "configs",
+        "isExtraImport": true,
+        "detail": "configs",
+        "documentation": {}
+    },
+    {
+        "label": "history",
+        "importPath": "core",
+        "description": "core",
+        "isExtraImport": true,
+        "detail": "core",
+        "documentation": {}
+    },
+    {
+        "label": "history",
+        "importPath": "core",
+        "description": "core",
+        "isExtraImport": true,
+        "detail": "core",
+        "documentation": {}
+    },
+    {
+        "label": "crypto",
+        "importPath": "core",
+        "description": "core",
+        "isExtraImport": true,
+        "detail": "core",
+        "documentation": {}
+    },
+    {
+        "label": "history",
+        "importPath": "core",
+        "description": "core",
+        "isExtraImport": true,
+        "detail": "core",
+        "documentation": {}
+    },
+    {
+        "label": "history",
+        "importPath": "core",
+        "description": "core",
+        "isExtraImport": true,
+        "detail": "core",
+        "documentation": {}
+    },
+    {
+        "label": "history",
+        "importPath": "core",
+        "description": "core",
+        "isExtraImport": true,
+        "detail": "core",
+        "documentation": {}
+    },
+    {
+        "label": "shutil",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "shutil",
+        "description": "shutil",
+        "detail": "shutil",
+        "documentation": {}
+    },
+    {
+        "label": "subprocess",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "subprocess",
+        "description": "subprocess",
+        "detail": "subprocess",
+        "documentation": {}
+    },
+    {
+        "label": "Fernet",
+        "importPath": "cryptography.fernet",
+        "description": "cryptography.fernet",
+        "isExtraImport": true,
+        "detail": "cryptography.fernet",
+        "documentation": {}
+    },
+    {
+        "label": "InvalidToken",
+        "importPath": "cryptography.fernet",
+        "description": "cryptography.fernet",
+        "isExtraImport": true,
+        "detail": "cryptography.fernet",
+        "documentation": {}
+    },
+    {
+        "label": "sqlite3",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "sqlite3",
+        "description": "sqlite3",
+        "detail": "sqlite3",
+        "documentation": {}
+    },
+    {
+        "label": "hashlib",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "hashlib",
+        "description": "hashlib",
+        "detail": "hashlib",
+        "documentation": {}
+    },
+    {
+        "label": "settings",
+        "importPath": "configs.settings_manager",
+        "description": "configs.settings_manager",
+        "isExtraImport": true,
+        "detail": "configs.settings_manager",
+        "documentation": {}
+    },
+    {
+        "label": "settings",
+        "importPath": "configs.settings_manager",
+        "description": "configs.settings_manager",
+        "isExtraImport": true,
+        "detail": "configs.settings_manager",
+        "documentation": {}
+    },
+    {
+        "label": "settings",
+        "importPath": "configs.settings_manager",
+        "description": "configs.settings_manager",
+        "isExtraImport": true,
+        "detail": "configs.settings_manager",
+        "documentation": {}
+    },
+    {
+        "label": "ctypes",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "ctypes",
+        "description": "ctypes",
+        "detail": "ctypes",
+        "documentation": {}
+    },
+    {
+        "label": "threading",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "threading",
+        "description": "threading",
+        "detail": "threading",
+        "documentation": {}
+    },
+    {
+        "label": "QImage",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QClipboard",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QIcon",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QPixmap",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QColor",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QKeySequence",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QShortcut",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QDrag",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QPainter",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QPen",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QBrush",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QImage",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QPainterPath",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QRegion",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QPainter",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QColor",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QBrush",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QKeySequence",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QIcon",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QAction",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "platform",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "platform",
+        "description": "platform",
+        "detail": "platform",
+        "documentation": {}
+    },
+    {
+        "label": "keyboard",
+        "importPath": "pynput",
+        "description": "pynput",
+        "isExtraImport": true,
+        "detail": "pynput",
+        "documentation": {}
+    },
+    {
+        "label": "keyboard",
+        "importPath": "pynput",
+        "description": "pynput",
+        "isExtraImport": true,
+        "detail": "pynput",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "datetime",
+        "description": "datetime",
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "InputSimulator",
+        "importPath": "core.platform_handler",
+        "description": "core.platform_handler",
+        "isExtraImport": true,
+        "detail": "core.platform_handler",
+        "documentation": {}
+    },
+    {
+        "label": "io",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "io",
+        "description": "io",
+        "detail": "io",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "importPath": "core.app",
+        "description": "core.app",
+        "isExtraImport": true,
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "gi",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "gi",
+        "description": "gi",
+        "detail": "gi",
+        "documentation": {}
+    },
+    {
+        "label": "Gtk",
+        "importPath": "gi.repository",
+        "description": "gi.repository",
+        "isExtraImport": true,
+        "detail": "gi.repository",
+        "documentation": {}
+    },
+    {
+        "label": "Gdk",
+        "importPath": "gi.repository",
+        "description": "gi.repository",
+        "isExtraImport": true,
+        "detail": "gi.repository",
+        "documentation": {}
+    },
+    {
+        "label": "get_asset_path",
+        "kind": 2,
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "peekOfCode": "def get_asset_path(filename):\n    \"\"\"Retrieve absolute path to an asset file, handling PyInstaller packaging.\"\"\"\n    import sys\n    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):\n        return os.path.join(sys._MEIPASS, \"assets\", filename)\n    # If running from source\n    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))\n    return os.path.join(base_dir, \"assets\", filename)\ndef hide_dock_icon():\n    \"\"\"Hides the application icon from the macOS Dock programmatically.\"\"\"",
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "hide_dock_icon",
+        "kind": 2,
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "peekOfCode": "def hide_dock_icon():\n    \"\"\"Hides the application icon from the macOS Dock programmatically.\"\"\"\n    import sys\n    if sys.platform == \"darwin\":\n        try:\n            from AppKit import NSApplication, NSApplicationActivationPolicyAccessory\n            app = NSApplication.sharedApplication()\n            if app is not None:\n                app.setActivationPolicy_(NSApplicationActivationPolicyAccessory)\n        except Exception as e:",
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "APP_NAME",
+        "kind": 5,
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "peekOfCode": "APP_NAME = \"FPaste\"\nMAX_HISTORY = 500\n# Caminhos dos arquivos persistentes (evita perda ao reiniciar e problemas de sandbox como Snaps/Flatpaks)\nimport sys\nif sys.platform.startswith(\"win\"):\n    DATA_DIR = os.path.join(os.environ.get(\"APPDATA\", os.path.expanduser(\"~\")), \"fast-paste\")\nelif sys.platform.startswith(\"darwin\"):\n    DATA_DIR = os.path.join(os.path.expanduser(\"~\"), \"Library\", \"Application Support\", \"fast-paste\")\nelse:\n    DATA_DIR = os.path.join(os.environ.get(\"XDG_DATA_HOME\", os.path.expanduser(\"~/.local/share\")), \"fast-paste\")",
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "MAX_HISTORY",
+        "kind": 5,
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "peekOfCode": "MAX_HISTORY = 500\n# Caminhos dos arquivos persistentes (evita perda ao reiniciar e problemas de sandbox como Snaps/Flatpaks)\nimport sys\nif sys.platform.startswith(\"win\"):\n    DATA_DIR = os.path.join(os.environ.get(\"APPDATA\", os.path.expanduser(\"~\")), \"fast-paste\")\nelif sys.platform.startswith(\"darwin\"):\n    DATA_DIR = os.path.join(os.path.expanduser(\"~\"), \"Library\", \"Application Support\", \"fast-paste\")\nelse:\n    DATA_DIR = os.path.join(os.environ.get(\"XDG_DATA_HOME\", os.path.expanduser(\"~/.local/share\")), \"fast-paste\")\nDB_FILE = os.path.join(DATA_DIR, \"history.db\")",
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "DB_FILE",
+        "kind": 5,
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "peekOfCode": "DB_FILE = os.path.join(DATA_DIR, \"history.db\")\nIMAGES_DIR = os.path.join(DATA_DIR, \"images\")\nLOG_FILE = os.path.join(DATA_DIR, \"daemon.log\")\n# Controle de processos (agora na pasta runtime do usuário)\nXDG_RUNTIME_DIR = os.environ.get(\"XDG_RUNTIME_DIR\", \"/tmp\")\nPID_FILE = os.path.join(XDG_RUNTIME_DIR, f\"{APP_NAME.lower()}.pid\")\nSOCKET_PATH = os.path.join(XDG_RUNTIME_DIR, f\"{APP_NAME.lower()}.sock\")\n# Cores UI (Ubuntu Dark System Theme)\nUI_COLORS = {\n    \"bg_transparent\": \"rgba(30, 30, 30, 0.0)\",    # Fundo da janela invisível",
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "IMAGES_DIR",
+        "kind": 5,
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "peekOfCode": "IMAGES_DIR = os.path.join(DATA_DIR, \"images\")\nLOG_FILE = os.path.join(DATA_DIR, \"daemon.log\")\n# Controle de processos (agora na pasta runtime do usuário)\nXDG_RUNTIME_DIR = os.environ.get(\"XDG_RUNTIME_DIR\", \"/tmp\")\nPID_FILE = os.path.join(XDG_RUNTIME_DIR, f\"{APP_NAME.lower()}.pid\")\nSOCKET_PATH = os.path.join(XDG_RUNTIME_DIR, f\"{APP_NAME.lower()}.sock\")\n# Cores UI (Ubuntu Dark System Theme)\nUI_COLORS = {\n    \"bg_transparent\": \"rgba(30, 30, 30, 0.0)\",    # Fundo da janela invisível\n    \"card_bg\": \"rgba(36, 36, 36, 0.98)\",          # Fundo escuro (Yaru Dark)",
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "LOG_FILE",
+        "kind": 5,
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "peekOfCode": "LOG_FILE = os.path.join(DATA_DIR, \"daemon.log\")\n# Controle de processos (agora na pasta runtime do usuário)\nXDG_RUNTIME_DIR = os.environ.get(\"XDG_RUNTIME_DIR\", \"/tmp\")\nPID_FILE = os.path.join(XDG_RUNTIME_DIR, f\"{APP_NAME.lower()}.pid\")\nSOCKET_PATH = os.path.join(XDG_RUNTIME_DIR, f\"{APP_NAME.lower()}.sock\")\n# Cores UI (Ubuntu Dark System Theme)\nUI_COLORS = {\n    \"bg_transparent\": \"rgba(30, 30, 30, 0.0)\",    # Fundo da janela invisível\n    \"card_bg\": \"rgba(36, 36, 36, 0.98)\",          # Fundo escuro (Yaru Dark)\n    \"card_border\": \"rgba(60, 60, 60, 0.8)\",       # Borda sutil escura",
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "XDG_RUNTIME_DIR",
+        "kind": 5,
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "peekOfCode": "XDG_RUNTIME_DIR = os.environ.get(\"XDG_RUNTIME_DIR\", \"/tmp\")\nPID_FILE = os.path.join(XDG_RUNTIME_DIR, f\"{APP_NAME.lower()}.pid\")\nSOCKET_PATH = os.path.join(XDG_RUNTIME_DIR, f\"{APP_NAME.lower()}.sock\")\n# Cores UI (Ubuntu Dark System Theme)\nUI_COLORS = {\n    \"bg_transparent\": \"rgba(30, 30, 30, 0.0)\",    # Fundo da janela invisível\n    \"card_bg\": \"rgba(36, 36, 36, 0.98)\",          # Fundo escuro (Yaru Dark)\n    \"card_border\": \"rgba(60, 60, 60, 0.8)\",       # Borda sutil escura\n    \"hover\": \"rgba(50, 50, 50, 0.8)\",             # Hover suave\n    \"selected\": \"rgba(233, 84, 32, 0.9)\",         # Seleção (Ubuntu Orange)",
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "PID_FILE",
+        "kind": 5,
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "peekOfCode": "PID_FILE = os.path.join(XDG_RUNTIME_DIR, f\"{APP_NAME.lower()}.pid\")\nSOCKET_PATH = os.path.join(XDG_RUNTIME_DIR, f\"{APP_NAME.lower()}.sock\")\n# Cores UI (Ubuntu Dark System Theme)\nUI_COLORS = {\n    \"bg_transparent\": \"rgba(30, 30, 30, 0.0)\",    # Fundo da janela invisível\n    \"card_bg\": \"rgba(36, 36, 36, 0.98)\",          # Fundo escuro (Yaru Dark)\n    \"card_border\": \"rgba(60, 60, 60, 0.8)\",       # Borda sutil escura\n    \"hover\": \"rgba(50, 50, 50, 0.8)\",             # Hover suave\n    \"selected\": \"rgba(233, 84, 32, 0.9)\",         # Seleção (Ubuntu Orange)\n    \"fg\": \"#ffffff\",                              # Texto branco",
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "SOCKET_PATH",
+        "kind": 5,
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "peekOfCode": "SOCKET_PATH = os.path.join(XDG_RUNTIME_DIR, f\"{APP_NAME.lower()}.sock\")\n# Cores UI (Ubuntu Dark System Theme)\nUI_COLORS = {\n    \"bg_transparent\": \"rgba(30, 30, 30, 0.0)\",    # Fundo da janela invisível\n    \"card_bg\": \"rgba(36, 36, 36, 0.98)\",          # Fundo escuro (Yaru Dark)\n    \"card_border\": \"rgba(60, 60, 60, 0.8)\",       # Borda sutil escura\n    \"hover\": \"rgba(50, 50, 50, 0.8)\",             # Hover suave\n    \"selected\": \"rgba(233, 84, 32, 0.9)\",         # Seleção (Ubuntu Orange)\n    \"fg\": \"#ffffff\",                              # Texto branco\n    \"fg_dim\": \"#a1a1a1\",                          # Texto cinza",
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "UI_COLORS",
+        "kind": 5,
+        "importPath": "configs.config",
+        "description": "configs.config",
+        "peekOfCode": "UI_COLORS = {\n    \"bg_transparent\": \"rgba(30, 30, 30, 0.0)\",    # Fundo da janela invisível\n    \"card_bg\": \"rgba(36, 36, 36, 0.98)\",          # Fundo escuro (Yaru Dark)\n    \"card_border\": \"rgba(60, 60, 60, 0.8)\",       # Borda sutil escura\n    \"hover\": \"rgba(50, 50, 50, 0.8)\",             # Hover suave\n    \"selected\": \"rgba(233, 84, 32, 0.9)\",         # Seleção (Ubuntu Orange)\n    \"fg\": \"#ffffff\",                              # Texto branco\n    \"fg_dim\": \"#a1a1a1\",                          # Texto cinza\n    \"shadow\": \"rgba(0, 0, 0, 0.4)\"                # Sombra forte para destacar\n}",
+        "detail": "configs.config",
+        "documentation": {}
+    },
+    {
+        "label": "SettingsManager",
+        "kind": 6,
+        "importPath": "configs.settings_manager",
+        "description": "configs.settings_manager",
+        "peekOfCode": "class SettingsManager:\n    _instance = None\n    def __new__(cls):\n        if cls._instance is None:\n            cls._instance = super(SettingsManager, cls).__new__(cls)\n            cls._instance._load()\n        return cls._instance\n    def _load(self):\n        self.settings = {\n            \"max_history\": MAX_HISTORY,",
+        "detail": "configs.settings_manager",
+        "documentation": {}
+    },
+    {
+        "label": "SETTINGS_FILE",
+        "kind": 5,
+        "importPath": "configs.settings_manager",
+        "description": "configs.settings_manager",
+        "peekOfCode": "SETTINGS_FILE = os.path.join(DATA_DIR, \"settings.json\")\nclass SettingsManager:\n    _instance = None\n    def __new__(cls):\n        if cls._instance is None:\n            cls._instance = super(SettingsManager, cls).__new__(cls)\n            cls._instance._load()\n        return cls._instance\n    def _load(self):\n        self.settings = {",
+        "detail": "configs.settings_manager",
+        "documentation": {}
+    },
+    {
+        "label": "settings",
+        "kind": 5,
+        "importPath": "configs.settings_manager",
+        "description": "configs.settings_manager",
+        "peekOfCode": "settings = SettingsManager()",
+        "detail": "configs.settings_manager",
+        "documentation": {}
+    },
+    {
+        "label": "HotkeySignaler",
+        "kind": 6,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "class HotkeySignaler(QObject):\n    show_popup = pyqtSignal()\ndef pause_hotkeys():\n    global hotkeys_manager\n    if hotkeys_manager:\n        hotkeys_manager.stop()\ndef resume_hotkeys():\n    global hotkeys_manager\n    if hotkeys_manager:\n        hotkeys_manager.start()",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "pause_hotkeys",
+        "kind": 2,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "def pause_hotkeys():\n    global hotkeys_manager\n    if hotkeys_manager:\n        hotkeys_manager.stop()\ndef resume_hotkeys():\n    global hotkeys_manager\n    if hotkeys_manager:\n        hotkeys_manager.start()\ndef check_status():\n    \"\"\"Check if the daemon is running by trying to connect to the local server.\"\"\"",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "resume_hotkeys",
+        "kind": 2,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "def resume_hotkeys():\n    global hotkeys_manager\n    if hotkeys_manager:\n        hotkeys_manager.start()\ndef check_status():\n    \"\"\"Check if the daemon is running by trying to connect to the local server.\"\"\"\n    socket = QLocalSocket()\n    socket.connectToServer(IPC_SERVER_NAME)\n    if socket.waitForConnected(500):\n        socket.disconnectFromServer()",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "check_status",
+        "kind": 2,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "def check_status():\n    \"\"\"Check if the daemon is running by trying to connect to the local server.\"\"\"\n    socket = QLocalSocket()\n    socket.connectToServer(IPC_SERVER_NAME)\n    if socket.waitForConnected(500):\n        socket.disconnectFromServer()\n        return True\n    return False\ndef start_daemon():\n    if check_status():",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "start_daemon",
+        "kind": 2,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "def start_daemon():\n    if check_status():\n        print(f\"✅ {APP_NAME} Monitor is already running.\")\n        return\n    if sys.platform.startswith(\"linux\"):\n        import subprocess\n        app_lower = APP_NAME.lower()\n        service_file = os.path.expanduser(f\"~/.config/systemd/user/{app_lower}.service\")\n        if os.path.exists(service_file):\n            try:",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "stop_daemon",
+        "kind": 2,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "def stop_daemon():\n    if sys.platform.startswith(\"linux\"):\n        import subprocess\n        app_lower = APP_NAME.lower()\n        service_file = os.path.expanduser(f\"~/.config/systemd/user/{app_lower}.service\")\n        if os.path.exists(service_file):\n            try:\n                res = subprocess.run([\"systemctl\", \"--user\", \"is-active\", f\"{app_lower}.service\"], capture_output=True, text=True)\n                if res.stdout.strip() == \"active\":\n                    print(f\"🛑 Stopping {APP_NAME} via systemd...\")",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "restart_daemon",
+        "kind": 2,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "def restart_daemon():\n    print(f\"🔄 Restarting {APP_NAME}...\")\n    stop_daemon()\n    # Wait up to 5 seconds for status to become inactive\n    for _ in range(25):\n        if not check_status():\n            break\n        time.sleep(0.2)\n    start_daemon()\ndef run_standalone_popup():",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "run_standalone_popup",
+        "kind": 2,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "def run_standalone_popup():\n    # Verifica se já existe um popup aberto\n    socket = QLocalSocket()\n    socket.connectToServer(f\"{APP_NAME}_Popup_Server\")\n    if socket.waitForConnected(300):\n        # Já está aberto! Vamos verificar o modo de interação atual\n        from configs.settings_manager import settings\n        mode = settings.get('interaction_mode', 1)\n        if mode == 1:\n            # No Modo 1 (Ditto), o atalho alterna (fecha se já estiver aberto)",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "show_popup",
+        "kind": 2,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "def show_popup():\n    is_wayland = os.environ.get('WAYLAND_DISPLAY') is not None or os.environ.get('XDG_SESSION_TYPE') == 'wayland'\n    if sys.platform.startswith(\"linux\") and is_wayland:\n        # No Linux/Wayland, rodamos o popup em modo standalone no processo principal.\n        # Isso garante que a janela receba foco imediato sem o bloqueio \"is ready\" do GNOME Shell,\n        # e permite o drag-and-drop nativo de imagens e textos para o desktop (Wayland).\n        run_standalone_popup()\n    else:\n        if check_status():\n            socket = QLocalSocket()",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "run_foreground",
+        "kind": 2,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "def run_foreground():\n    \"\"\"Runs the main Qt application with System Tray, Clipboard Monitor, Global Hotkeys and IPC Server.\"\"\"\n    global popup_instance, clipboard_monitor, hotkeys_manager\n    # Ensure a QApplication instance exists\n    app = QApplication.instance()\n    if not app:\n        app = QApplication(sys.argv)\n    from configs.config import hide_dock_icon\n    hide_dock_icon()\n    # Prevent app from quitting when popup is closed",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "print_usage",
+        "kind": 2,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "def print_usage():\n    print(f\"\"\"\n╔═══════════════════════════════════════════════╗\n║         ⚡ {APP_NAME} - Cross-Platform         ║\n╠═══════════════════════════════════════════════╣\n║                                               ║\n║  Commands:                                    ║\n║    start   - Start background monitor         ║\n║    stop    - Stop background monitor          ║\n║    restart - Restart background monitor       ║",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "def main():\n    if len(sys.argv) < 2:\n        if sys.platform.startswith(\"win\") or sys.platform.startswith(\"darwin\"):\n            if check_status():\n                show_popup()\n            else:\n                run_foreground()\n            sys.exit(0)\n        else:\n            print_usage()",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "IPC_SERVER_NAME",
+        "kind": 5,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "IPC_SERVER_NAME = f\"{APP_NAME}_IPC_Server\"\npopup_instance = None\nclipboard_monitor = None\nhotkeys_manager = None\nclass HotkeySignaler(QObject):\n    show_popup = pyqtSignal()\ndef pause_hotkeys():\n    global hotkeys_manager\n    if hotkeys_manager:\n        hotkeys_manager.stop()",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "popup_instance",
+        "kind": 5,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "popup_instance = None\nclipboard_monitor = None\nhotkeys_manager = None\nclass HotkeySignaler(QObject):\n    show_popup = pyqtSignal()\ndef pause_hotkeys():\n    global hotkeys_manager\n    if hotkeys_manager:\n        hotkeys_manager.stop()\ndef resume_hotkeys():",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "clipboard_monitor",
+        "kind": 5,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "clipboard_monitor = None\nhotkeys_manager = None\nclass HotkeySignaler(QObject):\n    show_popup = pyqtSignal()\ndef pause_hotkeys():\n    global hotkeys_manager\n    if hotkeys_manager:\n        hotkeys_manager.stop()\ndef resume_hotkeys():\n    global hotkeys_manager",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "hotkeys_manager",
+        "kind": 5,
+        "importPath": "core.app",
+        "description": "core.app",
+        "peekOfCode": "hotkeys_manager = None\nclass HotkeySignaler(QObject):\n    show_popup = pyqtSignal()\ndef pause_hotkeys():\n    global hotkeys_manager\n    if hotkeys_manager:\n        hotkeys_manager.stop()\ndef resume_hotkeys():\n    global hotkeys_manager\n    if hotkeys_manager:",
+        "detail": "core.app",
+        "documentation": {}
+    },
+    {
+        "label": "get_executable_command",
+        "kind": 2,
+        "importPath": "core.autostart",
+        "description": "core.autostart",
+        "peekOfCode": "def get_executable_command():\n    if getattr(sys, 'frozen', False):\n        exe = os.path.abspath(sys.executable)\n        if sys.platform.startswith(\"win\") or sys.platform.startswith(\"darwin\"):\n            return [exe]\n        else:\n            return [exe, \"run\"]\n    else:\n        script_path = os.path.abspath(sys.argv[0])\n        # If running from main.py script",
+        "detail": "core.autostart",
+        "documentation": {}
+    },
+    {
+        "label": "get_background_command",
+        "kind": 2,
+        "importPath": "core.autostart",
+        "description": "core.autostart",
+        "peekOfCode": "def get_background_command():\n    cmd = get_executable_command()\n    if cmd and cmd[-1] == \"run\":\n        return cmd\n    return [*cmd, \"run\"]\ndef get_macos_launch_agent_paths():\n    app_lower = APP_NAME.lower()\n    agents_dir = os.path.expanduser(\"~/Library/LaunchAgents\")\n    canonical_path = os.path.join(agents_dir, f\"com.{app_lower}.autostart.plist\")\n    legacy_path = os.path.join(agents_dir, f\"com.{app_lower}.daemon.plist\")",
+        "detail": "core.autostart",
+        "documentation": {}
+    },
+    {
+        "label": "get_macos_launch_agent_paths",
+        "kind": 2,
+        "importPath": "core.autostart",
+        "description": "core.autostart",
+        "peekOfCode": "def get_macos_launch_agent_paths():\n    app_lower = APP_NAME.lower()\n    agents_dir = os.path.expanduser(\"~/Library/LaunchAgents\")\n    canonical_path = os.path.join(agents_dir, f\"com.{app_lower}.autostart.plist\")\n    legacy_path = os.path.join(agents_dir, f\"com.{app_lower}.daemon.plist\")\n    return canonical_path, legacy_path\ndef is_autostart_enabled():\n    app_lower = APP_NAME.lower()\n    if sys.platform.startswith(\"win\"):\n        try:",
+        "detail": "core.autostart",
+        "documentation": {}
+    },
+    {
+        "label": "is_autostart_enabled",
+        "kind": 2,
+        "importPath": "core.autostart",
+        "description": "core.autostart",
+        "peekOfCode": "def is_autostart_enabled():\n    app_lower = APP_NAME.lower()\n    if sys.platform.startswith(\"win\"):\n        try:\n            import winreg\n            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r\"Software\\Microsoft\\Windows\\CurrentVersion\\Run\", 0, winreg.KEY_READ)\n            value, _ = winreg.QueryValueEx(key, APP_NAME)\n            winreg.CloseKey(key)\n            return True\n        except Exception:",
+        "detail": "core.autostart",
+        "documentation": {}
+    },
+    {
+        "label": "enable_autostart",
+        "kind": 2,
+        "importPath": "core.autostart",
+        "description": "core.autostart",
+        "peekOfCode": "def enable_autostart():\n    cmd = get_background_command()\n    app_lower = APP_NAME.lower()\n    if sys.platform.startswith(\"win\"):\n        try:\n            import winreg\n            # Quote path if it contains spaces\n            cmd_str = f'\"{cmd[0]}\"'\n            if len(cmd) > 1:\n                cmd_str += \" \" + \" \".join(cmd[1:])",
+        "detail": "core.autostart",
+        "documentation": {}
+    },
+    {
+        "label": "disable_autostart",
+        "kind": 2,
+        "importPath": "core.autostart",
+        "description": "core.autostart",
+        "peekOfCode": "def disable_autostart():\n    app_lower = APP_NAME.lower()\n    if sys.platform.startswith(\"win\"):\n        try:\n            import winreg\n            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r\"Software\\Microsoft\\Windows\\CurrentVersion\\Run\", 0, winreg.KEY_WRITE)\n            winreg.DeleteValue(key, APP_NAME)\n            winreg.CloseKey(key)\n            return True\n        except Exception:",
+        "detail": "core.autostart",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "core.clip_handler",
+        "description": "core.clip_handler",
+        "peekOfCode": "def main():\n    \"\"\"Lê da entrada padrão (injetada pelo wl-paste) e salva no histórico SQLite.\"\"\"\n    if len(sys.argv) < 2:\n        print(\"[FastPaste] Uso: clip_handler.py [text|image]\", file=sys.stderr)\n        sys.exit(1)\n    mode = sys.argv[1].lower()\n    try:\n        if mode == \"text\":\n            # Lê todo o conteúdo textual da entrada padrão\n            content = sys.stdin.read()",
+        "detail": "core.clip_handler",
+        "documentation": {}
+    },
+    {
+        "label": "get_cipher",
+        "kind": 2,
+        "importPath": "core.crypto",
+        "description": "core.crypto",
+        "peekOfCode": "def get_cipher():\n    global _fernet\n    if _fernet is None:\n        _fernet = _get_fernet()\n    return _fernet\ndef encrypt_text(text: str) -> str:\n    if not text:\n        return text\n    cipher = get_cipher()\n    return cipher.encrypt(text.encode('utf-8')).decode('utf-8')",
+        "detail": "core.crypto",
+        "documentation": {}
+    },
+    {
+        "label": "encrypt_text",
+        "kind": 2,
+        "importPath": "core.crypto",
+        "description": "core.crypto",
+        "peekOfCode": "def encrypt_text(text: str) -> str:\n    if not text:\n        return text\n    cipher = get_cipher()\n    return cipher.encrypt(text.encode('utf-8')).decode('utf-8')\ndef decrypt_text(encrypted_text: str) -> str:\n    if not encrypted_text:\n        return encrypted_text\n    try:\n        cipher = get_cipher()",
+        "detail": "core.crypto",
+        "documentation": {}
+    },
+    {
+        "label": "decrypt_text",
+        "kind": 2,
+        "importPath": "core.crypto",
+        "description": "core.crypto",
+        "peekOfCode": "def decrypt_text(encrypted_text: str) -> str:\n    if not encrypted_text:\n        return encrypted_text\n    try:\n        cipher = get_cipher()\n        return cipher.decrypt(encrypted_text.encode('utf-8')).decode('utf-8')\n    except InvalidToken:\n        # Fallback for legacy unencrypted text in the database\n        return encrypted_text\n    except Exception as e:",
+        "detail": "core.crypto",
+        "documentation": {}
+    },
+    {
+        "label": "encrypt_bytes",
+        "kind": 2,
+        "importPath": "core.crypto",
+        "description": "core.crypto",
+        "peekOfCode": "def encrypt_bytes(data: bytes) -> bytes:\n    if not data:\n        return data\n    cipher = get_cipher()\n    return cipher.encrypt(data)\ndef decrypt_bytes(encrypted_data: bytes) -> bytes:\n    if not encrypted_data:\n        return encrypted_data\n    try:\n        cipher = get_cipher()",
+        "detail": "core.crypto",
+        "documentation": {}
+    },
+    {
+        "label": "decrypt_bytes",
+        "kind": 2,
+        "importPath": "core.crypto",
+        "description": "core.crypto",
+        "peekOfCode": "def decrypt_bytes(encrypted_data: bytes) -> bytes:\n    if not encrypted_data:\n        return encrypted_data\n    try:\n        cipher = get_cipher()\n        return cipher.decrypt(encrypted_data)\n    except InvalidToken:\n        # Fallback for legacy unencrypted image bytes\n        return encrypted_data\n    except Exception as e:",
+        "detail": "core.crypto",
+        "documentation": {}
+    },
+    {
+        "label": "_fernet",
+        "kind": 5,
+        "importPath": "core.crypto",
+        "description": "core.crypto",
+        "peekOfCode": "_fernet = None\ndef get_cipher():\n    global _fernet\n    if _fernet is None:\n        _fernet = _get_fernet()\n    return _fernet\ndef encrypt_text(text: str) -> str:\n    if not text:\n        return text\n    cipher = get_cipher()",
+        "detail": "core.crypto",
+        "documentation": {}
+    },
+    {
+        "label": "get_db_path",
+        "kind": 2,
+        "importPath": "core.history",
+        "description": "core.history",
+        "peekOfCode": "def get_db_path():\n    path = settings.get('db_path', DATA_DIR)\n    os.makedirs(path, exist_ok=True)\n    return os.path.join(path, \"history.db\")\ndef get_images_path():\n    path = settings.get('db_path', DATA_DIR)\n    img_path = os.path.join(path, \"images\")\n    os.makedirs(img_path, exist_ok=True)\n    return img_path\ndef get_connection():",
+        "detail": "core.history",
+        "documentation": {}
+    },
+    {
+        "label": "get_images_path",
+        "kind": 2,
+        "importPath": "core.history",
+        "description": "core.history",
+        "peekOfCode": "def get_images_path():\n    path = settings.get('db_path', DATA_DIR)\n    img_path = os.path.join(path, \"images\")\n    os.makedirs(img_path, exist_ok=True)\n    return img_path\ndef get_connection():\n    db_file = get_db_path()\n    conn = sqlite3.connect(db_file)\n    return conn\ndef init_db():",
+        "detail": "core.history",
+        "documentation": {}
+    },
+    {
+        "label": "get_connection",
+        "kind": 2,
+        "importPath": "core.history",
+        "description": "core.history",
+        "peekOfCode": "def get_connection():\n    db_file = get_db_path()\n    conn = sqlite3.connect(db_file)\n    return conn\ndef init_db():\n    get_images_path()\n    conn = get_connection()\n    cursor = conn.cursor()\n    cursor.execute(\"\"\"\n        CREATE TABLE IF NOT EXISTS clipboard_history (",
+        "detail": "core.history",
+        "documentation": {}
+    },
+    {
+        "label": "init_db",
+        "kind": 2,
+        "importPath": "core.history",
+        "description": "core.history",
+        "peekOfCode": "def init_db():\n    get_images_path()\n    conn = get_connection()\n    cursor = conn.cursor()\n    cursor.execute(\"\"\"\n        CREATE TABLE IF NOT EXISTS clipboard_history (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            type TEXT NOT NULL,          -- 'text' ou 'image'\n            content TEXT NOT NULL,       -- texto bruto ou caminho do arquivo da imagem\n            hash TEXT UNIQUE,            -- hash sha256 para evitar duplicatas consecutivas/gerais",
+        "detail": "core.history",
+        "documentation": {}
+    },
+    {
+        "label": "cleanup_history",
+        "kind": 2,
+        "importPath": "core.history",
+        "description": "core.history",
+        "peekOfCode": "def cleanup_history(conn):\n    \"\"\"Remove os registros mais antigos não fixados além do limite MAX_HISTORY, limpando também arquivos de imagem.\"\"\"\n    cursor = conn.cursor()\n    # 1. Identifica e deleta arquivos de imagem correspondentes aos registros a serem apagados\n    cursor.execute(\"\"\"\n        SELECT content FROM clipboard_history \n        WHERE type = 'image' \n          AND is_pinned = 0 \n          AND id NOT IN (\n              SELECT id FROM clipboard_history ",
+        "detail": "core.history",
+        "documentation": {}
+    },
+    {
+        "label": "add_text",
+        "kind": 2,
+        "importPath": "core.history",
+        "description": "core.history",
+        "peekOfCode": "def add_text(text):\n    \"\"\"Adiciona um novo texto ao histórico, tratando duplicatas consecutivas e gerais.\"\"\"\n    if not text or not text.strip():\n        return\n    init_db()\n    hash_val = hashlib.sha256(text.encode('utf-8')).hexdigest()\n    now = time.time()\n    conn = get_connection()\n    cursor = conn.cursor()\n    # Verifica duplicata consecutiva no topo",
+        "detail": "core.history",
+        "documentation": {}
+    },
+    {
+        "label": "add_image",
+        "kind": 2,
+        "importPath": "core.history",
+        "description": "core.history",
+        "peekOfCode": "def add_image(image_bytes):\n    \"\"\"Adiciona uma imagem ao histórico, salvando o arquivo e tratando duplicatas.\"\"\"\n    if not image_bytes:\n        return\n    init_db()\n    hash_val = hashlib.sha256(image_bytes).hexdigest()\n    now = time.time()\n    conn = get_connection()\n    cursor = conn.cursor()\n    # Verifica duplicata consecutiva no topo",
+        "detail": "core.history",
+        "documentation": {}
+    },
+    {
+        "label": "load_history",
+        "kind": 2,
+        "importPath": "core.history",
+        "description": "core.history",
+        "peekOfCode": "def load_history(search_query=None):\n    \"\"\"Carrega o histórico do banco de dados, descriptografando o texto e aplicando filtro em memória.\"\"\"\n    init_db()\n    conn = get_connection()\n    cursor = conn.cursor()\n    import datetime\n    limit = settings.get('max_history', MAX_HISTORY)\n    cursor.execute(\"\"\"\n        SELECT id, type, content, is_pinned, created_at \n        FROM clipboard_history ",
+        "detail": "core.history",
+        "documentation": {}
+    },
+    {
+        "label": "get_image_bytes",
+        "kind": 2,
+        "importPath": "core.history",
+        "description": "core.history",
+        "peekOfCode": "def get_image_bytes(filepath):\n    \"\"\"Lê e descriptografa os bytes de uma imagem.\"\"\"\n    if not os.path.exists(filepath):\n        return None\n    try:\n        with open(filepath, 'rb') as f:\n            data = f.read()\n        return crypto.decrypt_bytes(data)\n    except Exception as e:\n        print(f\"[FastPaste] Erro ao carregar imagem criptografada: {e}\")",
+        "detail": "core.history",
+        "documentation": {}
+    },
+    {
+        "label": "toggle_pin",
+        "kind": 2,
+        "importPath": "core.history",
+        "description": "core.history",
+        "peekOfCode": "def toggle_pin(item_id):\n    \"\"\"Inverte o status de fixado de um item.\"\"\"\n    init_db()\n    conn = get_connection()\n    cursor = conn.cursor()\n    cursor.execute(\"UPDATE clipboard_history SET is_pinned = 1 - is_pinned WHERE id = ?\", (item_id,))\n    conn.commit()\n    conn.close()\ndef delete_item(item_id):\n    \"\"\"Exclui um item específico, incluindo o arquivo físico caso seja uma imagem.\"\"\"",
+        "detail": "core.history",
+        "documentation": {}
+    },
+    {
+        "label": "delete_item",
+        "kind": 2,
+        "importPath": "core.history",
+        "description": "core.history",
+        "peekOfCode": "def delete_item(item_id):\n    \"\"\"Exclui um item específico, incluindo o arquivo físico caso seja uma imagem.\"\"\"\n    init_db()\n    conn = get_connection()\n    cursor = conn.cursor()\n    # Se for imagem, remove o arquivo correspondente\n    cursor.execute(\"SELECT type, content FROM clipboard_history WHERE id = ?\", (item_id,))\n    row = cursor.fetchone()\n    if row:\n        item_type, content = row",
+        "detail": "core.history",
+        "documentation": {}
+    },
+    {
+        "label": "clear",
+        "kind": 2,
+        "importPath": "core.history",
+        "description": "core.history",
+        "peekOfCode": "def clear():\n    \"\"\"Limpa todo o histórico de clipes não fixados.\"\"\"\n    init_db()\n    conn = get_connection()\n    cursor = conn.cursor()\n    # Deleta arquivos físicos de imagens não fixadas\n    cursor.execute(\"SELECT content FROM clipboard_history WHERE type = 'image' AND is_pinned = 0\")\n    files = [row[0] for row in cursor.fetchall()]\n    for filepath in files:\n        if os.path.exists(filepath):",
+        "detail": "core.history",
+        "documentation": {}
+    },
+    {
+        "label": "EventTypeSpec",
+        "kind": 6,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "class EventTypeSpec(ctypes.Structure):\n    _fields_ = [(\"eventClass\", ctypes.c_uint32), (\"eventKind\", ctypes.c_uint32)]\nclass EventHotKeyID(ctypes.Structure):\n    _fields_ = [(\"signature\", ctypes.c_uint32), (\"id\", ctypes.c_uint32)]\ndef _load_carbon():\n    carbon = ctypes.CDLL(CARBON_FRAMEWORK)\n    carbon.GetApplicationEventTarget.restype = ctypes.c_void_p\n    carbon.GetApplicationEventTarget.argtypes = []\n    carbon.RegisterEventHotKey.restype = ctypes.c_int32\n    carbon.RegisterEventHotKey.argtypes = [",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "EventHotKeyID",
+        "kind": 6,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "class EventHotKeyID(ctypes.Structure):\n    _fields_ = [(\"signature\", ctypes.c_uint32), (\"id\", ctypes.c_uint32)]\ndef _load_carbon():\n    carbon = ctypes.CDLL(CARBON_FRAMEWORK)\n    carbon.GetApplicationEventTarget.restype = ctypes.c_void_p\n    carbon.GetApplicationEventTarget.argtypes = []\n    carbon.RegisterEventHotKey.restype = ctypes.c_int32\n    carbon.RegisterEventHotKey.argtypes = [\n        ctypes.c_uint32,\n        ctypes.c_uint32,",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "CarbonHotkeyManager",
+        "kind": 6,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "class CarbonHotkeyManager:\n    def __init__(self, callback):\n        self.callback = callback\n        self._carbon = None\n        self._hotkey_ref = ctypes.c_void_p()\n        self._handler_ref = ctypes.c_void_p()\n        self._handler_callback = None\n        self._event_types = None\n    def start(self):\n        from configs.settings_manager import settings",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "resolve_hotkey",
+        "kind": 2,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "def resolve_hotkey(hotkey_str, native_key_code=None):\n    modifiers, key_token = _parse_hotkey(hotkey_str)\n    if native_key_code is not None:\n        try:\n            return int(native_key_code), modifiers\n        except (TypeError, ValueError):\n            pass\n    if key_token == \"space\":\n        return MAC_KEYCODES[\"space\"], modifiers\n    if len(key_token) == 1:",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "CARBON_FRAMEWORK",
+        "kind": 5,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "CARBON_FRAMEWORK = \"/System/Library/Frameworks/Carbon.framework/Carbon\"\nEVENT_CLASS_KEYBOARD = 0x6B657962\nEVENT_HOT_KEY_PRESSED = 5\nCMD_KEY = 1 << 8\nSHIFT_KEY = 1 << 9\nOPTION_KEY = 1 << 11\nCONTROL_KEY = 1 << 12\nHOTKEY_SIGNATURE = 0x46505354\nMAC_KEYCODES = {\n    \"a\": 0,",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "EVENT_CLASS_KEYBOARD",
+        "kind": 5,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "EVENT_CLASS_KEYBOARD = 0x6B657962\nEVENT_HOT_KEY_PRESSED = 5\nCMD_KEY = 1 << 8\nSHIFT_KEY = 1 << 9\nOPTION_KEY = 1 << 11\nCONTROL_KEY = 1 << 12\nHOTKEY_SIGNATURE = 0x46505354\nMAC_KEYCODES = {\n    \"a\": 0,\n    \"s\": 1,",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "EVENT_HOT_KEY_PRESSED",
+        "kind": 5,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "EVENT_HOT_KEY_PRESSED = 5\nCMD_KEY = 1 << 8\nSHIFT_KEY = 1 << 9\nOPTION_KEY = 1 << 11\nCONTROL_KEY = 1 << 12\nHOTKEY_SIGNATURE = 0x46505354\nMAC_KEYCODES = {\n    \"a\": 0,\n    \"s\": 1,\n    \"d\": 2,",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "CMD_KEY",
+        "kind": 5,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "CMD_KEY = 1 << 8\nSHIFT_KEY = 1 << 9\nOPTION_KEY = 1 << 11\nCONTROL_KEY = 1 << 12\nHOTKEY_SIGNATURE = 0x46505354\nMAC_KEYCODES = {\n    \"a\": 0,\n    \"s\": 1,\n    \"d\": 2,\n    \"f\": 3,",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "SHIFT_KEY",
+        "kind": 5,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "SHIFT_KEY = 1 << 9\nOPTION_KEY = 1 << 11\nCONTROL_KEY = 1 << 12\nHOTKEY_SIGNATURE = 0x46505354\nMAC_KEYCODES = {\n    \"a\": 0,\n    \"s\": 1,\n    \"d\": 2,\n    \"f\": 3,\n    \"h\": 4,",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "OPTION_KEY",
+        "kind": 5,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "OPTION_KEY = 1 << 11\nCONTROL_KEY = 1 << 12\nHOTKEY_SIGNATURE = 0x46505354\nMAC_KEYCODES = {\n    \"a\": 0,\n    \"s\": 1,\n    \"d\": 2,\n    \"f\": 3,\n    \"h\": 4,\n    \"g\": 5,",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "CONTROL_KEY",
+        "kind": 5,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "CONTROL_KEY = 1 << 12\nHOTKEY_SIGNATURE = 0x46505354\nMAC_KEYCODES = {\n    \"a\": 0,\n    \"s\": 1,\n    \"d\": 2,\n    \"f\": 3,\n    \"h\": 4,\n    \"g\": 5,\n    \"z\": 6,",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "HOTKEY_SIGNATURE",
+        "kind": 5,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "HOTKEY_SIGNATURE = 0x46505354\nMAC_KEYCODES = {\n    \"a\": 0,\n    \"s\": 1,\n    \"d\": 2,\n    \"f\": 3,\n    \"h\": 4,\n    \"g\": 5,\n    \"z\": 6,\n    \"x\": 7,",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "MAC_KEYCODES",
+        "kind": 5,
+        "importPath": "core.macos_hotkeys",
+        "description": "core.macos_hotkeys",
+        "peekOfCode": "MAC_KEYCODES = {\n    \"a\": 0,\n    \"s\": 1,\n    \"d\": 2,\n    \"f\": 3,\n    \"h\": 4,\n    \"g\": 5,\n    \"z\": 6,\n    \"x\": 7,\n    \"c\": 8,",
+        "detail": "core.macos_hotkeys",
+        "documentation": {}
+    },
+    {
+        "label": "ClipboardMonitor",
+        "kind": 6,
+        "importPath": "core.monitor",
+        "description": "core.monitor",
+        "peekOfCode": "class ClipboardMonitor:\n    def __init__(self):\n        self.last_text_hash = None\n        self.last_image_hash = None\n        self.running = False\n        self.wl_proc = None\n        self.app = QApplication.instance()\n        if self.app:\n            self.clipboard = self.app.clipboard()\n            # Capture initial state to prevent double-saving on startup",
+        "detail": "core.monitor",
+        "documentation": {}
+    },
+    {
+        "label": "InputSimulator",
+        "kind": 6,
+        "importPath": "core.platform_handler",
+        "description": "core.platform_handler",
+        "peekOfCode": "class InputSimulator:\n    def __init__(self):\n        self.os_name = platform.system()\n    def paste(self):\n        \"\"\"Simulate Ctrl+V or Cmd+V to paste the current clipboard content.\"\"\"\n        if self.os_name == \"Windows\":\n            try:\n                import time\n                time.sleep(0.15) # Wait a bit for the popup to hide and return focus\n                from pynput.keyboard import Controller, Key",
+        "detail": "core.platform_handler",
+        "documentation": {}
+    },
+    {
+        "label": "GlobalHotkeyManager",
+        "kind": 6,
+        "importPath": "core.platform_handler",
+        "description": "core.platform_handler",
+        "peekOfCode": "class GlobalHotkeyManager:\n    def __init__(self, callback):\n        self.os_name = platform.system()\n        self.callback = callback\n        self.listener = None\n        self.hotkey_instance = None\n        self.backend = None\n    def start(self):\n        if self.os_name == \"Darwin\":\n            try:",
+        "detail": "core.platform_handler",
+        "documentation": {}
+    },
+    {
+        "label": "normalize_pynput_key",
+        "kind": 2,
+        "importPath": "core.platform_handler",
+        "description": "core.platform_handler",
+        "peekOfCode": "def normalize_pynput_key(key, os_name):\n    from pynput import keyboard\n    # 1. Normalize modifier keys to their generic versions (ctrl, shift, alt, cmd)\n    if key in (keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):\n        return keyboard.Key.ctrl\n    if key in (keyboard.Key.shift_l, keyboard.Key.shift_r):\n        return keyboard.Key.shift\n    if key in (keyboard.Key.alt_l, keyboard.Key.alt_r):\n        return keyboard.Key.alt\n    if key in (keyboard.Key.cmd_l, keyboard.Key.cmd_r):",
+        "detail": "core.platform_handler",
+        "documentation": {}
+    },
+    {
+        "label": "parse_hotkey_for_filter",
+        "kind": 2,
+        "importPath": "core.platform_handler",
+        "description": "core.platform_handler",
+        "peekOfCode": "def parse_hotkey_for_filter(hotkey_str):\n    expected = {\n        'ctrl': False,\n        'shift': False,\n        'alt': False,\n        'vks': []\n    }\n    parts = hotkey_str.lower().split('+')\n    for part in parts:\n        if part == \"<ctrl>\":",
+        "detail": "core.platform_handler",
+        "documentation": {}
+    },
+    {
+        "label": "on_press",
+        "kind": 2,
+        "importPath": "scratch.debug_keys",
+        "description": "scratch.debug_keys",
+        "peekOfCode": "def on_press(key):\n    try:\n        print(f\"Pressionado: char={getattr(key, 'char', None)}, vk={getattr(key, 'vk', None)}, key={key}\")\n    except Exception as e:\n        print(f\"Erro no log: {e}\")\n    if key == keyboard.Key.esc:\n        return False\nwith keyboard.Listener(on_press=on_press) as listener:\n    listener.join()",
+        "detail": "scratch.debug_keys",
+        "documentation": {}
+    },
+    {
+        "label": "on_activate",
+        "kind": 2,
+        "importPath": "scratch.test_canonical",
+        "description": "scratch.test_canonical",
+        "peekOfCode": "def on_activate():\n    print(\"✅ HOTKEY ATIVADO!\")\n# Registra <ctrl>+'\nhotkey_keys = keyboard.HotKey.parse(\"<ctrl>+'\")\nprint(\"Teclas do hotkey:\", hotkey_keys)\nhotkey = keyboard.HotKey(hotkey_keys, on_activate)\ndef on_press(key):\n    canonical_key = listener.canonical(key)\n    print(f\"Press: raw={key}, canonical={canonical_key}\")\n    hotkey.press(canonical_key)",
+        "detail": "scratch.test_canonical",
+        "documentation": {}
+    },
+    {
+        "label": "on_press",
+        "kind": 2,
+        "importPath": "scratch.test_canonical",
+        "description": "scratch.test_canonical",
+        "peekOfCode": "def on_press(key):\n    canonical_key = listener.canonical(key)\n    print(f\"Press: raw={key}, canonical={canonical_key}\")\n    hotkey.press(canonical_key)\ndef on_release(key):\n    canonical_key = listener.canonical(key)\n    hotkey.release(canonical_key)\nprint(\"Aguardando atalho <ctrl>+' (Pressione Esc para sair)...\")\nwith keyboard.Listener(on_press=on_press, on_release=on_release) as l:\n    listener = l",
+        "detail": "scratch.test_canonical",
+        "documentation": {}
+    },
+    {
+        "label": "on_release",
+        "kind": 2,
+        "importPath": "scratch.test_canonical",
+        "description": "scratch.test_canonical",
+        "peekOfCode": "def on_release(key):\n    canonical_key = listener.canonical(key)\n    hotkey.release(canonical_key)\nprint(\"Aguardando atalho <ctrl>+' (Pressione Esc para sair)...\")\nwith keyboard.Listener(on_press=on_press, on_release=on_release) as l:\n    listener = l\n    l.join()",
+        "detail": "scratch.test_canonical",
+        "documentation": {}
+    },
+    {
+        "label": "hotkey_keys",
+        "kind": 5,
+        "importPath": "scratch.test_canonical",
+        "description": "scratch.test_canonical",
+        "peekOfCode": "hotkey_keys = keyboard.HotKey.parse(\"<ctrl>+'\")\nprint(\"Teclas do hotkey:\", hotkey_keys)\nhotkey = keyboard.HotKey(hotkey_keys, on_activate)\ndef on_press(key):\n    canonical_key = listener.canonical(key)\n    print(f\"Press: raw={key}, canonical={canonical_key}\")\n    hotkey.press(canonical_key)\ndef on_release(key):\n    canonical_key = listener.canonical(key)\n    hotkey.release(canonical_key)",
+        "detail": "scratch.test_canonical",
+        "documentation": {}
+    },
+    {
+        "label": "hotkey",
+        "kind": 5,
+        "importPath": "scratch.test_canonical",
+        "description": "scratch.test_canonical",
+        "peekOfCode": "hotkey = keyboard.HotKey(hotkey_keys, on_activate)\ndef on_press(key):\n    canonical_key = listener.canonical(key)\n    print(f\"Press: raw={key}, canonical={canonical_key}\")\n    hotkey.press(canonical_key)\ndef on_release(key):\n    canonical_key = listener.canonical(key)\n    hotkey.release(canonical_key)\nprint(\"Aguardando atalho <ctrl>+' (Pressione Esc para sair)...\")\nwith keyboard.Listener(on_press=on_press, on_release=on_release) as l:",
+        "detail": "scratch.test_canonical",
+        "documentation": {}
+    },
+    {
+        "label": "DragEventFilter",
+        "kind": 6,
+        "importPath": "screens.popup",
+        "description": "screens.popup",
+        "peekOfCode": "class DragEventFilter(QObject):\n    def __init__(self, list_widget):\n        super().__init__(list_widget)\n        self.list_widget = list_widget\n        self.drag_start_pos = None\n    def eventFilter(self, obj, event):\n        if event.type() == QEvent.Type.MouseButtonPress:\n            if event.button() == Qt.MouseButton.LeftButton:\n                self.drag_start_pos = event.position().toPoint()\n        elif event.type() == QEvent.Type.MouseMove:",
+        "detail": "screens.popup",
+        "documentation": {}
+    },
+    {
+        "label": "DraggableListWidget",
+        "kind": 6,
+        "importPath": "screens.popup",
+        "description": "screens.popup",
+        "peekOfCode": "class DraggableListWidget(QListWidget):\n    def __init__(self, parent=None):\n        super().__init__(parent)\n        self.setDragEnabled(True)\n        self.setDragDropMode(QListWidget.DragDropMode.DragOnly)\n    def supportedDropActions(self):\n        return Qt.DropAction.CopyAction\n    def startDrag(self, supportedActions):\n        item = self.currentItem()\n        if not item:",
+        "detail": "screens.popup",
+        "documentation": {}
+    },
+    {
+        "label": "FastPastePopup",
+        "kind": 6,
+        "importPath": "screens.popup",
+        "description": "screens.popup",
+        "peekOfCode": "class FastPastePopup(QWidget):\n    WINDOW_RADIUS = 16\n    WINDOW_PADDING = 28\n    WINDOW_OPEN_Y_OFFSET = -28\n    def __init__(self, standalone=True):\n        super().__init__()\n        hide_dock_icon()\n        self.standalone = standalone\n        self.input_sim = InputSimulator()\n        # Servidor de instância única para o popup standalone",
+        "detail": "screens.popup",
+        "documentation": {}
+    },
+    {
+        "label": "draw_custom_search_icon",
+        "kind": 2,
+        "importPath": "screens.popup",
+        "description": "screens.popup",
+        "peekOfCode": "def draw_custom_search_icon(color_hex):\n    pixmap = QPixmap(18, 18)\n    pixmap.fill(Qt.GlobalColor.transparent)\n    painter = QPainter(pixmap)\n    painter.setRenderHint(QPainter.RenderHint.Antialiasing)\n    pen = QPen(QColor(color_hex), 2)\n    painter.setPen(pen)\n    painter.drawEllipse(2, 2, 9, 9)\n    painter.drawLine(10, 10, 15, 15)\n    painter.end()",
+        "detail": "screens.popup",
+        "documentation": {}
+    },
+    {
+        "label": "draw_custom_gear_icon",
+        "kind": 2,
+        "importPath": "screens.popup",
+        "description": "screens.popup",
+        "peekOfCode": "def draw_custom_gear_icon(color_hex):\n    import math\n    pixmap = QPixmap(18, 18)\n    pixmap.fill(Qt.GlobalColor.transparent)\n    painter = QPainter(pixmap)\n    painter.setRenderHint(QPainter.RenderHint.Antialiasing)\n    pen = QPen(QColor(color_hex), 2)\n    painter.setPen(pen)\n    center_x = 9\n    center_y = 9",
+        "detail": "screens.popup",
+        "documentation": {}
+    },
+    {
+        "label": "get_tinted_icon",
+        "kind": 2,
+        "importPath": "screens.popup",
+        "description": "screens.popup",
+        "peekOfCode": "def get_tinted_icon(icon_name, color_hex):\n    icon = QIcon.fromTheme(icon_name)\n    if icon.isNull():\n        icon = QIcon.fromTheme(icon_name.replace(\"-symbolic\", \"\"))\n    if icon.isNull():\n        return None\n    pixmap = icon.pixmap(16, 16)\n    if pixmap.isNull() or pixmap.width() == 0 or pixmap.height() == 0:\n        return None\n    # Tint symbolic icons so they are visible on dark themes",
+        "detail": "screens.popup",
+        "documentation": {}
+    },
+    {
+        "label": "show",
+        "kind": 2,
+        "importPath": "screens.popup",
+        "description": "screens.popup",
+        "peekOfCode": "def show(standalone=True):\n    app = QApplication.instance()\n    if not app:\n        app = QApplication(sys.argv)\n    window = FastPastePopup(standalone=standalone)\n    window.show()\n    # Force focus\n    window.activateWindow()\n    window.raise_()\n    if standalone:",
+        "detail": "screens.popup",
+        "documentation": {}
+    },
+    {
+        "label": "HotkeyLineEdit",
+        "kind": 6,
+        "importPath": "screens.settings_ui",
+        "description": "screens.settings_ui",
+        "peekOfCode": "class HotkeyLineEdit(QLineEdit):\n    def __init__(self, parent=None):\n        super().__init__(parent)\n        self.setReadOnly(True)\n        self.setPlaceholderText(\"Clique para gravar...\")\n        self.recording = False\n        self.raw_hotkey = settings.get('hotkey', \"<ctrl>+'\")\n        self.native_mac_key_code = settings.get('hotkey_mac_key_code')\n        if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):\n            self.setText(\"Configurado no Sistema\")",
+        "detail": "screens.settings_ui",
+        "documentation": {}
+    },
+    {
+        "label": "SwitchButton",
+        "kind": 6,
+        "importPath": "screens.settings_ui",
+        "description": "screens.settings_ui",
+        "peekOfCode": "class SwitchButton(QAbstractButton):\n    def __init__(self, parent=None):\n        super().__init__(parent)\n        self.setCheckable(True)\n        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)\n        self._offset = 4\n        self._anim = QPropertyAnimation(self, b\"offset\", self)\n        self._anim.setDuration(120)\n        self._anim.setEasingCurve(QEasingCurve.Type.InOutQuad)\n        self.setCursor(Qt.CursorShape.PointingHandCursor)",
+        "detail": "screens.settings_ui",
+        "documentation": {}
+    },
+    {
+        "label": "SettingsWidget",
+        "kind": 6,
+        "importPath": "screens.settings_ui",
+        "description": "screens.settings_ui",
+        "peekOfCode": "class SettingsWidget(QWidget):\n    settings_closed = pyqtSignal(bool)\n    def __init__(self, parent=None):\n        super().__init__(parent)\n        # Apply dark theme stylesheet to match popup\n        self.setStyleSheet(\"\"\"\n            QWidget {\n                background-color: transparent;\n                color: #ffffff;\n            }",
+        "detail": "screens.settings_ui",
+        "documentation": {}
+    },
+    {
+        "label": "pynput_to_qt",
+        "kind": 2,
+        "importPath": "screens.settings_ui",
+        "description": "screens.settings_ui",
+        "peekOfCode": "def pynput_to_qt(pynput_str):\n    if not pynput_str:\n        return \"\"\n    parts = pynput_str.split('+')\n    qt_parts = []\n    for part in parts:\n        if part == \"<ctrl>\":\n            qt_parts.append(\"Ctrl\")\n        elif part == \"<shift>\":\n            qt_parts.append(\"Shift\")",
+        "detail": "screens.settings_ui",
+        "documentation": {}
+    },
+    {
+        "label": "FastPasteTray",
+        "kind": 6,
+        "importPath": "screens.tray",
+        "description": "screens.tray",
+        "peekOfCode": "class FastPasteTray:\n    def __init__(self, on_show_callback, on_settings_callback, on_exit_callback):\n        self.on_show_callback = on_show_callback\n        self.on_settings_callback = on_settings_callback\n        self.on_exit_callback = on_exit_callback\n        self.tray_icon = None\n    def setup(self):\n        # We need a QApplication instance to run QSystemTrayIcon\n        app = QApplication.instance()\n        if not app:",
+        "detail": "screens.tray",
+        "documentation": {}
+    },
+    {
+        "label": "run_command",
+        "kind": 2,
+        "importPath": "scripts.build",
+        "description": "scripts.build",
+        "peekOfCode": "def run_command(command, shell=False):\n    print(f\"Executing: {' '.join(command) if isinstance(command, list) else command}\")\n    result = subprocess.run(command, shell=shell)\n    if result.returncode != 0:\n        print(f\"Error executing command: {command}\")\n        sys.exit(result.returncode)\ndef main():\n    print(f\"=== {APP_NAME} Builder ===\")\n    # Force working directory to project root\n    script_dir = os.path.dirname(os.path.abspath(__file__))",
+        "detail": "scripts.build",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "scripts.build",
+        "description": "scripts.build",
+        "peekOfCode": "def main():\n    print(f\"=== {APP_NAME} Builder ===\")\n    # Force working directory to project root\n    script_dir = os.path.dirname(os.path.abspath(__file__))\n    repo_root = os.path.dirname(script_dir)\n    os.chdir(repo_root)\n    print(f\"[Info] Running from root folder: {os.getcwd()}\")\n    # 1. Verify and install dependencies\n    deps = {\n        \"PyQt6\": \"PyQt6\",",
+        "detail": "scripts.build",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "scripts.checkup",
+        "description": "scripts.checkup",
+        "peekOfCode": "def main():\n    # Ensure project root is in path\n    script_dir = os.path.dirname(os.path.abspath(__file__))\n    repo_root = os.path.dirname(script_dir)\n    if repo_root not in sys.path:\n        sys.path.insert(0, repo_root)\n    os.chdir(repo_root)\n    from configs.config import APP_NAME\n    print(f\"=== {APP_NAME} Diagnostic Import Checkup ===\")\n    # Modules to check",
+        "detail": "scripts.checkup",
+        "documentation": {}
+    },
+    {
+        "label": "run_cmd",
+        "kind": 2,
+        "importPath": "scripts.setup",
+        "description": "scripts.setup",
+        "peekOfCode": "def run_cmd(args):\n    try:\n        res = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)\n        return res.returncode == 0, res.stdout, res.stderr\n    except Exception as e:\n        return False, \"\", str(e)\ndef install_pip_requirements():\n    print(\"[1/4] Instalando dependências do Python...\")\n    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))\n    req_file = os.path.join(base_dir, \"requirements.txt\")",
+        "detail": "scripts.setup",
+        "documentation": {}
+    },
+    {
+        "label": "install_pip_requirements",
+        "kind": 2,
+        "importPath": "scripts.setup",
+        "description": "scripts.setup",
+        "peekOfCode": "def install_pip_requirements():\n    print(\"[1/4] Instalando dependências do Python...\")\n    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))\n    req_file = os.path.join(base_dir, \"requirements.txt\")\n    if not os.path.exists(req_file):\n        print(f\"  ⚠ requirements.txt não encontrado em {req_file}\")\n        return\n    # Try different pip combinations\n    commands = [\n        [sys.executable, \"-m\", \"pip\", \"install\", \"-r\", req_file, \"--break-system-packages\"],",
+        "detail": "scripts.setup",
+        "documentation": {}
+    },
+    {
+        "label": "setup_linux",
+        "kind": 2,
+        "importPath": "scripts.setup",
+        "description": "scripts.setup",
+        "peekOfCode": "def setup_linux():\n    app_lower = APP_NAME.lower()\n    print(f\"\\n🐧 Configurando ambiente Linux para {APP_NAME}...\")\n    # Install system deps\n    if shutil.which(\"apt-get\"):\n        print(\"  Instalando pacotes do sistema (wl-clipboard, wtype, xdotool)...\")\n        # Run non-interactively, ignore error\n        subprocess.run([\"sudo\", \"apt-get\", \"update\"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)\n        subprocess.run([\"sudo\", \"apt-get\", \"install\", \"-y\", \"wl-clipboard\", \"wtype\", \"xdotool\"])\n        print(\"  ✅ Dependências do sistema instaladas!\")",
+        "detail": "scripts.setup",
+        "documentation": {}
+    },
+    {
+        "label": "setup_macos",
+        "kind": 2,
+        "importPath": "scripts.setup",
+        "description": "scripts.setup",
+        "peekOfCode": "def setup_macos():\n    app_lower = APP_NAME.lower()\n    print(f\"\\n🍎 Configurando ambiente macOS para {APP_NAME}...\")\n    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))\n    main_py = os.path.join(base_dir, \"main.py\")\n    # Create Launch Agent directory\n    agents_dir = os.path.expanduser(\"~/Library/LaunchAgents\")\n    os.makedirs(agents_dir, exist_ok=True)\n    plist_file = os.path.join(agents_dir, f\"com.{app_lower}.autostart.plist\")\n    legacy_plist_file = os.path.join(agents_dir, f\"com.{app_lower}.daemon.plist\")",
+        "detail": "scripts.setup",
+        "documentation": {}
+    },
+    {
+        "label": "setup_windows",
+        "kind": 2,
+        "importPath": "scripts.setup",
+        "description": "scripts.setup",
+        "peekOfCode": "def setup_windows():\n    print(f\"\\n🪟 Configurando ambiente Windows para {APP_NAME}...\")\n    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))\n    main_py = os.path.join(base_dir, \"main.py\")\n    # Determine pythonw executable to run gui without console\n    pythonw_exe = sys.executable.replace(\"python.exe\", \"pythonw.exe\")\n    if not os.path.exists(pythonw_exe):\n        pythonw_exe = sys.executable\n    # Startup Folder\n    startup_dir = os.path.join(os.environ.get(\"APPDATA\", \"\"), \"Microsoft\", \"Windows\", \"Start Menu\", \"Programs\", \"Startup\")",
+        "detail": "scripts.setup",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "scripts.setup",
+        "description": "scripts.setup",
+        "peekOfCode": "def main():\n    print(\"==================================================\")\n    print(f\"⚡ Instalando e Configurando o {APP_NAME}...\")\n    print(\"==================================================\")\n    # 1. Install dependencies\n    install_pip_requirements()\n    # 2. OS-specific setup\n    os_name = platform.system()\n    if os_name == \"Linux\":\n        setup_linux()",
+        "detail": "scripts.setup",
+        "documentation": {}
+    },
+    {
+        "label": "on_changed",
+        "kind": 2,
+        "importPath": "test_watcher",
+        "description": "test_watcher",
+        "peekOfCode": "def on_changed(clipboard, event):\n    text = clipboard.wait_for_text()\n    if text:\n        print(\"NEW:\" + text, flush=True)\ncb = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)\ncb.connect('owner-change', on_changed)\nprint(\"Listening...\")\nGtk.main()",
+        "detail": "test_watcher",
+        "documentation": {}
+    },
+    {
+        "label": "cb",
+        "kind": 5,
+        "importPath": "test_watcher",
+        "description": "test_watcher",
+        "peekOfCode": "cb = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)\ncb.connect('owner-change', on_changed)\nprint(\"Listening...\")\nGtk.main()",
+        "detail": "test_watcher",
+        "documentation": {}
+    }
+]

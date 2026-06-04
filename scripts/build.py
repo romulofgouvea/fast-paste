@@ -140,6 +140,12 @@ def main():
     for folder in ["build", "dist"]:
         if os.path.exists(folder):
             print(f"Cleaning existing '{folder}' directory...")
+            ds_store = os.path.join(folder, ".DS_Store")
+            if os.path.exists(ds_store):
+                try:
+                    os.remove(ds_store)
+                except Exception:
+                    pass
             shutil.rmtree(folder)
 
     # 4. Run PyInstaller
@@ -160,6 +166,20 @@ def main():
                 print("[OK] Hided from Dock (LSUIElement set in Info.plist).")
             except Exception as e:
                 print(f"[Warning] Failed to modify Info.plist: {e}")
+
+        stray_binary = f"dist/{name}"
+        if os.path.isdir(stray_binary):
+            try:
+                shutil.rmtree(stray_binary)
+                print(f"[OK] Removed stray binary folder: {stray_binary}")
+            except Exception as e:
+                print(f"[Warning] Failed to remove stray binary folder: {e}")
+        elif os.path.isfile(stray_binary):
+            try:
+                os.remove(stray_binary)
+                print(f"[OK] Removed stray binary: {stray_binary}")
+            except Exception as e:
+                print(f"[Warning] Failed to remove stray binary: {e}")
     
     print("\n==========================================")
     print("Build process completed successfully!")

@@ -157,14 +157,23 @@ def setup_macos():
     # Create Launch Agent directory
     agents_dir = os.path.expanduser("~/Library/LaunchAgents")
     os.makedirs(agents_dir, exist_ok=True)
-    plist_file = os.path.join(agents_dir, f"com.{app_lower}.daemon.plist")
+    plist_file = os.path.join(agents_dir, f"com.{app_lower}.autostart.plist")
+    legacy_plist_file = os.path.join(agents_dir, f"com.{app_lower}.daemon.plist")
+
+    for path in [legacy_plist_file]:
+        if os.path.exists(path):
+            try:
+                run_cmd(["launchctl", "unload", path])
+                os.remove(path)
+            except Exception:
+                pass
     
     plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.{app_lower}.daemon</string>
+    <string>com.{app_lower}.autostart</string>
     <key>ProgramArguments</key>
     <array>
         <string>{sys.executable}</string>
@@ -172,8 +181,6 @@ def setup_macos():
         <string>run</string>
     </array>
     <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
     <string>{os.path.expanduser(f"~/Library/Logs/{app_lower}.log")}</string>
@@ -187,6 +194,7 @@ def setup_macos():
         
     # Load the agent
     run_cmd(["launchctl", "unload", plist_file])
+    run_cmd(["launchctl", "unload", legacy_plist_file])
     ok, _, err = run_cmd(["launchctl", "load", plist_file])
     
     if ok:

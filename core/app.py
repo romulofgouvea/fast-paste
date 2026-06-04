@@ -18,6 +18,16 @@ hotkeys_manager = None
 class HotkeySignaler(QObject):
     show_popup = pyqtSignal()
 
+def pause_hotkeys():
+    global hotkeys_manager
+    if hotkeys_manager:
+        hotkeys_manager.stop()
+
+def resume_hotkeys():
+    global hotkeys_manager
+    if hotkeys_manager:
+        hotkeys_manager.start()
+
 def check_status():
     """Check if the daemon is running by trying to connect to the local server."""
     socket = QLocalSocket()

@@ -23,6 +23,19 @@ def get_executable_command():
                 return [sys.executable, fallback, "run"]
             return [sys.executable, script_path, "run"]
 
+def get_background_command():
+    cmd = get_executable_command()
+    if cmd and cmd[-1] == "run":
+        return cmd
+    return [*cmd, "run"]
+
+def get_macos_launch_agent_paths():
+    app_lower = APP_NAME.lower()
+    agents_dir = os.path.expanduser("~/Library/LaunchAgents")
+    canonical_path = os.path.join(agents_dir, f"com.{app_lower}.autostart.plist")
+    legacy_path = os.path.join(agents_dir, f"com.{app_lower}.daemon.plist")
+    return canonical_path, legacy_path
+
 def is_autostart_enabled():
     app_lower = APP_NAME.lower()
     if sys.platform.startswith("win"):
@@ -50,13 +63,13 @@ def is_autostart_enabled():
         return os.path.exists(autostart_file)
         
     elif sys.platform.startswith("darwin"):
-        plist_file = os.path.expanduser(f"~/Library/LaunchAgents/com.{app_lower}.autostart.plist")
-        return os.path.exists(plist_file)
+        plist_file, legacy_plist_file = get_macos_launch_agent_paths()
+        return os.path.exists(plist_file) or os.path.exists(legacy_plist_file)
         
     return False
 
 def enable_autostart():
-    cmd = get_executable_command()
+    cmd = get_background_command()
     app_lower = APP_NAME.lower()
     
     if sys.platform.startswith("win"):
@@ -108,7 +121,11 @@ Categories=Utility;
             
     elif sys.platform.startswith("darwin"):
         try:
-            # Create a LaunchAgent plist
+            plist_file, legacy_plist_file = get_macos_launch_agent_paths()
+            if os.path.exists(legacy_plist_file):
+                subprocess.run(["launchctl", "unload", legacy_plist_file], check=False)
+                os.remove(legacy_plist_file)
+
             plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -124,9 +141,8 @@ Categories=Utility;
 </dict>
 </plist>
 """
-            agents_dir = os.path.expanduser("~/Library/LaunchAgents")
-            os.makedirs(agents_dir, exist_ok=True)
-            with open(os.path.join(agents_dir, f"com.{app_lower}.autostart.plist"), "w", encoding="utf-8") as f:
+            os.makedirs(os.path.dirname(plist_file), exist_ok=True)
+            with open(plist_file, "w", encoding="utf-8") as f:
                 f.write(plist_content)
             return True
         except Exception as e:
@@ -169,9 +185,13 @@ def disable_autostart():
             
     elif sys.platform.startswith("darwin"):
         try:
-            plist_file = os.path.expanduser(f"~/Library/LaunchAgents/com.{app_lower}.autostart.plist")
+            plist_file, legacy_plist_file = get_macos_launch_agent_paths()
             if os.path.exists(plist_file):
+                subprocess.run(["launchctl", "unload", plist_file], check=False)
                 os.remove(plist_file)
+            if os.path.exists(legacy_plist_file):
+                subprocess.run(["launchctl", "unload", legacy_plist_file], check=False)
+                os.remove(legacy_plist_file)
             return True
         except Exception as e:
             print(f"[Autostart] Error disabling on macOS: {e}")

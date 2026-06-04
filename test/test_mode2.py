@@ -2,7 +2,7 @@ import sys, time
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt, QTimer
 from configs.config import settings
-from screens.popup import FastPastePopup
+from screens.history_ui import FastPastePopup
 
 app = QApplication(sys.argv)
 settings.set('interaction_mode', 2) # Force Mode 2

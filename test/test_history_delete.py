@@ -1,7 +1,7 @@
 import sys, time
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt, QTimer
-from screens.popup import FastPastePopup
+from screens.history_ui import FastPastePopup
 from core import history
 
 # add some items

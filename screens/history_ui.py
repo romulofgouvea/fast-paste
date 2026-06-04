@@ -792,29 +792,7 @@ class FastPastePopup(QWidget):
 
     def on_search_changed(self, text):
         query = text.strip()
-        if not query:
-            self.full_history = history.load_history()
-            self.filtered_history = list(self.full_history)
-        elif query.startswith('/'):
-            from core.variables import load_variables
-            vars_dict = load_variables()
-            search_key = query[1:].lower()
-            self.filtered_history = []
-            for k, v in vars_dict.items():
-                val_str = v.get("value", "")
-                if search_key in k.lower() or search_key in val_str.lower():
-                    self.filtered_history.append({
-                        'id': f"var_{k}",
-                        'type': 'text',
-                        'content': val_str,
-                        'is_pinned': 0,
-                        'created_at': 0,
-                        'is_variable': True,
-                        'var_name': k,
-                        'is_secret': v.get("is_secret", False)
-                    })
-        else:
-            self.filtered_history = history.load_history(query)
+        self.filtered_history = history.load_history_with_variables(query)
         self.populate_list()
         
     def set_shortcuts_enabled(self, enabled):
@@ -867,49 +845,7 @@ class FastPastePopup(QWidget):
             self.paste_item(item_data)
 
     def paste_item(self, item_data, simulate_paste=True, close_window=True):
-        import subprocess
-        import shutil
-        
-        has_wl = shutil.which('wl-copy') is not None
-        has_xclip = shutil.which('xclip') is not None
-        
-        if item_data["type"] == "text":
-            text = item_data["content"]
-            try:
-                if has_wl:
-                    proc = subprocess.Popen(['wl-copy'], stdin=subprocess.PIPE)
-                    proc.communicate(text.encode('utf-8'))
-                elif has_xclip:
-                    proc = subprocess.Popen(['xclip', '-selection', 'clipboard'], stdin=subprocess.PIPE)
-                    proc.communicate(text.encode('utf-8'))
-                else:
-                    QApplication.clipboard().setText(text)
-                history.add_text(text)
-            except Exception as e:
-                print(f"[FastPaste] Erro ao copiar texto: {e}")
-                
-        elif item_data["type"] == "image":
-            filepath = item_data["content"]
-            try:
-                img_data = history.get_image_bytes(filepath)
-                if not img_data:
-                    raise Exception("Não foi possível carregar os bytes da imagem (provavelmente apagada ou corrompida).")
-                    
-                if has_wl:
-                    proc = subprocess.Popen(['wl-copy', '--type', 'image/png'], stdin=subprocess.PIPE)
-                    proc.communicate(img_data)
-                elif has_xclip:
-                    proc = subprocess.Popen(['xclip', '-selection', 'clipboard', '-t', 'image/png'], stdin=subprocess.PIPE)
-                    proc.communicate(img_data)
-                else:
-                    pixmap = QPixmap()
-                    pixmap.loadFromData(img_data)
-                    QApplication.clipboard().setImage(pixmap.toImage())
-                    
-                history.add_image(img_data)
-            except Exception as e:
-                print(f"[FastPaste] Erro ao copiar imagem: {e}")
-        
+        history.copy_item_to_clipboard(item_data)
         if close_window:
             self.close_app(simulate_paste=simulate_paste)
 

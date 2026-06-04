@@ -2,7 +2,7 @@ import sys, time
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt, QTimer
 from configs.settings_manager import settings
-from screens.popup import FastPastePopup
+from screens.history_ui import FastPastePopup
 from core import history
 
 history.add_text("test item 1")

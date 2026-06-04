@@ -356,3 +356,78 @@ def import_backup(filepath: str) -> bool:
     except Exception as e:
         print(f"Import error: {e}")
         return False
+
+def copy_item_to_clipboard(item_data):
+    """Copia o conteúdo do item para a área de transferência do sistema (com suporte a Wayland/X11 e fallback)."""
+    import subprocess
+    import shutil
+    
+    has_wl = shutil.which('wl-copy') is not None
+    has_xclip = shutil.which('xclip') is not None
+    
+    if item_data["type"] == "text":
+        text = item_data["content"]
+        try:
+            if has_wl:
+                proc = subprocess.Popen(['wl-copy'], stdin=subprocess.PIPE)
+                proc.communicate(text.encode('utf-8'))
+            elif has_xclip:
+                proc = subprocess.Popen(['xclip', '-selection', 'clipboard'], stdin=subprocess.PIPE)
+                proc.communicate(text.encode('utf-8'))
+            else:
+                from PyQt6.QtWidgets import QApplication
+                app = QApplication.instance()
+                if app:
+                    app.clipboard().setText(text)
+            add_text(text)
+        except Exception as e:
+            print(f"[FastPaste] Erro ao copiar texto: {e}")
+            
+    elif item_data["type"] == "image":
+        filepath = item_data["content"]
+        try:
+            img_data = get_image_bytes(filepath)
+            if not img_data:
+                raise Exception("Não foi possível carregar os bytes da imagem (provavelmente apagada ou corrompida).")
+                
+            if has_wl:
+                proc = subprocess.Popen(['wl-copy', '--type', 'image/png'], stdin=subprocess.PIPE)
+                proc.communicate(img_data)
+            elif has_xclip:
+                proc = subprocess.Popen(['xclip', '-selection', 'clipboard', '-t', 'image/png'], stdin=subprocess.PIPE)
+                proc.communicate(img_data)
+            else:
+                from PyQt6.QtWidgets import QApplication
+                from PyQt6.QtGui import QPixmap
+                app = QApplication.instance()
+                if app:
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(img_data)
+                    app.clipboard().setImage(pixmap.toImage())
+            add_image(img_data)
+        except Exception as e:
+            print(f"[FastPaste] Erro ao copiar imagem: {e}")
+
+def load_history_with_variables(query=""):
+    """Carrega o histórico filtrado e inclui variáveis se a query começar com '/'."""
+    if query.startswith('/'):
+        from core.variables import load_variables
+        vars_dict = load_variables()
+        search_key = query[1:].lower()
+        filtered = []
+        for k, v in vars_dict.items():
+            val_str = v.get("value", "")
+            if search_key in k.lower() or search_key in val_str.lower():
+                filtered.append({
+                    'id': f"var_{k}",
+                    'type': 'text',
+                    'content': val_str,
+                    'is_pinned': 0,
+                    'created_at': 0,
+                    'is_variable': True,
+                    'var_name': k,
+                    'is_secret': v.get("is_secret", False)
+                })
+        return filtered
+    else:
+        return load_history(query)

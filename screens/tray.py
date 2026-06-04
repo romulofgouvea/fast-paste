@@ -41,7 +41,7 @@ class FastPasteTray:
         # Context Menu
         self.menu = QMenu()
         
-        from screens.popup import get_tinted_icon
+        from screens.history_ui import get_tinted_icon
         
         # Helper para evitar travamentos se o ícone não existir
         def make_icon(name):

@@ -24,6 +24,14 @@ def run_command(command, shell=False):
         print(f"Error executing command: {command}")
         sys.exit(result.returncode)
 
+def sign_macos_app(app_path):
+    if not shutil.which("codesign"):
+        print("[Warning] codesign not found. Skipping macOS app signing.")
+        return
+
+    run_command(["codesign", "--force", "--deep", "--sign", "-", app_path])
+    run_command(["codesign", "--verify", "--deep", "--strict", "--verbose=2", app_path])
+
 def main():
     print(f"=== {APP_NAME} Builder ===")
     
@@ -180,6 +188,8 @@ def main():
                 print(f"[OK] Removed stray binary: {stray_binary}")
             except Exception as e:
                 print(f"[Warning] Failed to remove stray binary: {e}")
+
+        sign_macos_app(f"dist/{name}.app")
     
     print("\n==========================================")
     print("Build process completed successfully!")

@@ -17,6 +17,7 @@ class SettingsManager:
         self.settings = {
             "max_history": MAX_HISTORY,
             "hotkey": "<ctrl>+'",
+            "hotkey_mac_key_code": None,
             "db_path": DATA_DIR,
             "interaction_mode": 1
         }

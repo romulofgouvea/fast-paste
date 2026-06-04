@@ -714,11 +714,15 @@ class FastPastePopup(QWidget):
                 shortcut.setEnabled(enabled)
 
     def open_settings(self):
+        import core.app
+        core.app.pause_hotkeys()
         # Switch to settings page
         self.set_shortcuts_enabled(False)
         self.stacked_widget.setCurrentIndex(1)
         
     def close_settings(self, saved=False):
+        import core.app
+        core.app.resume_hotkeys()
         # Switch back to main page
         self.stacked_widget.setCurrentIndex(0)
         self.set_shortcuts_enabled(True)

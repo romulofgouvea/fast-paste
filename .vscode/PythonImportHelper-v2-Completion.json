@@ -900,6 +900,22 @@
         "documentation": {}
     },
     {
+        "label": "QPainterPath",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
+        "label": "QRegion",
+        "importPath": "PyQt6.QtGui",
+        "description": "PyQt6.QtGui",
+        "isExtraImport": true,
+        "detail": "PyQt6.QtGui",
+        "documentation": {}
+    },
+    {
         "label": "QPainter",
         "importPath": "PyQt6.QtGui",
         "description": "PyQt6.QtGui",
@@ -1311,6 +1327,24 @@
         "documentation": {}
     },
     {
+        "label": "get_background_command",
+        "kind": 2,
+        "importPath": "core.autostart",
+        "description": "core.autostart",
+        "peekOfCode": "def get_background_command():\n    cmd = get_executable_command()\n    if cmd and cmd[-1] == \"run\":\n        return cmd\n    return [*cmd, \"run\"]\ndef get_macos_launch_agent_paths():\n    app_lower = APP_NAME.lower()\n    agents_dir = os.path.expanduser(\"~/Library/LaunchAgents\")\n    canonical_path = os.path.join(agents_dir, f\"com.{app_lower}.autostart.plist\")\n    legacy_path = os.path.join(agents_dir, f\"com.{app_lower}.daemon.plist\")",
+        "detail": "core.autostart",
+        "documentation": {}
+    },
+    {
+        "label": "get_macos_launch_agent_paths",
+        "kind": 2,
+        "importPath": "core.autostart",
+        "description": "core.autostart",
+        "peekOfCode": "def get_macos_launch_agent_paths():\n    app_lower = APP_NAME.lower()\n    agents_dir = os.path.expanduser(\"~/Library/LaunchAgents\")\n    canonical_path = os.path.join(agents_dir, f\"com.{app_lower}.autostart.plist\")\n    legacy_path = os.path.join(agents_dir, f\"com.{app_lower}.daemon.plist\")\n    return canonical_path, legacy_path\ndef is_autostart_enabled():\n    app_lower = APP_NAME.lower()\n    if sys.platform.startswith(\"win\"):\n        try:",
+        "detail": "core.autostart",
+        "documentation": {}
+    },
+    {
         "label": "is_autostart_enabled",
         "kind": 2,
         "importPath": "core.autostart",
@@ -1324,7 +1358,7 @@
         "kind": 2,
         "importPath": "core.autostart",
         "description": "core.autostart",
-        "peekOfCode": "def enable_autostart():\n    cmd = get_executable_command()\n    app_lower = APP_NAME.lower()\n    if sys.platform.startswith(\"win\"):\n        try:\n            import winreg\n            # Quote path if it contains spaces\n            cmd_str = f'\"{cmd[0]}\"'\n            if len(cmd) > 1:\n                cmd_str += \" \" + \" \".join(cmd[1:])",
+        "peekOfCode": "def enable_autostart():\n    cmd = get_background_command()\n    app_lower = APP_NAME.lower()\n    if sys.platform.startswith(\"win\"):\n        try:\n            import winreg\n            # Quote path if it contains spaces\n            cmd_str = f'\"{cmd[0]}\"'\n            if len(cmd) > 1:\n                cmd_str += \" \" + \" \".join(cmd[1:])",
         "detail": "core.autostart",
         "documentation": {}
     },
@@ -1747,7 +1781,7 @@
         "kind": 6,
         "importPath": "screens.popup",
         "description": "screens.popup",
-        "peekOfCode": "class FastPastePopup(QWidget):\n    def __init__(self, standalone=True):\n        super().__init__()\n        hide_dock_icon()\n        self.standalone = standalone\n        self.input_sim = InputSimulator()\n        # Servidor de instância única para o popup standalone\n        if self.standalone:\n            self.setup_single_instance_server()\n        # Configurações da Janela",
+        "peekOfCode": "class FastPastePopup(QWidget):\n    WINDOW_RADIUS = 16\n    WINDOW_PADDING = 28\n    WINDOW_OPEN_Y_OFFSET = -28\n    def __init__(self, standalone=True):\n        super().__init__()\n        hide_dock_icon()\n        self.standalone = standalone\n        self.input_sim = InputSimulator()\n        # Servidor de instância única para o popup standalone",
         "detail": "screens.popup",
         "documentation": {}
     },
@@ -1891,7 +1925,7 @@
         "kind": 2,
         "importPath": "scripts.setup",
         "description": "scripts.setup",
-        "peekOfCode": "def setup_macos():\n    app_lower = APP_NAME.lower()\n    print(f\"\\n🍎 Configurando ambiente macOS para {APP_NAME}...\")\n    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))\n    main_py = os.path.join(base_dir, \"main.py\")\n    # Create Launch Agent directory\n    agents_dir = os.path.expanduser(\"~/Library/LaunchAgents\")\n    os.makedirs(agents_dir, exist_ok=True)\n    plist_file = os.path.join(agents_dir, f\"com.{app_lower}.daemon.plist\")\n    plist_content = f\"\"\"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+        "peekOfCode": "def setup_macos():\n    app_lower = APP_NAME.lower()\n    print(f\"\\n🍎 Configurando ambiente macOS para {APP_NAME}...\")\n    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))\n    main_py = os.path.join(base_dir, \"main.py\")\n    # Create Launch Agent directory\n    agents_dir = os.path.expanduser(\"~/Library/LaunchAgents\")\n    os.makedirs(agents_dir, exist_ok=True)\n    plist_file = os.path.join(agents_dir, f\"com.{app_lower}.autostart.plist\")\n    legacy_plist_file = os.path.join(agents_dir, f\"com.{app_lower}.daemon.plist\")",
         "detail": "scripts.setup",
         "documentation": {}
     },

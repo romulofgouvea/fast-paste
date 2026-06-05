@@ -74,7 +74,8 @@ class VariablesManagerDialog(QDialog):
         """)
         
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        # Margens idênticas ao history_ui para alinhar perfeitamente com a janela principal
+        main_layout.setContentsMargins(28, 28, 28, 78)
         main_layout.addWidget(self.container)
         
         layout = QVBoxLayout(self.container)

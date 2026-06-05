@@ -647,14 +647,14 @@ class SettingsWidget(QWidget):
         btn_layout.setContentsMargins(5, 5, 5, 5)
         btn_layout.addStretch(1)
         
-        cancel_btn = QPushButton("Cancelar")
-        cancel_btn.clicked.connect(self.cancel_settings)
+        back_btn = QPushButton("Voltar")
+        back_btn.clicked.connect(self.cancel_settings)
         
         save_btn = QPushButton("Salvar Configurações")
         save_btn.setObjectName("saveButton")
         save_btn.clicked.connect(self.save_settings)
         
-        btn_layout.addWidget(cancel_btn)
+        btn_layout.addWidget(back_btn)
         btn_layout.addWidget(save_btn)
         main_layout.addLayout(btn_layout)
 

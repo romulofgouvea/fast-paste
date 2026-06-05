@@ -1,7 +1,8 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QPushButton, QListWidget, QListWidgetItem, QLineEdit, QWidget, QCheckBox)
+                             QPushButton, QListWidget, QListWidgetItem, QLineEdit, QWidget, QCheckBox, QFrame)
 from PyQt6.QtCore import Qt
-from configs.config import UI_COLORS
+from configs.config import UI_COLORS, DEFAULT_SETTINGS
+from configs.settings_manager import settings
 from core.variables import load_variables, add_variable, remove_variable
 
 class VariablesManagerDialog(QDialog):
@@ -10,7 +11,12 @@ class VariablesManagerDialog(QDialog):
         self.setWindowTitle("Gerenciar Variáveis")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setFixedWidth(500)
+        
+        w = settings.get("window_width", DEFAULT_SETTINGS["window_width"])
+        h = settings.get("window_height", DEFAULT_SETTINGS["window_height"])
+        self.setFixedSize(w, h)
+        if parent:
+            self.move(parent.window().geometry().topLeft())
         
         self.container = QWidget(self)
         self.container.setObjectName("ModalContainer")
@@ -44,7 +50,27 @@ class VariablesManagerDialog(QDialog):
                 selection-background-color: {UI_COLORS.get('selected', '#FF7A00')};
             }}
             QLineEdit:focus {{ border: 1px solid {UI_COLORS.get('selected', '#FF7A00')}; }}
-            QCheckBox {{ color: #ffffff; font-size: 13px; background: transparent; }}
+            QCheckBox {{
+                color: #ffffff;
+                font-size: 13px;
+                background: transparent;
+                spacing: 6px;
+            }}
+            QCheckBox::indicator {{
+                width: 16px;
+                height: 16px;
+                border: 2px solid rgba(255, 255, 255, 0.4);
+                border-radius: 4px;
+                background-color: transparent;
+            }}
+            QCheckBox::indicator:hover {{
+                border-color: rgba(255, 255, 255, 0.8);
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {UI_COLORS.get('selected', '#FF7A00')};
+                border: 2px solid {UI_COLORS.get('selected', '#FF7A00')};
+                image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIzLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBvbHlsaW5lIHBvaW50cz0iMjAgNiA5IDE3IDQgMTIiLz48L3N2Zz4=);
+            }}
         """)
         
         main_layout = QVBoxLayout(self)
@@ -64,32 +90,81 @@ class VariablesManagerDialog(QDialog):
         desc.setStyleSheet("color: #a1a1a1; font-size: 12px;")
         layout.addWidget(desc)
         
-        # Lista
-        self.list_widget = QListWidget()
-        self.list_widget.itemSelectionChanged.connect(self.on_selection)
-        layout.addWidget(self.list_widget)
+        # Spacer
+        layout.addSpacing(4)
         
-        # Campos de Add
-        add_layout = QHBoxLayout()
+        # Card de Variáveis (seção para criar variáveis)
+        vars_card = QFrame()
+        vars_card.setObjectName("VarsCard")
+        vars_card.setFrameShape(QFrame.Shape.NoFrame)
+        vars_card.setStyleSheet("QFrame#VarsCard { background-color: rgba(45, 45, 45, 0.3); border: 1px solid rgba(80, 80, 80, 0.2); border-radius: 12px; }")
+        
+        vars_layout = QVBoxLayout(vars_card)
+        vars_layout.setContentsMargins(14, 14, 14, 14)
+        vars_layout.setSpacing(12)
+        
+        accent_color = UI_COLORS.get('selected', '#FF7A00')
+        card_header = QLabel("Criar Variável")
+        card_header.setStyleSheet(f"font-weight: bold; font-size: 14px; color: {accent_color};")
+        vars_layout.addWidget(card_header)
+        
+        # Seção de Adicionar Variável (dentro do card) - Estrutura Vertical Espaçosa
+        add_layout = QVBoxLayout()
+        add_layout.setSpacing(10)
+        
+        # Linha 1: Nome da Variável
+        name_row = QHBoxLayout()
+        name_label = QLabel("Nome (ex: cpf):")
+        name_label.setStyleSheet("font-size: 13px; color: #dfdfdf;")
+        name_label.setFixedWidth(120)
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Nome (ex: cpf)")
-        self.name_input.setFixedWidth(100)
+        self.name_input.setPlaceholderText("Digite o atalho...")
+        name_row.addWidget(name_label)
+        name_row.addWidget(self.name_input)
         
+        # Linha 2: Conteúdo da Variável
+        val_row = QHBoxLayout()
+        val_label = QLabel("Conteúdo:")
+        val_label.setStyleSheet("font-size: 13px; color: #dfdfdf;")
+        val_label.setFixedWidth(120)
         self.val_input = QLineEdit()
-        self.val_input.setPlaceholderText("Conteúdo...")
+        self.val_input.setPlaceholderText("Digite o texto de substituição...")
+        val_row.addWidget(val_label)
+        val_row.addWidget(self.val_input)
         
-        self.secret_cb = QCheckBox("Secreta")
+        # Linha 3: Checkbox Secreta e Botão Adicionar
+        bottom_row = QHBoxLayout()
+        self.secret_cb = QCheckBox("Secreta (ocultar conteúdo)")
         
         self.add_btn = QPushButton("Adicionar")
         self.add_btn.setObjectName("primary")
         self.add_btn.clicked.connect(self.add_var)
+        self.add_btn.setMinimumWidth(120)
         
-        add_layout.addWidget(self.name_input)
-        add_layout.addWidget(self.val_input)
-        add_layout.addWidget(self.secret_cb)
-        add_layout.addWidget(self.add_btn)
+        bottom_row.addWidget(self.secret_cb)
+        bottom_row.addStretch(1)
+        bottom_row.addWidget(self.add_btn)
         
-        layout.addLayout(add_layout)
+        add_layout.addLayout(name_row)
+        add_layout.addLayout(val_row)
+        add_layout.addLayout(bottom_row)
+        
+        vars_layout.addLayout(add_layout)
+        
+        layout.addWidget(vars_card)
+        
+        # Spacer
+        layout.addSpacing(6)
+        
+        # Título da Lista (fora do card)
+        list_header = QLabel("Variáveis Cadastradas:")
+        list_header.setStyleSheet("font-weight: bold; font-size: 13px; color: #a1a1a1;")
+        layout.addWidget(list_header)
+        
+        # Lista (fora do card, embaixo)
+        self.list_widget = QListWidget()
+        self.list_widget.itemSelectionChanged.connect(self.on_selection)
+        layout.addWidget(self.list_widget)
         
         # Botões Rodapé
         btn_layout = QHBoxLayout()
@@ -101,9 +176,9 @@ class VariablesManagerDialog(QDialog):
         btn_layout.addWidget(self.remove_btn)
         btn_layout.addStretch(1)
         
-        close_btn = QPushButton("Fechar")
-        close_btn.clicked.connect(self.accept)
-        btn_layout.addWidget(close_btn)
+        back_btn = QPushButton("Voltar")
+        back_btn.clicked.connect(self.accept)
+        btn_layout.addWidget(back_btn)
         
         layout.addLayout(btn_layout)
         

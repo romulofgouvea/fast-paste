@@ -479,6 +479,7 @@ class SettingsWidget(QWidget):
         self.theme_btn_group = QButtonGroup(self)
         colors = [
             ("#e95420", "Ubuntu Orange"),
+            ("#fcc800", "Amarelo Ouro"),
             ("#0078D7", "Azul Windows"),
             ("#10B981", "Verde Esmeralda"),
             ("#8B5CF6", "Roxo Violeta")
@@ -645,17 +646,17 @@ class SettingsWidget(QWidget):
         # Save/Cancel bottom button layout
         btn_layout = QHBoxLayout()
         btn_layout.setContentsMargins(5, 5, 5, 5)
-        btn_layout.addStretch(1)
-        
-        back_btn = QPushButton("Voltar")
-        back_btn.clicked.connect(self.cancel_settings)
         
         save_btn = QPushButton("Salvar Configurações")
         save_btn.setObjectName("saveButton")
         save_btn.clicked.connect(self.save_settings)
         
-        btn_layout.addWidget(back_btn)
+        back_btn = QPushButton("Voltar")
+        back_btn.clicked.connect(self.cancel_settings)
+        
         btn_layout.addWidget(save_btn)
+        btn_layout.addStretch(1)
+        btn_layout.addWidget(back_btn)
         main_layout.addLayout(btn_layout)
 
     def browse_db_path(self):

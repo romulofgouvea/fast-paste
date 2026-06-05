@@ -56,10 +56,6 @@ class FastPasteTray:
         settings_action.triggered.connect(self.on_settings_callback)
         self.menu.addAction(settings_action)
         
-        clear_action = QAction(make_icon("edit-clear-all-symbolic"), "Limpar Histórico", self.menu)
-        clear_action.triggered.connect(self._clear_history)
-        self.menu.addAction(clear_action)
-        
         self.menu.addSeparator()
         
         exit_action = QAction(make_icon("application-exit-symbolic"), "Sair", self.menu)
@@ -77,7 +73,3 @@ class FastPasteTray:
     def _on_tray_activated(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
             self.on_show_callback()
-
-    def _clear_history(self):
-        history.clear()
-        print(f"[{APP_NAME}] History cleared via tray.")

@@ -348,8 +348,6 @@ def copy_item_to_clipboard(item_data):
                 app = QApplication.instance()
                 if app:
                     app.clipboard().setText(text)
-            
-            add_text(text)
         except Exception as e:
             print(f"[FastPaste] Erro ao copiar texto: {e}")
             
@@ -390,8 +388,6 @@ def copy_item_to_clipboard(item_data):
                     pixmap = QPixmap()
                     pixmap.loadFromData(img_data)
                     app.clipboard().setImage(pixmap.toImage())
-                    
-            add_image(img_data)
         except Exception as e:
             print(f"[FastPaste] Erro ao copiar imagem: {e}")
 

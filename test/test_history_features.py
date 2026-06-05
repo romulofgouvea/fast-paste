@@ -3,7 +3,7 @@ import os
 import shutil
 import json
 from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, QEvent
 
 # Import paths
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -138,7 +138,7 @@ def run_tests():
         popup.refresh_list()
         
         assert len(popup.filtered_history) > 0, "No items in history for copy test"
-        target_item = popup.filtered_history[-1]
+        target_item = popup.filtered_history[0]
         original_content = target_item["content"]
         
         import unittest.mock as mock
@@ -150,9 +150,13 @@ def run_tests():
             
             history.copy_item_to_clipboard(target_item)
             
+            # Verifica que o subprocess foi chamado (wl-copy ou xclip)
+            assert mock_popen.called, "subprocess.Popen não foi chamado durante a cópia"
+            
+            # Verifica que o conteúdo no histórico permanece inalterado
             popup.refresh_list()
-            new_top_item = popup.filtered_history[0]
-            assert new_top_item["content"] == original_content, f"Expected top item to be {original_content}, got {new_top_item['content']}"
+            found = any(i["content"] == original_content for i in popup.filtered_history)
+            assert found, f"Item '{original_content}' desapareceu do histórico após a cópia"
             
         print("✓ Copy to clipboard test passed")
 
@@ -175,6 +179,19 @@ def run_tests():
         selected_item = popup.list_widget.item(current_row)
         assert selected_item.flags() & Qt.ItemFlag.ItemIsSelectable, "Header/Separator selected instead of clipboard item!"
         print(f"✓ Arrow navigation correctly selected selectable row {current_row}")
+
+        # Test Return/Enter bubble up on list_widget
+        popup.list_widget.setFocus()
+        import unittest.mock as mock
+        with mock.patch.object(popup, 'paste_item') as mock_paste_item:
+            event_enter = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Return, Qt.KeyboardModifier.NoModifier)
+            popup.list_widget.keyPressEvent(event_enter)
+            
+            if not event_enter.isAccepted():
+                popup.keyPressEvent(event_enter)
+                
+            assert mock_paste_item.called, "Enter key event was not propagated or handled"
+            print("✓ Enter/Return key event bubble-up and handling passed")
 
     def test_modes():
         print("\n--- Testing Interaction Modes ---")

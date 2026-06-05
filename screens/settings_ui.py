@@ -11,7 +11,7 @@ from configs.settings_manager import settings
 from configs.config import DATA_DIR, MAX_HISTORY, APP_NAME, UI_COLORS, DEFAULT_SETTINGS
 
 class CustomModal(QDialog):
-    def __init__(self, parent=None, title="", text="", is_input=False, input_password=False, default_input="", show_cancel=False):
+    def __init__(self, parent=None, title="", text="", is_input=False, input_password=False, default_input="", show_cancel=False, ok_text="OK"):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
@@ -79,7 +79,7 @@ class CustomModal(QDialog):
             cancel_btn.clicked.connect(self.reject)
             btn_layout.addWidget(cancel_btn)
             
-        ok_btn = QPushButton("OK")
+        ok_btn = QPushButton(ok_text)
         ok_btn.setObjectName("primary")
         ok_btn.clicked.connect(self.accept)
         btn_layout.addWidget(ok_btn)
@@ -100,14 +100,14 @@ class CustomModal(QDialog):
         dialog.exec()
         
     @classmethod
-    def confirm(cls, parent, title, text):
-        dialog = cls(parent, title, text, show_cancel=True)
-        return dialog.exec() == QDialog.DialogCode.Accepted
+    def confirm(cls, parent, title, text, ok_text="OK"):
+        dialog = cls(parent, title, text, show_cancel=True, ok_text=ok_text)
+        return dialog.exec() == 1
         
     @classmethod
     def get_text(cls, parent, title, label, is_password=False, default_text=""):
         dialog = cls(parent, title, label, is_input=True, input_password=is_password, default_input=default_text, show_cancel=True)
-        ok = dialog.exec() == QDialog.DialogCode.Accepted
+        ok = dialog.exec() == 1
         return dialog.textValue(), ok
 
 def pynput_to_qt(pynput_str):
@@ -623,17 +623,6 @@ class SettingsWidget(QWidget):
         db_path_layout.addLayout(db_input_layout)
         data_layout.addLayout(db_path_layout)
         
-        # Row 2: Backup actions
-        actions_layout = QHBoxLayout()
-        self.export_btn = QPushButton("Exportar Bkp")
-        self.export_btn.clicked.connect(self.export_backup)
-        self.import_btn = QPushButton("Importar Bkp")
-        self.import_btn.clicked.connect(self.import_backup)
-        actions_layout.addWidget(self.export_btn)
-        actions_layout.addWidget(self.import_btn)
-        actions_layout.addStretch(1)
-        data_layout.addLayout(actions_layout)
-        
         # Spacer
         data_layout.addSpacing(12)
         
@@ -653,11 +642,6 @@ class SettingsWidget(QWidget):
         scroll_area.setWidget(scroll_content)
         main_layout.addWidget(scroll_area)
 
-        # Tip label
-        info = QLabel("Dica: Itens fixados (★) nunca são excluídos automaticamente.")
-        info.setStyleSheet("color: #a1a1a1; font-style: italic; margin-left: 5px;")
-        main_layout.addWidget(info)
-
         # Save/Cancel bottom button layout
         btn_layout = QHBoxLayout()
         btn_layout.setContentsMargins(5, 5, 5, 5)
@@ -675,21 +659,19 @@ class SettingsWidget(QWidget):
         main_layout.addLayout(btn_layout)
 
     def browse_db_path(self):
-        # Workaround for Wayland: Hide parent stays-on-top window
-        parent_window = self.window()
-        was_visible = parent_window.isVisible()
-        if was_visible:
-            parent_window.hide()
-            
-        folder = QFileDialog.getExistingDirectory(None, "Selecione a pasta para salvar o Banco de Dados", self.db_input.text())
+        dialog = QFileDialog(self.window())
+        dialog.setWindowTitle("Selecione a pasta para salvar o Banco de Dados")
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
+        dialog.setOption(QFileDialog.Option.DontUseNativeDialog, True)
         
-        if was_visible:
-            parent_window.show()
-            parent_window.activateWindow()
-            parent_window.raise_()
+        current_dir = self.db_input.text()
+        if os.path.exists(current_dir):
+            dialog.setDirectory(current_dir)
             
-        if folder:
-            self.db_input.setText(folder)
+        if dialog.exec() == 1:
+            selected = dialog.selectedFiles()
+            if selected:
+                self.db_input.setText(selected[0])
 
     def cancel_settings(self):
         self.settings_closed.emit(False)
@@ -767,7 +749,7 @@ class SettingsWidget(QWidget):
         
         result = dialog.exec()
         
-        if result == QDialog.DialogCode.Accepted:
+        if result == 1:
             import subprocess
             if getattr(sys, 'frozen', False):
                 cmd = [sys.executable, "show"]
@@ -804,68 +786,55 @@ class SettingsWidget(QWidget):
         dialog = VariablesManagerDialog(self)
         dialog.exec()
 
+    def _do_restart(self):
+        """Delega o reinício completo para core.app.force_restart()."""
+        # Fecha a janela principal ignorando o bloqueio da página de configurações
+        parent = self.parent()
+        if parent and hasattr(parent, 'force_close'):
+            parent.force_close()
+        elif parent:
+            parent._force_close = True
+            parent.close()
+        
+        from core.app import force_restart
+        force_restart()
+
     def clear_database_action(self):
         confirmed = CustomModal.confirm(
             self, 
             "Limpar Tudo", 
-            "Atenção: Isso apagará TODOS os dados permanentemente (histórico, itens fixados, imagens, variáveis e redefinirá as configurações para o padrão).\n\nDeseja continuar?"
+            "Atenção: Isso apagará TODOS os dados permanentemente:\n\n"
+            "• Histórico de clipes\n"
+            "• Itens fixados\n"
+            "• Imagens salvas\n"
+            "• Variáveis (Snippets)\n"
+            "• Configurações\n\n"
+            "Deseja continuar?",
+            ok_text="Limpar Tudo"
         )
-        if confirmed:
-            from core import data_settings
-            data_settings.clear_all_data()
-            CustomModal.show_message(self, APP_NAME, "Todos os dados foram excluídos e as configurações voltaram ao padrão!\nO aplicativo será reiniciado.")
-            
-            import subprocess
-            if getattr(sys, 'frozen', False):
-                cmd = [sys.executable, "show"]
-            else:
-                cmd = [sys.executable, sys.argv[0], "show"]
-            subprocess.Popen(cmd)
-            os._exit(0)
-
-    def export_backup(self):
-        from PyQt6.QtWidgets import QFileDialog
-        from core import data_settings
-        
-        password, ok = CustomModal.get_text(self, "Exportar Backup", "Digite uma senha para proteger o backup (mínimo 6 caracteres):", is_password=True)
-        if not ok:
+        if not confirmed:
             return
             
-        if len(password) < 6:
-            CustomModal.show_message(self, APP_NAME, "A senha deve ter pelo menos 6 caracteres.")
-            return
-            
-        import datetime
-        date_str = datetime.datetime.now().strftime("%Y%m%d")
-        default_filename = f"{APP_NAME.lower().replace(' ', '_')}_backup_{date_str}.zip"
-        
-        filepath, _ = QFileDialog.getSaveFileName(self, "Salvar Backup", default_filename, f"{APP_NAME} Backup (*.zip)")
-        if filepath:
-            try:
-                data_settings.export_backup_zip(filepath, password)
-                CustomModal.show_message(self, APP_NAME, "Backup exportado com sucesso e protegido com senha!")
-            except Exception as e:
-                CustomModal.show_message(self, APP_NAME, f"Falha ao exportar backup: {e}")
-
-    def import_backup(self):
-        from PyQt6.QtWidgets import QFileDialog
         from core import data_settings
-        
-        filepath, _ = QFileDialog.getOpenFileName(self, "Selecionar Backup", "", f"{APP_NAME} Backup (*.zip)")
-        if filepath:
-            password, ok = CustomModal.get_text(self, "Importar Backup", "Digite a senha do arquivo de backup:", is_password=True)
-            if not ok or not password:
-                return
-                
-            success = data_settings.import_backup_zip(filepath, password)
-            if success:
-                CustomModal.show_message(self, APP_NAME, "Backup importado com sucesso!\nO aplicativo será reiniciado para aplicar as mudanças.")
-                import subprocess
-                if getattr(sys, 'frozen', False):
-                    cmd = [sys.executable, "show"]
-                else:
-                    cmd = [sys.executable, sys.argv[0], "show"]
-                subprocess.Popen(cmd)
-                os._exit(0)
-            else:
-                CustomModal.show_message(self, APP_NAME, "Falha ao importar.\nVerifique se a senha está correta ou se o arquivo está corrompido.")
+        from core.app import stop_daemon, check_status
+
+        # 1. Para o daemon ANTES de limpar para evitar que ele grave novos itens
+        try:
+            if check_status():
+                stop_daemon()
+        except Exception as e:
+            print(f"[Clear] Aviso ao parar daemon: {e}")
+
+        # 2. Limpa tudo
+        data_settings.clear_all_data()
+
+        # 3. Mostra modal de reinicialização
+        CustomModal.show_message(
+            self, APP_NAME, 
+            "Todos os dados foram excluídos e as configurações voltaram ao padrão!\n\n"
+            "O aplicativo será reiniciado."
+        )
+        self._do_restart()
+
+
+

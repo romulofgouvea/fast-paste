@@ -25,6 +25,16 @@ def get_cipher():
         _fernet = _get_fernet()
     return _fernet
 
+def reset_cache():
+    """Invalida o cache do cipher para forçar a releitura da chave do disco.
+    
+    Deve ser chamado após operações que substituem o .secret.key:
+    - Importação de backup
+    - Limpeza total de dados (clear_all_data)
+    """
+    global _fernet
+    _fernet = None
+
 def encrypt_text(text: str) -> str:
     if not text:
         return text

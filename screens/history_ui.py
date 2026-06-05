@@ -51,6 +51,12 @@ class DraggableListWidget(QListWidget):
         self.setDragEnabled(True)
         self.setDragDropMode(QListWidget.DragDropMode.DragOnly)
 
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            event.ignore()
+            return
+        super().keyPressEvent(event)
+
     def supportedDropActions(self):
         return Qt.DropAction.CopyAction
 
@@ -245,7 +251,6 @@ class FastPastePopup(QWidget):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
         
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         
         self.full_history = history.load_history()
         self.filtered_history = list(self.full_history)
@@ -314,7 +319,11 @@ class FastPastePopup(QWidget):
         socket = self.popup_server.nextPendingConnection()
         if socket.waitForReadyRead(1000):
             data = socket.readAll().data()
-            if b"CLOSE" in data:
+            if b"FORCE_CLOSE" in data:
+                # Fechamento forçado (reinicialização, import de backup, etc.)
+                # Ignora o bloqueio da página de configurações
+                self.force_close()
+            elif b"CLOSE" in data:
                 if self.stacked_widget.currentIndex() == 1:
                     # Se estiver na página de configurações, proíbe fechar a janela
                     # e apenas traz ela para o foco.
@@ -821,10 +830,23 @@ class FastPastePopup(QWidget):
     def close_settings(self, saved=False):
         import core.app
         core.app.resume_hotkeys()
+        
+        # Força verificação do clipboard para salvar qualquer alteração ocorrida enquanto as configurações estavam abertas
+        try:
+            if hasattr(core.app, 'clipboard_monitor') and core.app.clipboard_monitor:
+                core.app.clipboard_monitor.force_check()
+        except Exception as e:
+            print(f"[Settings] Erro ao forçar verificação de clipboard: {e}")
+            
         # Switch back to main page
         self.stacked_widget.setCurrentIndex(0)
         self.set_shortcuts_enabled(True)
         self.search_entry.setFocus()
+        
+        # Sempre recarrega o histórico para mostrar novos itens copiados
+        self.full_history = history.load_history()
+        self.filtered_history = list(self.full_history)
+        self.refresh_list()
         
         if saved:
             conn = history.get_connection()
@@ -840,10 +862,10 @@ class FastPastePopup(QWidget):
             
             # Restart global hotkeys dynamically to apply new keybindings immediately
             try:
-                import core.app
                 if hasattr(core.app, 'hotkeys_manager') and core.app.hotkeys_manager:
                     core.app.hotkeys_manager.restart()
             except Exception as e:
+                print(f"[Settings] Erro ao reiniciar atalhos: {e}")
                 print(f"[FastPaste] Error reloading hotkey listener: {e}")
 
     def paste_by_index(self, idx):
@@ -965,9 +987,12 @@ class FastPastePopup(QWidget):
             
         # Salva o novo tamanho nas configurações se for diferente
         from configs.settings_manager import settings
+        from configs.config import DEFAULT_SETTINGS
         new_width = self.width()
         new_height = self.height()
-        if new_width >= 600 and new_height >= 550:
+        min_w = DEFAULT_SETTINGS["window_width"]
+        min_h = DEFAULT_SETTINGS["window_height"]
+        if new_width >= min_w and new_height >= min_h:
             if settings.get("window_width") != new_width or settings.get("window_height") != new_height:
                 settings.settings["window_width"] = new_width
                 settings.settings["window_height"] = new_height
@@ -1050,17 +1075,26 @@ class FastPastePopup(QWidget):
 
     def closeEvent(self, event):
         # Se a página de configurações estiver ativa, não permite fechar a janela do app
-        if self.stacked_widget.currentIndex() == 1:
+        # a menos que seja um fechamento forçado (reinicialização, import de backup, etc.)
+        if self.stacked_widget.currentIndex() == 1 and not getattr(self, '_force_close', False):
             event.ignore()
         else:
             super().closeEvent(event)
 
+    def force_close(self):
+        """Fecha a janela ignorando qualquer bloqueio das configurações."""
+        self._force_close = True
+        self.close()
+        if self.standalone:
+            QApplication.quit()
+
     def close_app(self, simulate_paste=False):
+        is_standalone = self.standalone
         self.close()
         if simulate_paste:
             self.input_sim.paste()
             
-        if self.standalone:
+        if is_standalone:
             QApplication.quit()
 
     def mousePressEvent(self, event):

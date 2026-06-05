@@ -132,6 +132,11 @@ def stop_daemon():
                 if res.stdout.strip() == "active":
                     print(f"🛑 Stopping {APP_NAME} via systemd...")
                     subprocess.run(["systemctl", "--user", "stop", f"{app_lower}.service"], check=True)
+                    # Aguarda de forma síncrona até que o monitor de fato pare
+                    for _ in range(15):
+                        if not check_status():
+                            break
+                        time.sleep(0.2)
                     print("🛑 Monitor stopped via systemd.")
                     return
             except Exception as e:
@@ -147,10 +152,27 @@ def stop_daemon():
         socket.write(b"STOP\n")
         socket.waitForBytesWritten(1000)
         socket.disconnectFromServer()
+        # Aguarda de forma síncrona até que o monitor de fato pare
+        for _ in range(15):
+            if not check_status():
+                break
+            time.sleep(0.2)
         print("🛑 Monitor stopped.")
+
+def close_popup_if_open():
+    """Fecha o popup standalone (Linux/Wayland) via IPC, ignorando bloqueios de configuração."""
+    socket = QLocalSocket()
+    socket.connectToServer(f"{APP_NAME}_Popup_Server")
+    if socket.waitForConnected(500):
+        socket.write(b"FORCE_CLOSE\n")
+        socket.waitForBytesWritten(500)
+        socket.disconnectFromServer()
+        time.sleep(0.3)  # Aguarda a janela fechar
 
 def restart_daemon():
     print(f"🔄 Restarting {APP_NAME}...")
+    # Fecha o popup standalone antes de reiniciar (especialmente no Linux/Wayland)
+    close_popup_if_open()
     stop_daemon()
     # Wait up to 5 seconds for status to become inactive
     for _ in range(25):
@@ -158,6 +180,44 @@ def restart_daemon():
             break
         time.sleep(0.2)
     start_daemon()
+
+def force_restart():
+    """Encerra TUDO (popup + daemon) e reinicia o aplicativo do zero.
+    
+    Deve ser chamado de dentro de um processo que faz parte do app (daemon ou popup standalone).
+    Fecha o popup via IPC, para o daemon, lança novo processo independente e encerra o atual.
+    """
+    import subprocess
+    
+    # 1. Fecha o popup standalone via IPC (se houver outra instância)
+    close_popup_if_open()
+    
+    # 2. Para o daemon se estiver rodando
+    try:
+        if check_status():
+            stop_daemon()
+            for _ in range(15):
+                if not check_status():
+                    break
+                time.sleep(0.2)
+    except Exception as e:
+        print(f"[Restart] Aviso ao parar daemon: {e}")
+    
+    # 3. Localiza o main.py e lança processo completamente novo e independente
+    if getattr(sys, 'frozen', False):
+        cmd = [sys.executable, "start"]
+    else:
+        main_py = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "main.py")
+        main_py = os.path.normpath(main_py)
+        if not os.path.exists(main_py):
+            main_py = sys.argv[0]
+        cmd = [sys.executable, main_py, "start"]
+    
+    # start_new_session=True garante que o novo processo seja completamente independente
+    subprocess.Popen(cmd, start_new_session=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    # 4. Encerra este processo completamente (sem cleanup do Qt para não travar)
+    os._exit(0)
 
 def run_standalone_popup():
     # Verifica se já existe um popup aberto
@@ -298,8 +358,8 @@ def run_foreground():
     def show_settings_cb():
         global popup_instance
         popup_instance = get_or_create_popup()
-        popup_instance.open_settings()
         popup_instance.show()
+        popup_instance.open_settings()
         popup_instance.activateWindow()
         popup_instance.raise_()
 
@@ -311,12 +371,10 @@ def run_foreground():
     clipboard_monitor.start()
 
     # 3. Setup System Tray
-    is_wayland = os.environ.get('WAYLAND_DISPLAY') is not None
-    if sys.platform.startswith('linux') and is_wayland:
-        print(f"[{APP_NAME}] Wayland detectado: Desativando System Tray para evitar bugs na dock.")
-    else:
-        tray_icon = FastPasteTray(on_show_callback=show_popup_cb, on_settings_callback=show_settings_cb, on_exit_callback=exit_cb)
-        tray_icon.setup()
+    # No Ubuntu 26 / GNOME Moderno, o suporte a AppIndicators (System Tray) é nativo e funciona perfeitamente.
+    # Sempre ativamos o ícone de bandeja por padrão para todos os sistemas.
+    tray_icon = FastPasteTray(on_show_callback=show_popup_cb, on_settings_callback=show_settings_cb, on_exit_callback=exit_cb)
+    tray_icon.setup()
 
     # 4. Setup Global Hotkeys (Windows/Mac)
     signaler = HotkeySignaler()

@@ -1,7 +1,7 @@
 import sys, time
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt, QTimer
-from configs.config import settings
+from configs.settings_manager import settings
 from screens.history_ui import FastPastePopup
 
 app = QApplication(sys.argv)

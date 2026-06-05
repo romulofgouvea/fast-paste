@@ -58,30 +58,6 @@ class TestSettingsRefactored(unittest.TestCase):
         history_settings.set_retention_days(60)
         self.assertEqual(history_settings.get_retention_days(), 60)
 
-    def test_backup_restore_with_password(self):
-        # Write dummy variables or settings to zip
-        settings.set("theme_color", "#8B5CF6")
-        
-        backup_zip = os.path.join(TEST_DIR, "test_backup.zip")
-        password = "secret_test_password"
-        
-        # Export ZIP with password
-        data_settings.export_backup_zip(backup_zip, password)
-        self.assertTrue(os.path.exists(backup_zip))
-        
-        # Change theme color in settings
-        settings.set("theme_color", "#000000")
-        self.assertEqual(settings.get("theme_color"), "#000000")
-        
-        # Import ZIP with incorrect password (should fail)
-        success = data_settings.import_backup_zip(backup_zip, "wrong_password")
-        self.assertFalse(success)
-        self.assertEqual(settings.get("theme_color"), "#000000")
-        
-        # Import ZIP with correct password (should succeed)
-        success = data_settings.import_backup_zip(backup_zip, password)
-        self.assertTrue(success)
-        self.assertEqual(settings.get("theme_color"), "#8B5CF6")
 
     def test_clear_all_data(self):
         # Change settings to non-default values

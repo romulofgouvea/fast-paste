@@ -573,6 +573,9 @@ class FastPastePopup(QWidget):
     def populate_list(self):
         self.list_widget.clear()
 
+        if hasattr(self, '_populate_timer') and self._populate_timer.isActive():
+            self._populate_timer.stop()
+
         if not self.filtered_history:
             item = QListWidgetItem("No clips found.")
             item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -581,28 +584,44 @@ class FastPastePopup(QWidget):
             return
 
         import datetime
-        today = datetime.datetime.now().date()
-        yesterday = today - datetime.timedelta(days=1)
-        
-        last_group_name = ""
+        self._today = datetime.datetime.now().date()
+        self._yesterday = self._today - datetime.timedelta(days=1)
+        self._last_group_name = ""
+        self._populate_idx = 0
 
-        for idx, item_data in enumerate(self.filtered_history):
+        self._render_chunk(20)
+        self.search_entry.setFocus()
+
+        if self._populate_idx < len(self.filtered_history):
+            self._populate_timer = QTimer(self)
+            self._populate_timer.timeout.connect(lambda: self._render_chunk(20))
+            self._populate_timer.start(5)
+        else:
+            self.list_widget.setCurrentRow(-1)
+
+    def _render_chunk(self, chunk_size):
+        end_idx = min(self._populate_idx + chunk_size, len(self.filtered_history))
+
+        for idx in range(self._populate_idx, end_idx):
+            item_data = self.filtered_history[idx]
+            
             # Lógica de Agrupamento
             if item_data.get("is_variable"):
                 group_name = "🔧 Variáveis (Snippets)"
             elif item_data.get("is_pinned"):
                 group_name = "📌 Fixados"
             else:
+                import datetime
                 item_date = datetime.datetime.fromtimestamp(item_data["created_at"]).date()
-                if item_date == today:
+                if item_date == self._today:
                     group_name = "Hoje"
-                elif item_date == yesterday:
+                elif item_date == self._yesterday:
                     group_name = "Ontem"
                 else:
                     group_name = item_date.strftime("%d/%m/%Y")
                     
-            if group_name != last_group_name:
-                last_group_name = group_name
+            if group_name != self._last_group_name:
+                self._last_group_name = group_name
                 header_item = QListWidgetItem()
                 header_item.setFlags(Qt.ItemFlag.NoItemFlags)
                 
@@ -710,6 +729,7 @@ class FastPastePopup(QWidget):
                 r_layout.addWidget(pin)
                 
             if not item_data.get("is_variable"):
+                import datetime
                 dt = datetime.datetime.fromtimestamp(item_data["created_at"])
                 time_lbl = QLabel(dt.strftime("%H:%M"))
                 time_lbl.setObjectName("TimestampLabel")
@@ -751,9 +771,11 @@ class FastPastePopup(QWidget):
             widget.installEventFilter(self.drag_filter)
             
             list_item.setData(Qt.ItemDataRole.UserRole, item_data)
-            
-        self.list_widget.setCurrentRow(-1)
-        self.search_entry.setFocus()
+
+        self._populate_idx = end_idx
+        
+        if self._populate_idx >= len(self.filtered_history) and hasattr(self, '_populate_timer'):
+            self._populate_timer.stop()
 
     def update_selection_style(self):
         # We manually update the background color of the selected widget

@@ -14,7 +14,8 @@ def load_variables():
                 if isinstance(v, str):
                     data[k] = {"value": v, "is_secret": False}
             return data
-    except:
+    except Exception as e:
+        print(f"[Variables] Erro ao carregar variables.json: {e}")
         return {}
 
 def save_variables(vars_dict):

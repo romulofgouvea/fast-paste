@@ -16,6 +16,7 @@ class ClipboardMonitor:
         self.last_image_hash = None
         self.running = False
         self.wl_proc = None
+        self._check_lock = threading.Lock()
         
         self.app = QApplication.instance()
         if self.app:
@@ -144,6 +145,10 @@ class ClipboardMonitor:
             time.sleep(1)
 
     def _do_linux_check(self):
+        with self._check_lock:
+            self._do_linux_check_locked()
+
+    def _do_linux_check_locked(self):
         # Para não bugar a dock do GNOME/Ubuntu (que pisca um ícone quando wl-paste roda),
         # priorizamos o xclip (XWayland/X11), que roda invisível.
         has_xclip = shutil.which('xclip') is not None

@@ -252,7 +252,6 @@ def run_standalone_popup():
     
     from screens.history_ui import FastPastePopup
     popup = FastPastePopup(standalone=True)
-    popup.refresh_list()
     popup.show()
     popup.activateWindow()
     popup.raise_()
@@ -319,9 +318,8 @@ def run_foreground():
         if b"SHOW" in data:
             if clipboard_monitor:
                 clipboard_monitor.force_check()
-                
+
             popup_instance = get_or_create_popup()
-            popup_instance.refresh_list()
             popup_instance.show()
             popup_instance.activateWindow()
             popup_instance.raise_()
@@ -350,7 +348,6 @@ def run_foreground():
             return
             
         popup_instance = get_or_create_popup()
-        popup_instance.refresh_list()
         popup_instance.show()
         popup_instance.activateWindow()
         popup_instance.raise_()

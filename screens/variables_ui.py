@@ -173,16 +173,21 @@ class VariablesManagerDialog(QDialog):
         self.remove_btn.setObjectName("danger")
         self.remove_btn.setEnabled(False)
         self.remove_btn.clicked.connect(self.remove_var)
-        
+
+        self.edit_btn = QPushButton("Editar")
+        self.edit_btn.setEnabled(False)
+        self.edit_btn.clicked.connect(self.edit_var)
+
         btn_layout.addWidget(self.remove_btn)
+        btn_layout.addWidget(self.edit_btn)
         btn_layout.addStretch(1)
-        
+
         back_btn = QPushButton("Voltar")
         back_btn.clicked.connect(self.accept)
         btn_layout.addWidget(back_btn)
-        
+
         layout.addLayout(btn_layout)
-        
+
         self.refresh_list()
         
     def refresh_list(self):
@@ -197,7 +202,9 @@ class VariablesManagerDialog(QDialog):
             self.list_widget.addItem(item)
             
     def on_selection(self):
-        self.remove_btn.setEnabled(bool(self.list_widget.selectedItems()))
+        has_sel = bool(self.list_widget.selectedItems())
+        self.remove_btn.setEnabled(has_sel)
+        self.edit_btn.setEnabled(has_sel)
         
     def add_var(self):
         name = self.name_input.text().strip()
@@ -210,6 +217,32 @@ class VariablesManagerDialog(QDialog):
         self.secret_cb.setChecked(False)
         self.refresh_list()
         
+    def edit_var(self):
+        sel = self.list_widget.selectedItems()
+        if not sel:
+            return
+        name = sel[0].data(Qt.ItemDataRole.UserRole)
+        vars_dict = load_variables()
+        current = vars_dict.get(name, {})
+        current_val = current.get('value', '')
+        is_secret = current.get('is_secret', False)
+
+        from screens.settings_ui import CustomModal
+        if is_secret:
+            new_val, ok = CustomModal.get_text(
+                self, f"Editar /{name}", "Novo conteúdo:",
+                is_password=True, default_text=current_val
+            )
+        else:
+            new_val, ok = CustomModal.get_text(
+                self, f"Editar /{name}", "Novo conteúdo:",
+                default_text=current_val, multiline=True
+            )
+
+        if ok and new_val and new_val.strip():
+            add_variable(name, new_val, is_secret=is_secret)
+            self.refresh_list()
+
     def remove_var(self):
         sel = self.list_widget.selectedItems()
         if not sel: return

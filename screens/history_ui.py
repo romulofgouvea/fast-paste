@@ -1,5 +1,6 @@
 import os
 import sys
+import base64
 import datetime
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
@@ -15,6 +16,9 @@ from core import history
 from configs.config import UI_COLORS, APP_NAME, hide_dock_icon
 from configs.settings_manager import settings
 from core.platform_handler import InputSimulator
+
+_thumbnail_cache: dict = {}
+_THUMBNAIL_CACHE_LIMIT = 150
 
 class DragEventFilter(QObject):
     def __init__(self, list_widget):
@@ -107,7 +111,12 @@ class DraggableListWidget(QListWidget):
                     
                     drag.setMimeData(mime_data)
                     drag.exec(Qt.DropAction.CopyAction)
-                
+                    try:
+                        if os.path.exists(temp_filepath):
+                            os.remove(temp_filepath)
+                    except Exception:
+                        pass
+
         elif item_data.get("type") == "text":
             text_content = item_data.get("content")
             if text_content:
@@ -155,6 +164,11 @@ class DraggableListWidget(QListWidget):
                 
                 drag.setMimeData(mime_data)
                 drag.exec(Qt.DropAction.CopyAction)
+                try:
+                    if os.path.exists(temp_filepath):
+                        os.remove(temp_filepath)
+                except Exception:
+                    pass
 
 def draw_custom_search_icon(color_hex):
     pixmap = QPixmap(18, 18)
@@ -255,9 +269,18 @@ class FastPastePopup(QWidget):
         self.full_history = history.load_history()
         self.filtered_history = list(self.full_history)
         self._window_position_initialized = False
+        self._populate_timer = None
+        self._prev_selected_item = None
+        self._pending_search_query = ""
+        self._type_filter = None
 
         from configs.config import apply_theme_color, DEFAULT_SETTINGS
         apply_theme_color(settings.get("theme_color", DEFAULT_SETTINGS["theme_color"]))
+
+        self._search_timer = QTimer(self)
+        self._search_timer.setSingleShot(True)
+        self._search_timer.setInterval(150)
+        self._search_timer.timeout.connect(self._do_search)
 
         self.init_ui()
         self.apply_styles()
@@ -452,6 +475,35 @@ class FastPastePopup(QWidget):
         
         main_page_layout.addWidget(self.search_card)
 
+        # Filter Bar
+        self.filter_bar = QWidget()
+        self.filter_bar.setObjectName("FilterBar")
+        filter_layout = QHBoxLayout(self.filter_bar)
+        filter_layout.setContentsMargins(2, 2, 2, 2)
+        filter_layout.setSpacing(6)
+
+        self.filter_all_btn = QPushButton("Todos")
+        self.filter_all_btn.setObjectName("FilterBtn")
+        self.filter_all_btn.setCheckable(True)
+        self.filter_all_btn.setChecked(True)
+        self.filter_all_btn.clicked.connect(lambda: self._set_type_filter(None))
+
+        self.filter_text_btn = QPushButton("Textos")
+        self.filter_text_btn.setObjectName("FilterBtn")
+        self.filter_text_btn.setCheckable(True)
+        self.filter_text_btn.clicked.connect(lambda: self._set_type_filter('text'))
+
+        self.filter_image_btn = QPushButton("Imagens")
+        self.filter_image_btn.setObjectName("FilterBtn")
+        self.filter_image_btn.setCheckable(True)
+        self.filter_image_btn.clicked.connect(lambda: self._set_type_filter('image'))
+
+        filter_layout.addWidget(self.filter_all_btn)
+        filter_layout.addWidget(self.filter_text_btn)
+        filter_layout.addWidget(self.filter_image_btn)
+        filter_layout.addStretch(1)
+        main_page_layout.addWidget(self.filter_bar)
+
         # List Card
         self.list_card = QFrame()
         self.list_card.setObjectName("ListCard")
@@ -463,7 +515,7 @@ class FastPastePopup(QWidget):
         self.list_widget.setObjectName("ListWidget")
         self.list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.list_widget.itemDoubleClicked.connect(self.on_item_activated)
+        self.list_widget.itemActivated.connect(self.on_item_activated)
         self.list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.list_widget.customContextMenuRequested.connect(self.show_context_menu)
         self.list_widget.itemSelectionChanged.connect(self.update_selection_style)
@@ -567,14 +619,40 @@ class FastPastePopup(QWidget):
             #ListWidget::item:selected {{
                 background-color: transparent;
             }}
+            #FilterBar {{
+                background-color: transparent;
+                border: none;
+            }}
+            #FilterBtn {{
+                background-color: transparent;
+                border: 1px solid rgba(80, 80, 80, 0.4);
+                border-radius: 12px;
+                color: {UI_COLORS['fg_dim']};
+                font-size: 11px;
+                padding: 3px 10px;
+            }}
+            #FilterBtn:hover {{
+                background-color: rgba(255, 255, 255, 0.05);
+                color: {UI_COLORS['fg']};
+            }}
+            #FilterBtn:checked {{
+                background-color: {UI_COLORS['selected']};
+                border: 1px solid {UI_COLORS['selected']};
+                color: #ffffff;
+            }}
         """
         self.setStyleSheet(css)
 
     def populate_list(self):
+        self._prev_selected_item = None
+        self.list_widget.blockSignals(True)
         self.list_widget.clear()
+        self.list_widget.blockSignals(False)
 
-        if hasattr(self, '_populate_timer') and self._populate_timer.isActive():
+        if self._populate_timer is not None:
             self._populate_timer.stop()
+            self._populate_timer.deleteLater()
+            self._populate_timer = None
 
         if not self.filtered_history:
             item = QListWidgetItem("No clips found.")
@@ -583,7 +661,6 @@ class FastPastePopup(QWidget):
             self.list_widget.addItem(item)
             return
 
-        import datetime
         self._today = datetime.datetime.now().date()
         self._yesterday = self._today - datetime.timedelta(days=1)
         self._last_group_name = ""
@@ -598,6 +675,7 @@ class FastPastePopup(QWidget):
             self._populate_timer.start(5)
         else:
             self.list_widget.setCurrentRow(-1)
+            self._populate_timer = None
 
     def _render_chunk(self, chunk_size):
         end_idx = min(self._populate_idx + chunk_size, len(self.filtered_history))
@@ -611,7 +689,6 @@ class FastPastePopup(QWidget):
             elif item_data.get("is_pinned"):
                 group_name = "📌 Fixados"
             else:
-                import datetime
                 item_date = datetime.datetime.fromtimestamp(item_data["created_at"]).date()
                 if item_date == self._today:
                     group_name = "Hoje"
@@ -683,32 +760,36 @@ class FastPastePopup(QWidget):
                 
             elif item_data["type"] == "image":
                 filepath = item_data["content"]
-                img_data = history.get_image_bytes(filepath)
-                
-                if img_data:
-                    pixmap = QPixmap()
-                    pixmap.loadFromData(img_data)
-                    
-                    if not pixmap.isNull():
-                        # Create cropped pixmap
-                        crop = QPixmap(80, 45)
-                        crop.fill(Qt.GlobalColor.transparent)
-                        from PyQt6.QtGui import QPainter
-                        painter = QPainter(crop)
-                        
-                        # Scale down first
-                        scaled_pixmap = pixmap.scaled(80, 45, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
-                        x = (scaled_pixmap.width() - 80) // 2
-                        y = (scaled_pixmap.height() - 45) // 2
-                        painter.drawPixmap(0, 0, scaled_pixmap, x, y, 80, 45)
-                        painter.end()
-                        
-                        icon_label.setPixmap(crop)
-                        icon_label.setFixedSize(80, 45)
-                    
-                    import base64
-                    b64_data = base64.b64encode(img_data).decode('utf-8')
-                    widget.setToolTip(f'<img src="data:image/png;base64,{b64_data}" width="300">')
+
+                if filepath not in _thumbnail_cache:
+                    if len(_thumbnail_cache) >= _THUMBNAIL_CACHE_LIMIT:
+                        oldest = next(iter(_thumbnail_cache))
+                        del _thumbnail_cache[oldest]
+                    img_data = history.get_image_bytes(filepath)
+                    entry = {'thumb': None, 'tooltip': None}
+                    if img_data:
+                        pixmap = QPixmap()
+                        pixmap.loadFromData(img_data)
+                        if not pixmap.isNull():
+                            crop = QPixmap(80, 45)
+                            crop.fill(Qt.GlobalColor.transparent)
+                            painter = QPainter(crop)
+                            scaled_pixmap = pixmap.scaled(80, 45, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+                            x = (scaled_pixmap.width() - 80) // 2
+                            y = (scaled_pixmap.height() - 45) // 2
+                            painter.drawPixmap(0, 0, scaled_pixmap, x, y, 80, 45)
+                            painter.end()
+                            entry['thumb'] = crop
+                        b64_data = base64.b64encode(img_data).decode('utf-8')
+                        entry['tooltip'] = f'<img src="data:image/png;base64,{b64_data}" width="300">'
+                    _thumbnail_cache[filepath] = entry
+
+                cached = _thumbnail_cache.get(filepath, {})
+                if cached.get('thumb'):
+                    icon_label.setPixmap(cached['thumb'])
+                    icon_label.setFixedSize(80, 45)
+                if cached.get('tooltip'):
+                    widget.setToolTip(cached['tooltip'])
                 
                 text_label = QLabel("[Imagem PNG]")
                 text_label.setObjectName("ItemLabelDim")
@@ -720,22 +801,22 @@ class FastPastePopup(QWidget):
             right_widget = QWidget()
             r_layout = QHBoxLayout(right_widget)
             r_layout.setContentsMargins(0, 0, 0, 0)
-            r_layout.setSpacing(8)
-
+            r_layout.setSpacing(4)
+            right_widget.setMinimumWidth(42)
 
             if item_data.get("is_pinned") and not item_data.get("is_variable"):
                 pin = QLabel("📌")
                 pin.setStyleSheet("background: transparent; font-size: 12px;")
                 r_layout.addWidget(pin)
-                
+
             if not item_data.get("is_variable"):
-                import datetime
                 dt = datetime.datetime.fromtimestamp(item_data["created_at"])
                 time_lbl = QLabel(dt.strftime("%H:%M"))
                 time_lbl.setObjectName("TimestampLabel")
+                time_lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
                 r_layout.addWidget(time_lbl)
 
-            h_layout.addWidget(right_widget)
+            h_layout.addWidget(right_widget, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
             # Define specific CSS for this widget to match GTK3 hover/select logic
             # PyQt6 supports dynamic properties or just relying on QListWidget state
@@ -765,77 +846,99 @@ class FastPastePopup(QWidget):
             """)
 
             list_item = QListWidgetItem(self.list_widget)
-            list_item.setSizeHint(widget.sizeHint())
             self.list_widget.addItem(list_item)
             self.list_widget.setItemWidget(list_item, widget)
+            list_item.setSizeHint(QSize(self.list_widget.viewport().width(), 56))
             widget.installEventFilter(self.drag_filter)
             
             list_item.setData(Qt.ItemDataRole.UserRole, item_data)
 
         self._populate_idx = end_idx
-        
-        if self._populate_idx >= len(self.filtered_history) and hasattr(self, '_populate_timer'):
+
+        if self._populate_idx >= len(self.filtered_history) and self._populate_timer is not None:
             self._populate_timer.stop()
+            self._populate_timer.deleteLater()
+            self._populate_timer = None
+            self.list_widget.setCurrentRow(-1)
 
     def update_selection_style(self):
-        # We manually update the background color of the selected widget
-        # to match the GTK3 transparent outer row / colored inner box behavior
-        for i in range(self.list_widget.count()):
-            item = self.list_widget.item(i)
-            widget = self.list_widget.itemWidget(item)
-            if not widget:
-                continue
-                
-            if item.isSelected():
-                widget.setStyleSheet(f"""
-                    #CardItem {{
-                        background-color: {UI_COLORS['selected']};
-                        border-radius: 8px;
-                    }}
-                    #ItemLabel, #ItemLabelDim {{
-                        color: #ffffff; 
-                        font-weight: 500; 
-                        font-size: 13.5px; 
-                        background: transparent;
-                    }}
-                    #TimestampLabel {{
-                        color: rgba(255, 255, 255, 0.8); 
-                        font-size: 11px; 
-                        background: transparent;
-                    }}
-                """)
-            else:
-                widget.setStyleSheet(f"""
-                    #CardItem {{
-                        background-color: transparent;
-                        border-radius: 8px;
-                    }}
-                    #CardItem:hover {{
-                        background-color: {UI_COLORS['hover']};
-                    }}
-                    #ItemLabel {{
-                        color: {UI_COLORS['fg']}; 
-                        font-weight: 500; 
-                        font-size: 13.5px; 
-                        background: transparent;
-                    }}
-                    #ItemLabelDim {{
-                        color: {UI_COLORS['fg_dim']}; 
-                        font-weight: 500; 
-                        font-size: 13.5px; 
-                        background: transparent;
-                    }}
-                    #TimestampLabel {{
-                        color: {UI_COLORS['fg_dim']}; 
-                        font-size: 11px; 
-                        background: transparent;
-                    }}
-                """)
+        current_item = self.list_widget.currentItem()
+
+        if self._prev_selected_item and self._prev_selected_item is not current_item:
+            widget = self.list_widget.itemWidget(self._prev_selected_item)
+            if widget:
+                self._apply_item_style(widget, selected=False)
+
+        if current_item:
+            widget = self.list_widget.itemWidget(current_item)
+            if widget:
+                self._apply_item_style(widget, selected=True)
+
+        self._prev_selected_item = current_item
+
+    def _apply_item_style(self, widget, selected):
+        if selected:
+            widget.setStyleSheet(f"""
+                #CardItem {{
+                    background-color: {UI_COLORS['selected']};
+                    border-radius: 8px;
+                }}
+                #ItemLabel, #ItemLabelDim {{
+                    color: #ffffff;
+                    font-weight: 500;
+                    font-size: 13.5px;
+                    background: transparent;
+                }}
+                #TimestampLabel {{
+                    color: rgba(255, 255, 255, 0.8);
+                    font-size: 11px;
+                    background: transparent;
+                }}
+            """)
+        else:
+            widget.setStyleSheet(f"""
+                #CardItem {{
+                    background-color: transparent;
+                    border-radius: 8px;
+                }}
+                #CardItem:hover {{
+                    background-color: {UI_COLORS['hover']};
+                }}
+                #ItemLabel {{
+                    color: {UI_COLORS['fg']};
+                    font-weight: 500;
+                    font-size: 13.5px;
+                    background: transparent;
+                }}
+                #ItemLabelDim {{
+                    color: {UI_COLORS['fg_dim']};
+                    font-weight: 500;
+                    font-size: 13.5px;
+                    background: transparent;
+                }}
+                #TimestampLabel {{
+                    color: {UI_COLORS['fg_dim']};
+                    font-size: 11px;
+                    background: transparent;
+                }}
+            """)
 
     def on_search_changed(self, text):
-        query = text.strip()
-        self.filtered_history = history.load_history_with_variables(query)
+        self._pending_search_query = text.strip()
+        self._search_timer.start()
+
+    def _do_search(self):
+        self.filtered_history = history.load_history_with_variables(self._pending_search_query)
+        if self._type_filter and not self._pending_search_query.startswith('/'):
+            self.filtered_history = [item for item in self.filtered_history if item.get('type') == self._type_filter]
         self.populate_list()
+
+    def _set_type_filter(self, type_filter):
+        self._type_filter = type_filter
+        self.filter_all_btn.setChecked(type_filter is None)
+        self.filter_text_btn.setChecked(type_filter == 'text')
+        self.filter_image_btn.setChecked(type_filter == 'image')
+        self.refresh_list()
         
     def set_shortcuts_enabled(self, enabled):
         if hasattr(self, 'shortcuts_list'):
@@ -865,30 +968,21 @@ class FastPastePopup(QWidget):
         self.set_shortcuts_enabled(True)
         self.search_entry.setFocus()
         
-        # Sempre recarrega o histórico para mostrar novos itens copiados
-        self.full_history = history.load_history()
-        self.filtered_history = list(self.full_history)
-        self.refresh_list()
-        
         if saved:
             conn = history.get_connection()
             history.cleanup_history(conn)
+            conn.commit()
             conn.close()
-            
-            # Re-read history since DB path might have changed
-            self.full_history = history.load_history()
-            self.filtered_history = list(self.full_history)
-            
-            self.refresh_list()
             self.setup_interaction_mode()
-            
-            # Restart global hotkeys dynamically to apply new keybindings immediately
-            try:
-                if hasattr(core.app, 'hotkeys_manager') and core.app.hotkeys_manager:
-                    core.app.hotkeys_manager.restart()
-            except Exception as e:
-                print(f"[Settings] Erro ao reiniciar atalhos: {e}")
-                print(f"[FastPaste] Error reloading hotkey listener: {e}")
+
+        self.refresh_list()
+
+        try:
+            if hasattr(core.app, 'hotkeys_manager') and core.app.hotkeys_manager:
+                core.app.hotkeys_manager.restart()
+        except Exception as e:
+            print(f"[Settings] Erro ao reiniciar atalhos: {e}")
+            print(f"[FastPaste] Error reloading hotkey listener: {e}")
 
     def paste_by_index(self, idx):
         if 0 <= idx < len(self.filtered_history):
@@ -952,11 +1046,13 @@ class FastPastePopup(QWidget):
             history.toggle_pin(item_data["id"])
             self.refresh_list()
         elif action == delete_action:
+            if item_data.get('type') == 'image':
+                _thumbnail_cache.pop(item_data.get('content', ''), None)
             history.delete_item(item_data["id"])
             self.refresh_list()
         elif edit_action and action == edit_action:
             from screens.settings_ui import CustomModal
-            new_text, ok = CustomModal.get_text(self, "Editar Texto", "Edite o conteúdo:", default_text=item_data["content"])
+            new_text, ok = CustomModal.get_text(self, "Editar Texto", "Edite o conteúdo:", default_text=item_data["content"], multiline=True)
             if ok and new_text and new_text != item_data["content"]:
                 history.edit_text(item_data["id"], new_text)
                 self.refresh_list()
@@ -974,11 +1070,15 @@ class FastPastePopup(QWidget):
         if item:
             item_data = item.data(Qt.ItemDataRole.UserRole)
             if item_data and not item_data.get('is_variable'):
+                if item_data.get('type') == 'image':
+                    _thumbnail_cache.pop(item_data.get('content', ''), None)
                 history.delete_item(item_data["id"])
                 self.refresh_list()
 
     def refresh_list(self):
-        self.on_search_changed(self.search_entry.text())
+        self._pending_search_query = self.search_entry.text().strip()
+        self._search_timer.stop()
+        self._do_search()
 
     def showEvent(self, event):
         # Clear search filter and reset search entry
@@ -986,12 +1086,10 @@ class FastPastePopup(QWidget):
         self.search_entry.clear()
         self.search_entry.blockSignals(False)
         
-        # Load fresh history
-        self.full_history = history.load_history()
-        self.filtered_history = list(self.full_history)
-        self.populate_list()
-        
-        # Always open at page 0 (search and list) instead of settings
+        self._pending_search_query = ""
+        self._search_timer.stop()
+        self._do_search()
+
         self.stacked_widget.setCurrentIndex(0)
         self.search_entry.setFocus()
         QTimer.singleShot(0, self.update_window_mask)
@@ -1162,22 +1260,15 @@ class FastPastePopup(QWidget):
     def setup_interaction_mode(self):
         # Desconecta os sinais existentes para evitar chamadas duplicadas
         try:
-            self.list_widget.itemDoubleClicked.disconnect(self.on_item_activated)
-        except TypeError:
-            pass
-        try:
             self.list_widget.itemClicked.disconnect(self.on_item_single_clicked)
         except TypeError:
             pass
-            
+
         mode = settings.get('interaction_mode', 1)
-        
+
         # Ambos os modos usam o clique único (Modo 1 copia e cola; Modo 2 apenas copia)
         self.list_widget.itemClicked.connect(self.on_item_single_clicked)
-        
-        if mode != 1:
-            # Modo 2: duplo clique ativa (copia e cola)
-            self.list_widget.itemDoubleClicked.connect(self.on_item_activated)
+        # itemActivated (Enter + duplo clique) já está conectado em init_ui e fica sempre ativo
             
         # O arrastar e soltar (DND) fica ativo em ambos os modos
         self.list_widget.setDragEnabled(True)

@@ -1,7 +1,7 @@
 import sys
 import os
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QSpinBox, QLineEdit, QPushButton, QFileDialog, QMessageBox, QCheckBox,
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+                             QSpinBox, QLineEdit, QPlainTextEdit, QPushButton, QFileDialog, QMessageBox, QCheckBox,
                              QAbstractButton, QSizePolicy, QRadioButton, QButtonGroup, QDialog,
                              QScrollArea, QFrame)
 from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPropertyAnimation, pyqtProperty, QEasingCurve
@@ -11,16 +11,17 @@ from configs.settings_manager import settings
 from configs.config import DATA_DIR, MAX_HISTORY, APP_NAME, UI_COLORS, DEFAULT_SETTINGS
 
 class CustomModal(QDialog):
-    def __init__(self, parent=None, title="", text="", is_input=False, input_password=False, default_input="", show_cancel=False, ok_text="OK"):
+    def __init__(self, parent=None, title="", text="", is_input=False, input_password=False, default_input="", show_cancel=False, ok_text="OK", multiline=False):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setFixedWidth(420)
-        
+
         self.container = QWidget(self)
         self.container.setObjectName("ModalContainer")
-        
+
+        input_focus_border = UI_COLORS.get('selected', '#FF7A00')
         self.setStyleSheet(f"""
             QWidget#ModalContainer {{
                 background-color: {UI_COLORS.get('card_bg', 'rgba(36, 36, 36, 0.98)')};
@@ -29,86 +30,100 @@ class CustomModal(QDialog):
             }}
             QLabel {{ color: {UI_COLORS.get('fg', '#ffffff')}; font-size: 14px; background: transparent; }}
             QLabel#Title {{ font-weight: bold; font-size: 16px; margin-bottom: 4px; }}
-            QPushButton {{ 
-                background-color: #3a3a3a; color: #ffffff; padding: 8px 16px; 
-                border-radius: 6px; border: 1px solid #5a5a5a; font-size: 13px; 
+            QPushButton {{
+                background-color: #3a3a3a; color: #ffffff; padding: 8px 16px;
+                border-radius: 6px; border: 1px solid #5a5a5a; font-size: 13px;
             }}
             QPushButton:hover {{ background-color: #4a4a4a; }}
             QPushButton#primary {{ background-color: {UI_COLORS.get('selected', '#FF7A00')}; border: none; font-weight: bold; }}
             QPushButton#primary:hover {{ background-color: {UI_COLORS.get('selected', '#FF7A00')}; opacity: 0.8; }}
-            QLineEdit {{
+            QLineEdit, QPlainTextEdit {{
                 background-color: rgba(20, 20, 20, 0.6); border: 1px solid #444;
                 border-radius: 6px; padding: 8px; color: #ffffff; font-size: 14px;
                 selection-background-color: {UI_COLORS.get('selected', '#FF7A00')};
             }}
-            QLineEdit:focus {{ border: 1px solid {UI_COLORS.get('selected', '#FF7A00')}; }}
+            QLineEdit:focus, QPlainTextEdit:focus {{ border: 1px solid {input_focus_border}; }}
         """)
-        
+
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(self.container)
-        
+
         layout = QVBoxLayout(self.container)
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(16)
-        
+
         title_label = QLabel(title)
         title_label.setObjectName("Title")
         title_label.setWordWrap(True)
         title_label.setFixedWidth(372)
         layout.addWidget(title_label)
-        
+
         text_label = QLabel(text)
         text_label.setWordWrap(True)
         text_label.setFixedWidth(372)
         layout.addWidget(text_label)
-        
+
         if is_input:
-            self.input_field = QLineEdit()
-            if input_password:
-                self.input_field.setEchoMode(QLineEdit.EchoMode.Password)
-            if default_input:
-                self.input_field.setText(default_input)
+            if multiline:
+                self.input_field = QPlainTextEdit()
+                self.input_field.setPlainText(default_input)
+                self.input_field.setMinimumHeight(120)
+            else:
+                self.input_field = QLineEdit()
+                if input_password:
+                    self.input_field.setEchoMode(QLineEdit.EchoMode.Password)
+                if default_input:
+                    self.input_field.setText(default_input)
             layout.addWidget(self.input_field)
-            
+
         btn_layout = QHBoxLayout()
         btn_layout.addStretch(1)
-        
+
         if show_cancel:
             cancel_btn = QPushButton("Cancelar")
             cancel_btn.clicked.connect(self.reject)
             btn_layout.addWidget(cancel_btn)
-            
+
         ok_btn = QPushButton(ok_text)
         ok_btn.setObjectName("primary")
         ok_btn.clicked.connect(self.accept)
         btn_layout.addWidget(ok_btn)
-        
+
         layout.addLayout(btn_layout)
-        
+
         if is_input:
             self.input_field.setFocus()
-        
+
     def textValue(self):
         if hasattr(self, 'input_field'):
-            return self.input_field.text()
+            field = self.input_field
+            if isinstance(field, QPlainTextEdit):
+                return field.toPlainText()
+            return field.text()
         return ""
-        
+
     @classmethod
     def show_message(cls, parent, title, text):
         dialog = cls(parent, title, text, show_cancel=False)
         dialog.exec()
-        
+
     @classmethod
     def confirm(cls, parent, title, text, ok_text="OK"):
         dialog = cls(parent, title, text, show_cancel=True, ok_text=ok_text)
         return dialog.exec() == 1
-        
+
     @classmethod
-    def get_text(cls, parent, title, label, is_password=False, default_text=""):
-        dialog = cls(parent, title, label, is_input=True, input_password=is_password, default_input=default_text, show_cancel=True)
+    def get_text(cls, parent, title, label, is_password=False, default_text="", multiline=False):
+        dialog = cls(parent, title, label, is_input=True, input_password=is_password, default_input=default_text, show_cancel=True, multiline=multiline)
         ok = dialog.exec() == 1
         return dialog.textValue(), ok
+
+def _is_wayland():
+    return (sys.platform.startswith('linux') and
+            (os.environ.get('WAYLAND_DISPLAY') is not None or
+             os.environ.get('XDG_SESSION_TYPE') == 'wayland'))
+
 
 def pynput_to_qt(pynput_str):
     if not pynput_str:
@@ -138,7 +153,7 @@ class HotkeyLineEdit(QLineEdit):
         self.raw_hotkey = settings.get('hotkey', DEFAULT_SETTINGS['hotkey'])
         self.native_mac_key_code = settings.get('hotkey_mac_key_code', DEFAULT_SETTINGS['hotkey_mac_key_code'])
         
-        if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):
+        if _is_wayland():
             self.setText("Configurado no Sistema")
             self.setStyleSheet("background-color: #1a1a1a; color: #888888; border-color: #333333;")
         else:
@@ -150,7 +165,7 @@ class HotkeyLineEdit(QLineEdit):
             event.accept()
             return
         if not self.recording:
-            if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):
+            if _is_wayland():
                 super().mousePressEvent(event)
                 return
             self.start_recording()
@@ -238,6 +253,10 @@ class HotkeyLineEdit(QLineEdit):
                 pynput_key = key_seq.lower()
 
         if not key_str:
+            return
+
+        modifiers_in_parts = [p for p in pynput_parts if p in ('<ctrl>', '<shift>', '<alt>', '<cmd>')]
+        if not modifiers_in_parts:
             return
 
         parts.append(key_str)
@@ -463,7 +482,7 @@ class SettingsWidget(QWidget):
         self.open_shortcuts_btn.setToolTip("Abre o painel do sistema operacional para configurar atalhos globais.")
         self.open_shortcuts_btn.clicked.connect(self.open_system_shortcuts)
         
-        if sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY'):
+        if _is_wayland():
             self.hotkey_input.setToolTip(f"No Wayland, configure o atalho nas configurações do seu sistema para rodar o comando: {APP_NAME.lower()} show")
         else:
             self.hotkey_input.setToolTip("Clique no campo e pressione a combinação de teclas desejada (ex: Ctrl+Shift+V). Pressione Esc para cancelar.")
@@ -696,8 +715,7 @@ class SettingsWidget(QWidget):
         if selected_theme_btn:
             new_settings['theme_color'] = selected_theme_btn.property("theme_hex")
             
-        # No linux (wayland) não tentamos salvar o hotkey do campo read-only
-        if not (sys.platform.startswith('linux') and os.environ.get('WAYLAND_DISPLAY')):
+        if not _is_wayland():
             if hasattr(self.hotkey_input, 'raw_hotkey'):
                 new_settings['hotkey'] = self.hotkey_input.raw_hotkey
             if sys.platform == "darwin" and hasattr(self.hotkey_input, 'native_mac_key_code'):
@@ -749,15 +767,9 @@ class SettingsWidget(QWidget):
         d_layout.addLayout(btn_layout)
         
         result = dialog.exec()
-        
+
         if result == 1:
-            import subprocess
-            if getattr(sys, 'frozen', False):
-                cmd = [sys.executable, "show"]
-            else:
-                cmd = [sys.executable, sys.argv[0], "show"]
-            subprocess.Popen(cmd)
-            os._exit(0)
+            self._do_restart()
         else:
             self.settings_closed.emit(True)
 

@@ -23,8 +23,8 @@ def clear_all_data():
     from configs.config import DATA_DIR
 
 
-    db_path = os.path.join(DATA_DIR, "history.db")
-    images_dir = os.path.join(DATA_DIR, "images")
+    db_path = history.get_db_path()
+    images_dir = history.get_images_path()
     vars_file = os.path.join(DATA_DIR, "variables.json")
 
     # 1. Deleta o arquivo do banco completamente (mais seguro que DELETE FROM)

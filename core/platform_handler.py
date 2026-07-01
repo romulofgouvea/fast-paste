@@ -37,16 +37,18 @@ class InputSimulator:
                     print(f"[FastPaste] AppleScript fallback failed: {ae}")
                 
         elif self.os_name == "Linux":
-            # Check for ydotool, wtype, or xdotool
-            cmd = None
+            # Chain the commands with || so if one fails (e.g., wtype on GNOME Wayland, or ydotool without daemon), it falls back to the next
+            cmd = "sleep 0.15 && ("
+            fallbacks = []
             if shutil.which("wtype"):
-                cmd = "sleep 0.15 && wtype -M ctrl -k v -m ctrl"
-            elif shutil.which("ydotool"):
-                cmd = "sleep 0.15 && ydotool key 29:1 47:1 47:0 29:0"
-            elif shutil.which("xdotool"):
-                cmd = "sleep 0.15 && xdotool key ctrl+v"
-            
-            if cmd:
+                fallbacks.append("wtype -M shift -k Insert -m shift")
+            if shutil.which("ydotool"):
+                fallbacks.append("ydotool key 42:1 110:1 110:0 42:0")
+            if shutil.which("xdotool"):
+                fallbacks.append("xdotool key shift+Insert")
+                
+            if fallbacks:
+                cmd += " || ".join(fallbacks) + ")"
                 subprocess.Popen(['sh', '-c', cmd], start_new_session=True)
             else:
                 print("[FastPaste] No input simulator (ydotool/wtype/xdotool) found on Linux.")

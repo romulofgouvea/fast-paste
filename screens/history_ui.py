@@ -986,12 +986,19 @@ class FastPastePopup(QWidget):
 
     def paste_by_index(self, idx):
         if 0 <= idx < len(self.filtered_history):
-            self.paste_item(self.filtered_history[idx])
+            self.on_item_activated_data(self.filtered_history[idx])
 
     def on_item_activated(self, item):
         item_data = item.data(Qt.ItemDataRole.UserRole)
         if item_data:
-            self.paste_item(item_data)
+            self.on_item_activated_data(item_data)
+            
+    def on_item_activated_data(self, item_data):
+        mode = settings.get('interaction_mode', 1)
+        if mode == 1:
+            self.paste_item(item_data, simulate_paste=True, close_window=True)
+        else:
+            self.paste_item(item_data, simulate_paste=False, close_window=False)
 
     def paste_item(self, item_data, simulate_paste=True, close_window=True):
         history.copy_item_to_clipboard(item_data)
@@ -1174,7 +1181,7 @@ class FastPastePopup(QWidget):
             if item:
                 item_data = item.data(Qt.ItemDataRole.UserRole)
                 if item_data:
-                    self.paste_item(item_data)
+                    self.on_item_activated_data(item_data)
             elif self.list_widget.count() > 0:
                 # Se não houver item explicitamente selecionado, pega o primeiro item selecionável
                 for i in range(self.list_widget.count()):
@@ -1182,7 +1189,7 @@ class FastPastePopup(QWidget):
                     if item and (item.flags() & Qt.ItemFlag.ItemIsSelectable):
                         item_data = item.data(Qt.ItemDataRole.UserRole)
                         if item_data:
-                            self.paste_item(item_data)
+                            self.on_item_activated_data(item_data)
                             break
             return
 
@@ -1266,9 +1273,8 @@ class FastPastePopup(QWidget):
 
         mode = settings.get('interaction_mode', 1)
 
-        # Ambos os modos usam o clique único (Modo 1 copia e cola; Modo 2 apenas copia)
-        self.list_widget.itemClicked.connect(self.on_item_single_clicked)
         # itemActivated (Enter + duplo clique) já está conectado em init_ui e fica sempre ativo
+
             
         # O arrastar e soltar (DND) fica ativo em ambos os modos
         self.list_widget.setDragEnabled(True)

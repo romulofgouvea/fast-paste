@@ -11,6 +11,8 @@ describe("ItemCard", () => {
     timestamp: Date.now(),
     pinned: false,
     groupId: null,
+    preview: null,
+    hasMedia: false,
   };
 
   it("should render title and text badge", () => {

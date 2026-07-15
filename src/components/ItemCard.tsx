@@ -235,6 +235,16 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
     setHovered(false);
   }, []);
 
+  const handleDragStart = useCallback((e: React.DragEvent) => {
+    if (item.type === "text" || item.type === "code") {
+      const fileName = `fpaste-${item.id}.txt`;
+      // O Chromium/WebView2 entende o formato MIME:filename:URL para criar arquivos via drag
+      const downloadUrl = `text/plain:${fileName}:data:text/plain;charset=utf-8,${encodeURIComponent(fullText)}`;
+      e.dataTransfer.setData("DownloadURL", downloadUrl);
+      e.dataTransfer.effectAllowed = "copy";
+    }
+  }, [item.type, item.id, fullText]);
+
   const openMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     void listGroups().then(setGroups);
@@ -263,6 +273,8 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
     <>
       <button
         ref={cardRef}
+        draggable={item.type === "text" || item.type === "code"}
+        onDragStart={handleDragStart}
         onClick={() => onSelect(item.id)}
         onContextMenu={openMenu}
         onMouseEnter={() => { onHover?.(); handleMouseEnter(); }}

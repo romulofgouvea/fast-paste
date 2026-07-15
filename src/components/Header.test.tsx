@@ -14,30 +14,30 @@ vi.mock("../lib/api", () => ({
 
 describe("Header", () => {
   it("should render and toggle viewMode", () => {
-    const setViewMode = vi.fn();
+    const toggleViewMode = vi.fn();
     // @ts-expect-error Mocking zustand
     useUi.mockImplementation((selector: any) => {
-      const state = { viewMode: "modo1", setViewMode };
+      const state = { viewMode: "modo1", toggleViewMode };
       return selector(state);
     });
 
     render(<Header />);
     expect(screen.getByText("FPaste")).toBeDefined();
-    
+
     const modeBtn = screen.getByText("Modo 1");
     fireEvent.click(modeBtn);
-    expect(setViewMode).toHaveBeenCalledWith("modo2");
+    expect(toggleViewMode).toHaveBeenCalled();
   });
 
   it("should close window on click close button", () => {
     // @ts-expect-error Mocking zustand
     useUi.mockImplementation((selector: any) => {
-      const state = { viewMode: "modo1", setViewMode: vi.fn() };
+      const state = { viewMode: "modo1", toggleViewMode: vi.fn() };
       return selector(state);
     });
 
     render(<Header />);
-    const closeBtn = screen.getByTitle("Fechar (Esc)");
+    const closeBtn = screen.getByTitle("Fechar");
     fireEvent.click(closeBtn);
     expect(hideWindow).toHaveBeenCalled();
   });

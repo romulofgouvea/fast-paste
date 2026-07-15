@@ -18,16 +18,19 @@ describe("ItemCard", () => {
   it("should render title and text badge", () => {
     const onSelect = vi.fn();
     render(<ItemCard item={mockItem} selected={false} onSelect={onSelect} onDelete={vi.fn()} onTogglePin={vi.fn()} />);
-    
+
+    // O título é a primeira linha não vazia do conteúdo.
     expect(screen.getByText("hello world")).toBeDefined();
-    expect(screen.getByText("TEXTO")).toBeDefined();
+    // O badge exibe o rótulo do tipo ("Texto"); o maiúsculo é só CSS (uppercase).
+    expect(screen.getByText("Texto")).toBeDefined();
   });
 
   it("should trigger onSelect on click", () => {
     const onSelect = vi.fn();
     render(<ItemCard item={mockItem} selected={false} onSelect={onSelect} onDelete={vi.fn()} onTogglePin={vi.fn()} />);
-    
-    const card = screen.getAllByRole("button")[0];
+
+    // O cartão é o botão cujo nome acessível contém o título do item.
+    const card = screen.getByRole("button", { name: /hello world/i });
     fireEvent.click(card);
     expect(onSelect).toHaveBeenCalledWith(1);
   });

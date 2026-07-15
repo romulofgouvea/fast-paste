@@ -11,21 +11,22 @@ use clipboard_rs::{
 use rusqlite::Connection;
 use tauri::{AppHandle, Emitter};
 
+use crate::db::ClipKind;
 use crate::error::AppError;
 use crate::{crypto, db, media};
 
 const PREVIEW_LEN: usize = 300;
 
-/// Classifica o conteúdo textual copiado em `link`, `code` ou `text`.
-pub fn classify_text(text: &str) -> &'static str {
+/// Classifica o conteúdo textual copiado em `Link`, `Code` ou `Text`.
+pub fn classify_text(text: &str) -> ClipKind {
     let trimmed = text.trim();
     if is_url(trimmed) {
-        return "link";
+        return ClipKind::Link;
     }
     if looks_like_code(trimmed) {
-        return "code";
+        return ClipKind::Code;
     }
-    "text"
+    ClipKind::Text
 }
 
 fn is_url(text: &str) -> bool {
@@ -98,7 +99,7 @@ impl Monitor {
             return Ok(false);
         }
         let item = db::NewItem {
-            kind: classify_text(&text).to_string(),
+            kind: classify_text(&text),
             preview: Some(make_preview(&text)),
             hash: crypto::sha256_hex(text.as_bytes()),
             size_bytes: text.len() as i64,
@@ -126,7 +127,7 @@ impl Monitor {
         }
         let path = media::save_encrypted(&self.data_dir, &self.master_key, bytes)?;
         let item = db::NewItem {
-            kind: "image".to_string(),
+            kind: ClipKind::Image,
             content: None,
             preview: None,
             secure_file_path: Some(path.display().to_string()),
@@ -196,25 +197,25 @@ mod tests {
 
     #[test]
     fn classifies_urls() {
-        assert_eq!(classify_text("https://tauri.app/start"), "link");
-        assert_eq!(classify_text("www.example.com"), "link");
-        assert_eq!(classify_text("visit https://a.com now"), "text");
+        assert_eq!(classify_text("https://tauri.app/start"), ClipKind::Link);
+        assert_eq!(classify_text("www.example.com"), ClipKind::Link);
+        assert_eq!(classify_text("visit https://a.com now"), ClipKind::Text);
     }
 
     #[test]
     fn classifies_code() {
         let rust = "fn main() {\n    println!(\"hi\");\n}";
-        assert_eq!(classify_text(rust), "code");
+        assert_eq!(classify_text(rust), ClipKind::Code);
         let js = "const x = 1;\nlet y = 2;\nreturn x + y;";
-        assert_eq!(classify_text(js), "code");
+        assert_eq!(classify_text(js), ClipKind::Code);
     }
 
     #[test]
     fn classifies_plain_text() {
-        assert_eq!(classify_text("uma nota simples"), "text");
+        assert_eq!(classify_text("uma nota simples"), ClipKind::Text);
         assert_eq!(
             classify_text("primeira linha\nsegunda linha de prosa"),
-            "text"
+            ClipKind::Text
         );
     }
 }

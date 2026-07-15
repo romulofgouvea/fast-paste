@@ -31,11 +31,60 @@ CREATE TABLE IF NOT EXISTS groups (
 );
 ";
 
+/// Tipo de um item do clipboard. Fecha o conjunto antes aberto (`kind: String`),
+/// impedindo classificações digitadas errado e mantendo o contrato com o
+/// `ClipType` do frontend (serializado em minúsculas: "text", "link", …).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ClipKind {
+    Text,
+    Link,
+    Code,
+    Image,
+    Files,
+}
+
+impl ClipKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ClipKind::Text => "text",
+            ClipKind::Link => "link",
+            ClipKind::Code => "code",
+            ClipKind::Image => "image",
+            ClipKind::Files => "files",
+        }
+    }
+
+    /// Converte a string persistida (ou vinda de um backup) no enum, caindo em
+    /// `Text` para valores desconhecidos — leitura sempre tolerante.
+    pub fn from_db(s: &str) -> ClipKind {
+        match s {
+            "link" => ClipKind::Link,
+            "code" => ClipKind::Code,
+            "image" => ClipKind::Image,
+            "files" => ClipKind::Files,
+            _ => ClipKind::Text,
+        }
+    }
+}
+
+impl rusqlite::ToSql for ClipKind {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        Ok(self.as_str().into())
+    }
+}
+
+impl rusqlite::types::FromSql for ClipKind {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        value.as_str().map(ClipKind::from_db)
+    }
+}
+
 #[derive(Serialize, Clone)]
 pub struct ClipItem {
     pub id: i64,
     #[serde(rename = "type")]
-    pub kind: String,
+    pub kind: ClipKind,
     pub preview: Option<String>,
     pub content: Option<String>,
     pub pinned: bool,
@@ -53,7 +102,7 @@ pub struct Group {
 }
 
 pub struct NewItem {
-    pub kind: String,
+    pub kind: ClipKind,
     pub content: Option<String>,
     pub preview: Option<String>,
     pub secure_file_path: Option<String>,
@@ -278,7 +327,7 @@ mod tests {
 
     fn text_item(text: &str) -> NewItem {
         NewItem {
-            kind: "text".into(),
+            kind: ClipKind::Text,
             content: Some(text.into()),
             preview: Some(text.into()),
             secure_file_path: None,
@@ -321,14 +370,14 @@ mod tests {
         insert_or_touch(&conn, &text_item("banana split")).unwrap();
         insert_or_touch(&conn, &text_item("apple pie")).unwrap();
         let mut link = text_item("https://example.com");
-        link.kind = "link".into();
+        link.kind = ClipKind::Link;
         insert_or_touch(&conn, &link).unwrap();
 
         let (items, _) = query_page(&conn, 0, 20, Some("banana"), None, None).unwrap();
         assert_eq!(items.len(), 1);
         let (items, _) = query_page(&conn, 0, 20, None, Some("link"), None).unwrap();
         assert_eq!(items.len(), 1);
-        assert_eq!(items[0].kind, "link");
+        assert_eq!(items[0].kind, ClipKind::Link);
     }
 
     #[test]

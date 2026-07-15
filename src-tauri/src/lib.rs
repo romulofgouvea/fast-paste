@@ -4,6 +4,7 @@ mod db;
 mod error;
 mod hotkey;
 mod media;
+mod settings;
 mod watcher;
 
 use std::collections::HashMap;
@@ -16,7 +17,6 @@ use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
 use tauri::Manager;
 use tauri_plugin_global_shortcut::ShortcutState;
-use tauri_plugin_store::StoreExt;
 
 use crate::error::AppError;
 
@@ -92,11 +92,7 @@ pub fn run() {
                 data_dir.clone(),
             );
 
-            let mut stored_hotkey = app
-                .store("settings.json")
-                .ok()
-                .and_then(|s| s.get("hotkey"))
-                .and_then(|v| v.as_str().map(String::from))
+            let mut stored_hotkey = settings::get_string(app.handle(), settings::KEY_HOTKEY)
                 .unwrap_or_else(hotkey::default_hotkey);
             if let Err(e) = hotkey::swap_hotkey(app.handle(), &stored_hotkey, None) {
                 eprintln!("fpaste: hotkey '{stored_hotkey}' failed ({e}), falling back to default");
@@ -114,11 +110,7 @@ pub fn run() {
                 thumb_cache: Mutex::new(std::collections::HashMap::new()),
                 last_focus: Mutex::new(None),
                 auto_paste: Mutex::new(
-                    app.store("settings.json")
-                        .ok()
-                        .and_then(|s| s.get("autoPaste"))
-                        .and_then(|v| v.as_bool())
-                        .unwrap_or(false),
+                    settings::get_bool(app.handle(), settings::KEY_AUTO_PASTE).unwrap_or(false),
                 ),
             });
 

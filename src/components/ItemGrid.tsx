@@ -67,7 +67,6 @@ export function ItemGrid() {
         >
           <ItemCard
             item={item}
-            index={i}
             selected={i === selectedIndex}
             onSelect={(id) => void selectItem(id)}
             onHover={() => setSelectedIndex(i)}

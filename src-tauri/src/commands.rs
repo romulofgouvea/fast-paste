@@ -467,8 +467,11 @@ pub fn open_settings(app: AppHandle) -> Result<(), String> {
         .title("Configurações — FPaste")
         .inner_size(760.0, 560.0)
         .min_inner_size(640.0, 480.0)
-        .resizable(true)
+        .resizable(false)
         .center()
+        // Injeta antes do React rodar — garante detecção do tipo de janela
+        // independente de timing do getCurrentWindow() no WebView2.
+        .initialization_script("window.__FPASTE_WINDOW__ = 'settings';")
         .build();
 
         if let Ok(window) = &result {

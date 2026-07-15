@@ -9,10 +9,14 @@ export const SearchBar = forwardRef<HTMLInputElement>(function SearchBar(_, ref)
   const isModo2 = useUi((s) => s.viewMode === "modo2");
 
   return (
-    <div className="px-3 pt-3 pb-2" {...dragRegionProps(isModo2)}>
-      <div className="flex items-center gap-2 rounded-xl bg-black/5 dark:bg-white/10 px-3 py-2 focus-within:ring-2 ring-[var(--accent-color)] transition-shadow">
+    <div className="px-3 pt-2 pb-2" {...dragRegionProps(isModo2)}>
+      <div
+        className="flex items-center gap-2 rounded-xl px-3 py-2
+                   bg-white/60 dark:bg-white/[0.08]
+                   border border-black/[0.07] dark:border-white/[0.10]"
+      >
         <svg
-          className="w-4 h-4 shrink-0 text-zinc-500 dark:text-zinc-400"
+          className="w-4 h-4 shrink-0 text-zinc-400 dark:text-zinc-500"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
@@ -31,6 +35,14 @@ export const SearchBar = forwardRef<HTMLInputElement>(function SearchBar(_, ref)
           autoFocus
           spellCheck={false}
         />
+        {rawQuery && (
+          <button
+            onClick={() => setQuery("")}
+            className="shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors text-xs leading-none"
+          >
+            ✕
+          </button>
+        )}
       </div>
     </div>
   );

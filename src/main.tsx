@@ -6,8 +6,19 @@ import Settings from "./windows/Settings";
 import "./index.css";
 import "highlight.js/styles/atom-one-dark.css";
 
-// Uma única SPA atende as duas janelas: o label decide o que renderizar.
-const isSettings = getCurrentWindow().label === "settings";
+// Detecção do tipo de janela:
+// 1º: __FPASTE_WINDOW__ injetado via initialization_script do Rust
+//     (mais confiável — roda antes de qualquer JS no WebView2)
+// 2º: fallback pelo label de getCurrentWindow()
+declare global {
+  interface Window {
+    __FPASTE_WINDOW__?: string;
+  }
+}
+
+const isSettings =
+  window.__FPASTE_WINDOW__ === "settings" ||
+  getCurrentWindow().label === "settings";
 
 window.addEventListener("error", (e) => {
   document.body.innerHTML = `<pre style="color:red;background:white;padding:16px;white-space:pre-wrap;font-size:14px">DIAG ERROR: ${e.message}\n${e.error?.stack ?? ""}</pre>`;

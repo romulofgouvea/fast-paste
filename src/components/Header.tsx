@@ -29,11 +29,11 @@ export function Header() {
           {isModo2 ? "Modo 2" : "Modo 1"}
         </button>
 
-        {/* Fechar — chama hide_window diretamente via invoke */}
+        {/* Fechar */}
         <button
           onClick={() => void hideWindow()}
           title="Fechar"
-          className="w-5 h-5 flex items-center justify-center rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-red-500 hover:text-white transition-colors text-xs leading-none"
+          className="w-5 h-5 flex items-center justify-center rounded-md text-zinc-400 hover:bg-red-500 hover:!text-white transition-colors text-xs leading-none font-bold"
         >
           ✕
         </button>

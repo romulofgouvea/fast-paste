@@ -22,86 +22,66 @@ body {
   user-select: none;
 }
 
-/* ── Superfície principal ───────────────────────────────────────────────────── */
-/* Tema claro: fundo branco quente com saturação suave e borda nítida          */
+/* ── Janela principal ───────────────────────────────────────────────────────── */
+.fpaste-shell {
+  background: rgba(246, 246, 248, 0.94);
+  backdrop-filter: blur(28px) saturate(1.6);
+  /* Borda via inset shadow: nunca é clipada pelo overflow-hidden,           */
+  /* e não cria halo escuro em janelas transparentes como box-shadow externo. */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.09);
+}
+.dark .fpaste-shell {
+  background: rgba(18, 18, 22, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* ── Superfície legada (Settings.tsx usa fpaste-surface) ────────────────────── */
 .fpaste-surface {
-  background: rgba(248, 248, 250, 0.88);
-  backdrop-filter: blur(28px) saturate(1.6) brightness(1.02);
+  background: rgba(246, 246, 248, 0.94);
+  backdrop-filter: blur(28px) saturate(1.6);
 }
-/* Tema escuro: grafite translúcido (Mica/Acrylic) */
 .dark .fpaste-surface {
-  background: rgba(22, 22, 26, 0.72);
-  backdrop-filter: blur(28px) saturate(1.4);
-}
-
-/* ── Borda da janela ────────────────────────────────────────────────────────── */
-/* Claro: borda cinza média visível para separar do fundo do SO                */
-.fpaste-surface.rounded-2xl {
-  border-color: rgba(0, 0, 0, 0.14) !important;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    0 2px 8px rgba(0, 0, 0, 0.08);
-}
-.dark .fpaste-surface.rounded-2xl {
-  border-color: rgba(255, 255, 255, 0.10) !important;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.40),
-    0 2px 8px rgba(0, 0, 0, 0.24);
-}
-
-/* ── Cards no tema claro ────────────────────────────────────────────────────── */
-/* Fundo levemente elevado + borda bem definida para legibilidade               */
-.light-card,
-:root:not(.dark) .group.rounded-xl {
-  background: rgba(255, 255, 255, 0.80) !important;
-  border-color: rgba(0, 0, 0, 0.09) !important;
-}
-:root:not(.dark) .group.rounded-xl:hover {
-  background: rgba(255, 255, 255, 0.97) !important;
-  border-color: rgba(0, 0, 0, 0.14) !important;
-}
-
-/* ── Texto principal no claro (mais escuro para contraste WCAG AA) ─────────── */
-:root:not(.dark) .text-zinc-800 {
-  color: #1a1a22;
-}
-:root:not(.dark) .text-zinc-500 {
-  color: #6b7280;
+  background: rgba(18, 18, 22, 0.82);
 }
 
 /* ── Animação de abertura ───────────────────────────────────────────────────── */
 @keyframes fpaste-in {
-  from {
-    opacity: 0;
-    transform: scale(0.97) translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  from { opacity: 0; transform: scale(0.96) translateY(6px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
 .fpaste-in {
-  animation: fpaste-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: fpaste-in 150ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* ── Scrollbar discreta ─────────────────────────────────────────────────────── */
-.fpaste-scroll::-webkit-scrollbar {
-  width: 4px;
-}
+.fpaste-scroll::-webkit-scrollbar { width: 4px; }
 .fpaste-scroll::-webkit-scrollbar-thumb {
-  background: rgba(127, 127, 127, 0.28);
+  background: rgba(127, 127, 127, 0.25);
   border-radius: 2px;
 }
-.fpaste-scroll::-webkit-scrollbar-track {
-  background: transparent;
+.fpaste-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Tema claro: cores mais definidas ───────────────────────────────────────── */
+.fpaste-shell .text-zinc-500,
+.fpaste-surface .text-zinc-500 {
+  color: #6b7280;
+}
+.fpaste-shell .text-zinc-800,
+.fpaste-surface .text-zinc-800 {
+  color: #1c1c1e;
+}
+.fpaste-shell .text-zinc-400,
+.fpaste-surface .text-zinc-400 {
+  color: #9ca3af;
 }
 
-/* ── SearchBar no claro — fundo visível ─────────────────────────────────────── */
-:root:not(.dark) input[type="search"],
-:root:not(.dark) input[type="text"] {
-  background: rgba(255, 255, 255, 0.70);
-  color: #1a1a22;
+/* ── SearchBar no claro ─────────────────────────────────────────────────────── */
+.fpaste-shell input,
+.fpaste-surface input {
+  background: rgba(255, 255, 255, 0.60);
+  color: #1c1c1e;
 }
-:root:not(.dark) input::placeholder {
-  color: #9ca3af;
+.fpaste-shell input::placeholder,
+.fpaste-surface input::placeholder {
+  color: #a1a1aa;
 }

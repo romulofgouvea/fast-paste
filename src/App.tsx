@@ -96,7 +96,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="fpaste-surface fpaste-in h-full flex flex-col rounded-2xl border border-black/10 dark:border-white/10 overflow-hidden">
+    <div className="fpaste-shell fpaste-in h-full flex flex-col rounded-2xl overflow-hidden">
       <Header />
       <SearchBar ref={searchRef} />
       <GroupBar />

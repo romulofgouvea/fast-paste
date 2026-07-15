@@ -18,15 +18,13 @@
         "height": 540,
         "minWidth": 360,
         "minHeight": 400,
+        "resizable": false,
         "decorations": false,
         "transparent": true,
         "skipTaskbar": true,
         "alwaysOnTop": true,
         "visible": false,
-        "shadow": true,
-        "windowEffects": {
-          "effects": ["mica", "acrylic", "popover"]
-        }
+        "shadow": false
       }
     ],
     "security": {

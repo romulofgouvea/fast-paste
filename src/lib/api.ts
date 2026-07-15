@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 export type ClipType = "text" | "link" | "code" | "image" | "files";
 
@@ -117,6 +118,19 @@ export function importBackup(password?: string): Promise<ImportSummary> {
   return invoke<ImportSummary>("import_backup", { password: password || null });
 }
 
-export function openSettings(): Promise<void> {
-  return invoke("open_settings");
+export async function openSettings(): Promise<void> {
+  const win = new WebviewWindow("settings", {
+    url: "index.html",
+    title: "Configurações — FPaste",
+    width: 760,
+    height: 560,
+    minWidth: 640,
+    minHeight: 480,
+    resizable: false,
+    center: true,
+  });
+
+  win.once("tauri://error", (e) => {
+    console.error("Erro ao criar janela de configurações:", e);
+  });
 }

@@ -81,9 +81,13 @@ export default function App() {
     // Expõe um helper global para suprimir o blur ao abrir settings
     (window as unknown as Record<string, unknown>).__fpasteOpenSettings = async () => {
       suppressBlur.current = true;
-      await openSettings();
+      // Dá um respiro para o event loop do frontend/WebView2 não congelar a
+      // criação da nova janela que será despachada via IPC.
+      setTimeout(() => {
+        void openSettings();
+      }, 50);
       // Restaura o blur após o foco mudar para a janela de settings
-      setTimeout(() => { suppressBlur.current = false; }, 600);
+      setTimeout(() => { suppressBlur.current = false; }, 800);
     };
     window.addEventListener("blur", onBlur);
 

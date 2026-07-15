@@ -1,67 +1,136 @@
-# ⚡ FPaste - Gerenciador de Clipboard Moderno
+# FPaste
 
-O **FPaste** é um gerenciador de área de transferência (clipboard) moderno, veloz e elegante projetado para **Linux** (compatível com Wayland e X11), **macOS** (Intel e Apple Silicon) e **Windows**. Ele roda silenciosamente em segundo plano, registrando seu histórico de cópias (textos e imagens) e permitindo que você as pesquise e cole instantaneamente em qualquer campo de texto.
+Gerenciador de área de transferência open-source, ultra-leve e multiplataforma (Windows, macOS, Linux). Herda o poder do clássico Ditto com uma UI moderna estilo Fluent/macOS.
 
----
+## Recursos
 
-## ✨ Funcionalidades Principais
+- **Captura em tempo real** de textos, links, código e imagens, com classificação automática por tipo
+- **Histórico criptografado em repouso** — SQLite + SQLCipher (AES-256), chave guardada no gerenciador de credenciais do SO
+- **Imagens cifradas em disco** (AES-256-GCM) fora do banco, com miniaturas decifradas sob demanda
+- **Hotkey global** (`Ctrl + '` por padrão, customizável com gravador de atalhos) — a janela surge sob o cursor
+- **Busca estilo Spotlight** com filtros em linguagem natural (`tipo:link`, `tipo:código`)
+- **Rolagem infinita** com paginação de 20 itens e IntersectionObserver
+- **Temas** claro/escuro/sistema com efeito Mica/Acrylic/Vibrancy e cor de destaque configurável
+- **Teclas 1–9** para selecionar itens sem tocar no mouse
 
-- 📋 **Monitoramento Silencioso**: Salva tudo o que você copia (textos e imagens) automaticamente.
-- 🔍 **Busca Dinâmica**: Comece a digitar letras ou partes de datas para encontrar rapidamente itens antigos.
-- ⌨️ **Navegação por Teclado**: Use setas para navegar e Enter para colar instantaneamente.
-- 🎨 **Interface Premium**: Design escuro moderno com visual translúcido e foco automático na barra de busca.
-- 💾 **Fila de Histórico Inteligente**: Fila rotativa de histórico (limite padrão de 500 itens, totalmente configurável).
-- 📌 **Fixar Itens**: Fixe itens importantes (★) para garantir que nunca sejam removidos pelo limite da fila.
-- 🚀 **Auto-Paste Inteligente**: Digita automaticamente o item selecionado na posição ativa do seu cursor de texto.
+## Stack
 
----
-
-## 📖 Como Usar
-
-### 💡 Workflow do Dia a Dia
-
-1. **Copie normalmente** textos ou capture imagens usando `Ctrl+C` ou print de tela.
-2. **Abra o popup** a qualquer momento usando o atalho de teclado padrão: **`Ctrl + '`** (Ctrl + aspas simples).
-3. **Busque e navegue** usando as setas do teclado (`↑` e `↓`) ou digite letras para buscar o texto.
-4. **Pressione Enter** para colar o item selecionado de forma automática!
-
-### ⌨️ Atalhos Disponíveis no Popup
-
-| Tecla | Ação |
-|-------|------|
-| `↑` e `↓` | Navega pela lista de itens copiados |
-| `Enter` | Selecionar o item e colar automaticamente |
-| `Delete` | Excluir a cópia selecionada do histórico |
-| `Esc` | Fecha a janela do popup |
-| Digitando | Filtra/busca itens instantaneamente |
+- **Core:** Tauri v2 (Rust) — `rusqlite` + SQLCipher, `clipboard-rs`, `keyring`, `aes-gcm`
+- **UI:** Vite + React + TypeScript + Tailwind CSS v4 + Zustand
 
 ---
 
-## 🚀 Guias de Instalação por Sistema Operacional
+## Como compilar
 
-Selecione o guia específico abaixo correspondente ao seu sistema operacional para ver as instruções detalhadas de pré-requisitos, instalação, atalhos do sistema e autostart:
+### 1. Pré-requisitos
 
-- [Ubuntu / Debian / Linux](readmes/ubuntu-readme.md)
-- [MacOS](readmes/mac-readme.md)
-- [Windows](readmes/windows-readme.md)
+Em qualquer sistema você precisa de:
 
----
+| Ferramenta | Versão mínima | Para quê |
+|---|---|---|
+| [Node.js](https://nodejs.org) | 20+ | Frontend (Vite/React) |
+| [Rust](https://rustup.rs) | stable | Core Tauri |
+| **Perl** | 5.x | Compilar o OpenSSL vendorado do SQLCipher |
 
-## 🏗️ Arquitetura do Projeto
+#### Windows
 
-O FPaste foi estruturado em módulos independentes utilizando **Python 3** e **PyQt6**:
+```powershell
+# Toolchain C++ (MSVC + Windows SDK) — obrigatório para o Rust no Windows
+winget install Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 
-```
-fast-paste/
-├── main.py              # Ponto de entrada unificado da aplicação
-├── configs/             # Configurações globais e banco de dados
-├── core/                # Lógica de daemon, monitoramento e atalhos globais
-├── screens/             # Componentes visuais (popup, bandeja do sistema, configurações)
-├── assets/              # Ícones e imagens do aplicativo
-└── readmes/             # Guias de instalação específicos por SO
+# Rust (toolchain stable-msvc)
+winget install Rustlang.Rustup
+
+# Perl (exigido pelo build do OpenSSL/SQLCipher)
+winget install StrawberryPerl.StrawberryPerl
 ```
 
-- **Daemon**: Roda em background monitorando a área de transferência.
-- **Popup**: Janela PyQt6 otimizada, focada em performance e ergonomia.
-- **IPC (Inter-Process Communication)**: Comunicação via Socket Unix/Local que garante uma única instância ativa da janela e rápida ativação.
-- **Storage**: Banco de dados leve SQLite para o histórico de cópias locais e cache seguro de imagens em disco.
+Abra um **novo terminal** depois das instalações para o `PATH` ser atualizado. O WebView2 já vem embutido no Windows 10/11.
+
+#### macOS
+
+```bash
+xcode-select --install          # Command Line Tools (inclui clang e perl)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+#### Linux (Debian/Ubuntu)
+
+```bash
+sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
+  libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev perl
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+### 2. Instalar dependências
+
+```bash
+git clone <url-do-repo> fpaste
+cd fpaste
+npm install
+```
+
+### 3. Rodar em modo desenvolvimento
+
+```bash
+npm run tauri dev
+```
+
+Compila o core Rust, sobe o Vite com hot-reload e abre o app. A **primeira compilação demora vários minutos** (baixa ~500 crates e compila o OpenSSL + SQLCipher do zero); as seguintes são incrementais e rápidas.
+
+O app inicia oculto na bandeja do sistema — pressione **`Ctrl + '`** para abrir a janela, ou use o menu do ícone na bandeja.
+
+### 4. Build de produção
+
+```bash
+npm run tauri build
+```
+
+Os artefatos saem em `src-tauri/target/release/`:
+
+- **Windows:** `fpaste.exe` + instaladores em `bundle/msi/` e `bundle/nsis/`
+- **macOS:** `bundle/macos/FPaste.app` e `bundle/dmg/`
+- **Linux:** `bundle/deb/`, `bundle/rpm/` e `bundle/appimage/`
+
+### 5. Rodar os testes do core
+
+```bash
+cd src-tauri
+cargo test
+```
+
+Cobrem classificação de conteúdo (texto/link/código), deduplicação, paginação e o round-trip da criptografia AES-256-GCM.
+
+### Erros comuns de build
+
+| Erro | Causa | Solução |
+|---|---|---|
+| `Command 'perl' not found` ao compilar `openssl-sys` | Perl ausente | Instale Strawberry Perl (Win) ou o pacote `perl` do seu SO e abra novo terminal |
+| `linker 'link.exe' not found` (Windows) | VS Build Tools sem o workload C++ | Reinstale com `--add Microsoft.VisualStudio.Workload.VCTools` |
+| `rustc: command not found` | PATH desatualizado | Abra um novo terminal ou rode `. "$HOME/.cargo/env"` |
+| Erro de `webkit2gtk` (Linux) | Dependências de sistema faltando | Instale os pacotes da seção Linux acima |
+
+---
+
+## Releases automáticas
+
+O workflow `.github/workflows/release.yml` builda o app em Windows, macOS e Linux e publica os instaladores (`.msi`/`.exe`, `.dmg`, `.deb`/`.rpm`/`.AppImage`) direto na release do GitHub sempre que uma tag `v*` é empurrada:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Mantenha a versão em `package.json` e `src-tauri/tauri.conf.json` alinhada com a tag antes de publicá-la.
+
+---
+
+## Dados
+
+O banco `fpaste.db` (cifrado com SQLCipher) e a pasta de mídia cifrada ficam em:
+
+- **Windows:** `%APPDATA%\fpaste\data\`
+- **macOS:** `~/Library/Application Support/fpaste/data/`
+- **Linux:** `~/.local/share/fpaste/data/`
+
+A chave de criptografia é gerada no primeiro boot e guardada no **Windows Credential Manager**, **macOS Keychain** ou **Secret Service** (Linux) — nunca em arquivo.

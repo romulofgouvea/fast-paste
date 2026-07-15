@@ -462,7 +462,7 @@ pub fn open_settings(app: AppHandle) -> Result<(), String> {
         let result = tauri::WebviewWindowBuilder::new(
             &app_clone,
             "settings",
-            tauri::WebviewUrl::App("".into()),
+            tauri::WebviewUrl::default(),
         )
         .title("Configurações — FPaste")
         .inner_size(760.0, 560.0)

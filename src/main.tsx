@@ -27,10 +27,28 @@ window.addEventListener("unhandledrejection", (e) => {
   document.body.innerHTML = `<pre style="color:red;background:white;padding:16px;white-space:pre-wrap;font-size:14px">DIAG REJECTION: ${String(e.reason)}\n${e.reason?.stack ?? ""}</pre>`;
 });
 
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {error: Error | null}> {
+  state = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("ErrorBoundary caught:", error, info);
+  }
+  render() {
+    if (this.state.error) {
+      return <pre style={{color:'red', background:'white', padding:'16px', whiteSpace:'pre-wrap', fontSize:'14px'}}>
+        ErrorBoundary: {this.state.error.message}{'\n'}{this.state.error.stack}
+      </pre>;
+    }
+    return this.props.children;
+  }
+}
+
 try {
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
-      {isSettings ? <Settings /> : <App />}
+      <ErrorBoundary>
+        {isSettings ? <Settings /> : <App />}
+      </ErrorBoundary>
     </React.StrictMode>,
   );
 } catch (err) {

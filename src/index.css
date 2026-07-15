@@ -24,24 +24,20 @@ body {
 
 /* ── Janela principal ───────────────────────────────────────────────────────── */
 .fpaste-shell {
-  background: rgba(246, 246, 248, 0.94);
-  backdrop-filter: blur(28px) saturate(1.6);
-  /* Borda via inset shadow: nunca é clipada pelo overflow-hidden,           */
-  /* e não cria halo escuro em janelas transparentes como box-shadow externo. */
+  background: #f4f4f5;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.09);
 }
 .dark .fpaste-shell {
-  background: rgba(18, 18, 22, 0.82);
+  background: #18181b;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 /* ── Superfície legada (Settings.tsx usa fpaste-surface) ────────────────────── */
 .fpaste-surface {
-  background: rgba(246, 246, 248, 0.94);
-  backdrop-filter: blur(28px) saturate(1.6);
+  background: #f4f4f5;
 }
 .dark .fpaste-surface {
-  background: rgba(18, 18, 22, 0.82);
+  background: #18181b;
 }
 
 /* ── Animação de abertura ───────────────────────────────────────────────────── */

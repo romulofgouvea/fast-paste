@@ -84,9 +84,10 @@ function PreviewTooltip({ anchorRect, item, fullText, highlighted, thumbSrc }: T
 
   return createPortal(
     <div
-      style={{ position: "fixed", left, top, width: W, maxHeight: MAX_H, zIndex: 9999, pointerEvents: "none" }}
+      onClick={(e) => e.stopPropagation()}
+      style={{ position: "fixed", left, top, width: W, maxHeight: MAX_H, zIndex: 9999 }}
       className="rounded-xl shadow-2xl overflow-hidden border border-black/10 dark:border-white/10
-                 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl animate-[fpaste-in_100ms_ease-out]"
+                 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl animate-[fpaste-in_100ms_ease-out] cursor-default"
     >
       {item.type === "image" ? (
         <div className="flex items-center justify-center p-3 bg-black/5">
@@ -256,11 +257,7 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
   // Linha de subtítulo abaixo do badge (ex: domínio para links)
   const subtitle = item.type === "link" ? fullText.slice(0, 60) : null;
 
-  // Preview de texto (linha 3 do card)
-  const previewText = item.type === "text" || item.type === "code"
-    ? fullText.split("\n").slice(1).join(" ").trim().slice(0, 80) || null
-    : item.type === "link" ? null
-    : null;
+
 
   return (
     <>
@@ -309,12 +306,7 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
             )}
           </div>
 
-          {/* Linha 3: preview de texto secundário */}
-          {previewText && (
-            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 truncate leading-tight">
-              {previewText}
-            </p>
-          )}
+
         </div>
 
         {/* Hora — bottom-right fixo */}

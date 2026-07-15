@@ -25,7 +25,9 @@ pub fn get_or_create_master_key() -> Result<[u8; 32], AppError> {
         Err(keyring::Error::NoEntry) => {
             let mut key = [0u8; 32];
             rand::thread_rng().fill_bytes(&mut key);
-            entry.set_password(&B64.encode(key)).map_err(AppError::msg)?;
+            entry
+                .set_password(&B64.encode(key))
+                .map_err(AppError::msg)?;
             Ok(key)
         }
         Err(e) => Err(AppError::msg(e)),

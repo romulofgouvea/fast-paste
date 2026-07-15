@@ -72,6 +72,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            hotkey::toggle_main_window_centered(app);
+        }))
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, _shortcut, event| {
@@ -82,8 +85,8 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
-            let master_key = crypto::get_or_create_master_key()
-                .map_err(|e| format!("master key: {e}"))?;
+            let master_key =
+                crypto::get_or_create_master_key().map_err(|e| format!("master key: {e}"))?;
 
             // %APPDATA%\fpaste\data (e equivalentes no macOS/Linux), conforme a spec.
             let data_dir = app.path().data_dir()?.join("fpaste").join("data");

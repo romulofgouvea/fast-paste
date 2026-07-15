@@ -148,7 +148,7 @@ pub fn toggle_main_window(app: &AppHandle) {
             let msize = monitor.size();
             let max_x = mpos.x as f64 + msize.width as f64 - size.width as f64;
             let max_y = mpos.y as f64 + msize.height as f64 - size.height as f64;
-            
+
             x = x.clamp(mpos.x as f64, max_x.max(mpos.x as f64));
             y = y.clamp(mpos.y as f64, max_y.max(mpos.y as f64));
         }

@@ -6,8 +6,8 @@ use tauri::{AppHandle, Manager, State};
 
 use crate::db;
 use crate::error::AppError;
-use crate::{hotkey, media};
 use crate::AppState;
+use crate::{hotkey, media};
 
 /// Conteúdo a ser devolvido ao clipboard do SO.
 enum ClipPayload {
@@ -75,6 +75,10 @@ pub fn select_item(app: AppHandle, state: State<'_, AppState>, id: i64) -> Resul
 /// transformações: "colar como texto puro", "inverter maiúsc/minúsc" etc.)
 /// sem passar pelo histórico.
 #[tauri::command]
-pub fn paste_text(app: AppHandle, state: State<'_, AppState>, text: String) -> Result<(), AppError> {
+pub fn paste_text(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    text: String,
+) -> Result<(), AppError> {
     put_on_clipboard_and_hide(&app, &state, ClipPayload::Text(text))
 }

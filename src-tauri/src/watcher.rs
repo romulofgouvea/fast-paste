@@ -65,13 +65,24 @@ fn looks_like_code(text: &str) -> bool {
         score += 1;
     }
     const KEYWORDS: [&str; 12] = [
-        "fn ", "def ", "function ", "import ", "const ", "let ", "class ", "#include", "pub ",
-        "return ", "if (", "=> ",
+        "fn ",
+        "def ",
+        "function ",
+        "import ",
+        "const ",
+        "let ",
+        "class ",
+        "#include",
+        "pub ",
+        "return ",
+        "if (",
+        "=> ",
     ];
-    if lines
-        .iter()
-        .any(|l| KEYWORDS.iter().any(|k| l.trim_start().starts_with(k) || l.contains(k)))
-    {
+    if lines.iter().any(|l| {
+        KEYWORDS
+            .iter()
+            .any(|k| l.trim_start().starts_with(k) || l.contains(k))
+    }) {
         score += 1;
     }
     score >= 2

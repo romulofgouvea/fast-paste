@@ -32,7 +32,11 @@ type BackupRow = (
 /// (AES-256 por entrada). O conteúdo já sai cifrado — a senha do zip é uma
 /// segunda camada para o trânsito/compartilhamento do arquivo de backup.
 #[tauri::command]
-pub fn export_backup(app: AppHandle, state: State<'_, AppState>, password: Option<String>) -> Result<String, AppError> {
+pub fn export_backup(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    password: Option<String>,
+) -> Result<String, AppError> {
     let dest = app
         .dialog()
         .file()
@@ -46,18 +50,19 @@ pub fn export_backup(app: AppHandle, state: State<'_, AppState>, password: Optio
     let _ = std::fs::remove_file(&snapshot_path);
     {
         let conn = state.db()?;
-        conn.execute(
-            "VACUUM INTO ?1",
-            [snapshot_path.to_string_lossy().as_ref()],
-        )?;
+        conn.execute("VACUUM INTO ?1", [snapshot_path.to_string_lossy().as_ref()])?;
     }
 
     let file = std::fs::File::create(&dest_path)?;
     let mut zip = zip::ZipWriter::new(file);
 
-    let write_entry = |zip: &mut zip::ZipWriter<std::fs::File>, name: &str, bytes: &[u8], pw: &Option<String>| -> Result<(), AppError> {
-        let opts: zip::write::FileOptions<()> = zip::write::FileOptions::default()
-            .compression_method(zip::CompressionMethod::Deflated);
+    let write_entry = |zip: &mut zip::ZipWriter<std::fs::File>,
+                       name: &str,
+                       bytes: &[u8],
+                       pw: &Option<String>|
+     -> Result<(), AppError> {
+        let opts: zip::write::FileOptions<()> =
+            zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
         let opts = match pw {
             Some(p) => opts.with_aes_encryption(zip::AesMode::Aes256, p),
             None => opts,
@@ -90,7 +95,11 @@ pub fn export_backup(app: AppHandle, state: State<'_, AppState>, password: Optio
 /// Importa um backup gerado pelo FPaste, mesclando por hash com o histórico
 /// atual para não duplicar itens já existentes (spec §5.3).
 #[tauri::command]
-pub fn import_backup(app: AppHandle, state: State<'_, AppState>, password: Option<String>) -> Result<ImportSummary, AppError> {
+pub fn import_backup(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    password: Option<String>,
+) -> Result<ImportSummary, AppError> {
     let src = app
         .dialog()
         .file()
@@ -102,7 +111,10 @@ pub fn import_backup(app: AppHandle, state: State<'_, AppState>, password: Optio
     let file = std::fs::File::open(&src_path)?;
     let mut archive = zip::ZipArchive::new(file)?;
 
-    let read_entry = |archive: &mut zip::ZipArchive<std::fs::File>, name: &str, pw: &Option<String>| -> Result<Vec<u8>, AppError> {
+    let read_entry = |archive: &mut zip::ZipArchive<std::fs::File>,
+                      name: &str,
+                      pw: &Option<String>|
+     -> Result<Vec<u8>, AppError> {
         let mut zf = match pw {
             Some(p) => archive
                 .by_name_decrypt(name, p.as_bytes())
@@ -121,14 +133,29 @@ pub fn import_backup(app: AppHandle, state: State<'_, AppState>, password: Optio
     let backup_conn = rusqlite::Connection::open(&tmp_db)?;
     backup_conn.pragma_update(None, "key", B64.encode(state.master_key))?;
     backup_conn
-        .query_row("SELECT count(*) FROM clipboard_history", [], |r| r.get::<_, i64>(0))
-        .map_err(|e| AppError::msg(format!("backup inválido ou de outra instalação do FPaste: {e}")))?;
+        .query_row("SELECT count(*) FROM clipboard_history", [], |r| {
+            r.get::<_, i64>(0)
+        })
+        .map_err(|e| {
+            AppError::msg(format!(
+                "backup inválido ou de outra instalação do FPaste: {e}"
+            ))
+        })?;
 
     let rows: Vec<BackupRow> = {
         let mut stmt = backup_conn
             .prepare("SELECT type, content, preview_text, secure_file_path, hash, size_bytes FROM clipboard_history")?;
         let collected = stmt
-            .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?)))?
+            .query_map([], |r| {
+                Ok((
+                    r.get(0)?,
+                    r.get(1)?,
+                    r.get(2)?,
+                    r.get(3)?,
+                    r.get(4)?,
+                    r.get(5)?,
+                ))
+            })?
             .collect::<Result<_, _>>()?;
         collected
     };

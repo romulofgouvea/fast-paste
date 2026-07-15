@@ -27,7 +27,11 @@ pub fn delete_group(state: State<'_, AppState>, id: i64) -> Result<(), AppError>
 }
 
 #[tauri::command]
-pub fn set_item_group(state: State<'_, AppState>, id: i64, group_id: Option<i64>) -> Result<(), AppError> {
+pub fn set_item_group(
+    state: State<'_, AppState>,
+    id: i64,
+    group_id: Option<i64>,
+) -> Result<(), AppError> {
     let conn = state.db()?;
     db::set_item_group(&conn, id, group_id)
 }

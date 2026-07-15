@@ -2,12 +2,16 @@ use serde_json::json;
 use tauri::{AppHandle, State};
 
 use crate::error::AppError;
-use crate::{hotkey, settings};
 use crate::AppState;
+use crate::{hotkey, settings};
 
 /// Valida, registra e persiste uma nova hotkey global vinda do key recorder.
 #[tauri::command]
-pub fn set_hotkey(app: AppHandle, state: State<'_, AppState>, shortcut: String) -> Result<(), AppError> {
+pub fn set_hotkey(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    shortcut: String,
+) -> Result<(), AppError> {
     let mut current = state.hotkey()?;
     hotkey::swap_hotkey(&app, &shortcut, Some(current.as_str()))?;
     *current = shortcut.clone();

@@ -42,7 +42,14 @@ fn clip_item_contract() {
     assert_eq!(
         keys(&item),
         expected(&[
-            "id", "type", "preview", "content", "pinned", "timestamp", "hasMedia", "groupId",
+            "id",
+            "type",
+            "preview",
+            "content",
+            "pinned",
+            "timestamp",
+            "hasMedia",
+            "groupId",
         ])
     );
 }
@@ -57,30 +64,46 @@ fn clip_kind_serializes_lowercase() {
         (ClipKind::Image, "image"),
         (ClipKind::Files, "files"),
     ] {
-        assert_eq!(serde_json::to_value(kind).unwrap(), serde_json::json!(expected));
+        assert_eq!(
+            serde_json::to_value(kind).unwrap(),
+            serde_json::json!(expected)
+        );
     }
 }
 
 #[test]
 fn group_contract() {
-    let g = Group { id: 1, name: "x".into() };
+    let g = Group {
+        id: 1,
+        name: "x".into(),
+    };
     assert_eq!(keys(&g), expected(&["id", "name"]));
 }
 
 #[test]
 fn history_page_contract() {
-    let p = HistoryPage { items: vec![], has_more: false };
+    let p = HistoryPage {
+        items: vec![],
+        has_more: false,
+    };
     assert_eq!(keys(&p), expected(&["items", "hasMore"]));
 }
 
 #[test]
 fn storage_info_contract() {
-    let s = StorageInfo { path: String::new(), db_size_bytes: 0, item_count: 0 };
+    let s = StorageInfo {
+        path: String::new(),
+        db_size_bytes: 0,
+        item_count: 0,
+    };
     assert_eq!(keys(&s), expected(&["path", "dbSizeBytes", "itemCount"]));
 }
 
 #[test]
 fn import_summary_contract() {
-    let s = ImportSummary { imported: 0, skipped: 0 };
+    let s = ImportSummary {
+        imported: 0,
+        skipped: 0,
+    };
     assert_eq!(keys(&s), expected(&["imported", "skipped"]));
 }

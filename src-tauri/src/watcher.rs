@@ -11,6 +11,7 @@ use clipboard_rs::{
 use rusqlite::Connection;
 use tauri::{AppHandle, Emitter};
 
+use crate::error::AppError;
 use crate::{crypto, db, media};
 
 const PREVIEW_LEN: usize = 300;
@@ -89,7 +90,7 @@ struct Monitor {
 }
 
 impl Monitor {
-    fn capture_text(&self) -> Result<bool, String> {
+    fn capture_text(&self) -> Result<bool, AppError> {
         let Ok(text) = self.ctx.get_text() else {
             return Ok(false);
         };
@@ -104,22 +105,22 @@ impl Monitor {
             content: Some(text),
             secure_file_path: None,
         };
-        let conn = self.db.lock().map_err(|_| "db mutex poisoned")?;
+        let conn = self.db.lock().map_err(|_| AppError::LockPoisoned("db"))?;
         db::insert_or_touch(&conn, &item)?;
         Ok(true)
     }
 
     /// Imagens nunca vão para dentro do banco: são cifradas em disco e o
     /// registro guarda apenas o caminho + hash SHA-256 (spec §5.4).
-    fn capture_image(&self) -> Result<bool, String> {
+    fn capture_image(&self) -> Result<bool, AppError> {
         let Ok(image) = self.ctx.get_image() else {
             return Ok(false);
         };
-        let png = image.to_png().map_err(|e| e.to_string())?;
+        let png = image.to_png().map_err(AppError::msg)?;
         let bytes = png.get_bytes();
         let hash = crypto::sha256_hex(bytes);
 
-        let conn = self.db.lock().map_err(|_| "db mutex poisoned")?;
+        let conn = self.db.lock().map_err(|_| AppError::LockPoisoned("db"))?;
         if db::touch_by_hash(&conn, &hash)?.is_some() {
             return Ok(true);
         }

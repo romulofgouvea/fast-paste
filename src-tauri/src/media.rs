@@ -1,22 +1,23 @@
 use std::path::{Path, PathBuf};
 
 use crate::crypto;
+use crate::error::AppError;
 
 /// Cifra o blob (AES-256-GCM) e grava em <data_dir>/media/<uuid>.bin.
 /// Retorna o caminho absoluto do arquivo gravado.
-pub fn save_encrypted(data_dir: &Path, key: &[u8; 32], plain: &[u8]) -> Result<PathBuf, String> {
+pub fn save_encrypted(data_dir: &Path, key: &[u8; 32], plain: &[u8]) -> Result<PathBuf, AppError> {
     let media_dir = data_dir.join("media");
-    std::fs::create_dir_all(&media_dir).map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&media_dir)?;
     let path = media_dir.join(format!("{}.bin", uuid::Uuid::new_v4()));
     let encrypted = crypto::encrypt_blob(key, plain)?;
-    std::fs::write(&path, encrypted).map_err(|e| e.to_string())?;
+    std::fs::write(&path, encrypted)?;
     Ok(path)
 }
 
 /// Lê e decifra um blob de mídia. A decifragem só acontece sob demanda,
 /// quando a miniatura entra na área visível (spec §5.4).
-pub fn load_decrypted(path: &Path, key: &[u8; 32]) -> Result<Vec<u8>, String> {
-    let data = std::fs::read(path).map_err(|e| e.to_string())?;
+pub fn load_decrypted(path: &Path, key: &[u8; 32]) -> Result<Vec<u8>, AppError> {
+    let data = std::fs::read(path)?;
     crypto::decrypt_blob(key, &data)
 }
 

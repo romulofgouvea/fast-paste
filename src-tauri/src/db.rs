@@ -3,8 +3,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine;
-use rusqlite::{params_from_iter, Connection};
+use rusqlite::{params_from_iter, Connection, OptionalExtension};
 use serde::Serialize;
+
+use crate::error::AppError;
 
 const SCHEMA: &str = "
 CREATE TABLE IF NOT EXISTS clipboard_history (
@@ -68,42 +70,36 @@ pub fn now_ms() -> i64 {
 
 /// Abre (ou cria) o banco cifrado com SQLCipher. A chave-mestra é aplicada
 /// como passphrase via PRAGMA key antes de qualquer acesso.
-pub fn open(dir: &Path, master_key: &[u8; 32]) -> Result<Connection, String> {
-    std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    let conn = Connection::open(dir.join("fpaste.db")).map_err(|e| e.to_string())?;
-    conn.pragma_update(None, "key", B64.encode(master_key))
-        .map_err(|e| e.to_string())?;
-    conn.execute_batch(SCHEMA).map_err(|e| e.to_string())?;
+pub fn open(dir: &Path, master_key: &[u8; 32]) -> Result<Connection, AppError> {
+    std::fs::create_dir_all(dir)?;
+    let conn = Connection::open(dir.join("fpaste.db"))?;
+    conn.pragma_update(None, "key", B64.encode(master_key))?;
+    conn.execute_batch(SCHEMA)?;
     Ok(conn)
 }
 
 /// Se um item com este hash já existe, promove-o ao topo (timestamp) e
 /// devolve seu id — deduplicação estilo Ditto.
-pub fn touch_by_hash(conn: &Connection, hash: &str) -> Result<Option<i64>, String> {
+pub fn touch_by_hash(conn: &Connection, hash: &str) -> Result<Option<i64>, AppError> {
     let existing: Option<i64> = conn
         .query_row(
             "SELECT id FROM clipboard_history WHERE hash = ?1 LIMIT 1",
             [hash],
             |row| row.get(0),
         )
-        .map(Some)
-        .or_else(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => Ok(None),
-            other => Err(other.to_string()),
-        })?;
+        .optional()?;
     if let Some(id) = existing {
         conn.execute(
             "UPDATE clipboard_history SET timestamp = ?1 WHERE id = ?2",
             rusqlite::params![now_ms(), id],
-        )
-        .map_err(|e| e.to_string())?;
+        )?;
     }
     Ok(existing)
 }
 
 /// Insere um item novo; se o hash já existe, apenas promove o item existente.
 /// Retorna (id, criado_agora).
-pub fn insert_or_touch(conn: &Connection, item: &NewItem) -> Result<(i64, bool), String> {
+pub fn insert_or_touch(conn: &Connection, item: &NewItem) -> Result<(i64, bool), AppError> {
     if let Some(id) = touch_by_hash(conn, &item.hash)? {
         return Ok((id, false));
     }
@@ -120,8 +116,7 @@ pub fn insert_or_touch(conn: &Connection, item: &NewItem) -> Result<(i64, bool),
             item.size_bytes,
             now_ms()
         ],
-    )
-    .map_err(|e| e.to_string())?;
+    )?;
     Ok((conn.last_insert_rowid(), true))
 }
 
@@ -134,7 +129,7 @@ pub fn query_page(
     search: Option<&str>,
     kind: Option<&str>,
     group_id: Option<i64>,
-) -> Result<(Vec<ClipItem>, bool), String> {
+) -> Result<(Vec<ClipItem>, bool), AppError> {
     let mut sql = String::from(
         "SELECT id, type, preview_text, content, secure_file_path, pinned, timestamp, group_id \
          FROM clipboard_history",
@@ -166,7 +161,7 @@ pub fn query_page(
         page as i64 * size as i64
     ));
 
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare(&sql)?;
     let rows = stmt
         .query_map(params_from_iter(params.iter()), |row| {
             let file_path: Option<String> = row.get(4)?;
@@ -180,10 +175,8 @@ pub fn query_page(
                 has_media: file_path.is_some(),
                 group_id: row.get(7)?,
             })
-        })
-        .map_err(|e| e.to_string())?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| e.to_string())?;
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
 
     let has_more = rows.len() > size as usize;
     let items = rows.into_iter().take(size as usize).collect();
@@ -191,95 +184,85 @@ pub fn query_page(
 }
 
 /// Alterna o estado de fixado do item e devolve o novo valor.
-pub fn toggle_pin(conn: &Connection, id: i64) -> Result<bool, String> {
+pub fn toggle_pin(conn: &Connection, id: i64) -> Result<bool, AppError> {
     conn.execute(
         "UPDATE clipboard_history SET pinned = 1 - pinned WHERE id = ?1",
         [id],
-    )
-    .map_err(|e| e.to_string())?;
-    conn.query_row(
+    )?;
+    let pinned = conn.query_row(
         "SELECT pinned FROM clipboard_history WHERE id = ?1",
         [id],
         |row| row.get::<_, i64>(0),
-    )
-    .map(|v| v != 0)
-    .map_err(|e| e.to_string())
+    )?;
+    Ok(pinned != 0)
 }
 
-pub fn set_item_group(conn: &Connection, id: i64, group_id: Option<i64>) -> Result<(), String> {
+pub fn set_item_group(conn: &Connection, id: i64, group_id: Option<i64>) -> Result<(), AppError> {
     conn.execute(
         "UPDATE clipboard_history SET group_id = ?1 WHERE id = ?2",
         rusqlite::params![group_id, id],
-    )
-    .map_err(|e| e.to_string())?;
+    )?;
     Ok(())
 }
 
-pub fn list_groups(conn: &Connection) -> Result<Vec<Group>, String> {
-    let mut stmt = conn
-        .prepare("SELECT id, name FROM groups ORDER BY name COLLATE NOCASE")
-        .map_err(|e| e.to_string())?;
+pub fn list_groups(conn: &Connection) -> Result<Vec<Group>, AppError> {
+    let mut stmt = conn.prepare("SELECT id, name FROM groups ORDER BY name COLLATE NOCASE")?;
     let groups = stmt
         .query_map([], |row| {
             Ok(Group {
                 id: row.get(0)?,
                 name: row.get(1)?,
             })
-        })
-        .map_err(|e| e.to_string())?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| e.to_string())?;
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
     Ok(groups)
 }
 
-pub fn create_group(conn: &Connection, name: &str) -> Result<i64, String> {
+pub fn create_group(conn: &Connection, name: &str) -> Result<i64, AppError> {
     conn.execute(
         "INSERT INTO groups (name, created_at) VALUES (?1, ?2)",
         rusqlite::params![name, now_ms()],
-    )
-    .map_err(|e| e.to_string())?;
+    )?;
     Ok(conn.last_insert_rowid())
 }
 
-pub fn delete_group(conn: &Connection, id: i64) -> Result<(), String> {
+pub fn delete_group(conn: &Connection, id: i64) -> Result<(), AppError> {
     conn.execute(
         "UPDATE clipboard_history SET group_id = NULL WHERE group_id = ?1",
         [id],
-    )
-    .map_err(|e| e.to_string())?;
-    conn.execute("DELETE FROM groups WHERE id = ?1", [id])
-        .map_err(|e| e.to_string())?;
+    )?;
+    conn.execute("DELETE FROM groups WHERE id = ?1", [id])?;
     Ok(())
 }
 
-pub fn get_content(conn: &Connection, id: i64) -> Result<Option<String>, String> {
-    conn.query_row(
+pub fn get_content(conn: &Connection, id: i64) -> Result<Option<String>, AppError> {
+    let content = conn.query_row(
         "SELECT content FROM clipboard_history WHERE id = ?1",
         [id],
         |row| row.get(0),
-    )
-    .map_err(|e| e.to_string())
+    )?;
+    Ok(content)
 }
 
-pub fn get_media_path(conn: &Connection, id: i64) -> Result<Option<String>, String> {
-    conn.query_row(
+pub fn get_media_path(conn: &Connection, id: i64) -> Result<Option<String>, AppError> {
+    let path = conn.query_row(
         "SELECT secure_file_path FROM clipboard_history WHERE id = ?1",
         [id],
         |row| row.get(0),
-    )
-    .map_err(|e| e.to_string())
+    )?;
+    Ok(path)
 }
 
-pub fn delete(conn: &Connection, id: i64) -> Result<Option<String>, String> {
+pub fn delete(conn: &Connection, id: i64) -> Result<Option<String>, AppError> {
     let file_path: Option<String> = conn
         .query_row(
             "SELECT secure_file_path FROM clipboard_history WHERE id = ?1",
             [id],
             |row| row.get(0),
         )
-        .unwrap_or(None);
-    conn.execute("DELETE FROM clipboard_history WHERE id = ?1", [id])
-        .map_err(|e| e.to_string())?;
+        .optional()?
+        .flatten();
+    conn.execute("DELETE FROM clipboard_history WHERE id = ?1", [id])?;
     Ok(file_path)
 }
 

@@ -1,13 +1,15 @@
 mod commands;
 mod crypto;
 mod db;
+mod error;
 mod hotkey;
 mod media;
 mod watcher;
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use rusqlite::Connection;
 use tauri::menu::{Menu, MenuItem};
@@ -16,6 +18,8 @@ use tauri::Manager;
 use tauri_plugin_global_shortcut::ShortcutState;
 use tauri_plugin_store::StoreExt;
 
+use crate::error::AppError;
+
 pub struct AppState {
     pub db: Arc<Mutex<Connection>>,
     pub suppress_capture: Arc<AtomicBool>,
@@ -23,10 +27,36 @@ pub struct AppState {
     pub data_dir: PathBuf,
     pub current_hotkey: Mutex<String>,
     /// Cache simples de miniaturas já decifradas (id → data URI).
-    pub thumb_cache: Mutex<std::collections::HashMap<i64, String>>,
+    pub thumb_cache: Mutex<HashMap<i64, String>>,
     /// Janela em primeiro plano antes do FPaste abrir (para o auto-paste).
     pub last_focus: Mutex<Option<isize>>,
     pub auto_paste: Mutex<bool>,
+}
+
+/// Acesso aos mutexes do estado com erro tipado, no lugar do antigo
+/// `state.db.lock().map_err(|_| "db lock poisoned")?` repetido em cada comando.
+impl AppState {
+    pub fn db(&self) -> Result<MutexGuard<'_, Connection>, AppError> {
+        self.db.lock().map_err(|_| AppError::LockPoisoned("db"))
+    }
+
+    pub fn hotkey(&self) -> Result<MutexGuard<'_, String>, AppError> {
+        self.current_hotkey
+            .lock()
+            .map_err(|_| AppError::LockPoisoned("hotkey"))
+    }
+
+    pub fn auto_paste(&self) -> Result<MutexGuard<'_, bool>, AppError> {
+        self.auto_paste
+            .lock()
+            .map_err(|_| AppError::LockPoisoned("auto_paste"))
+    }
+
+    pub fn thumb_cache(&self) -> Result<MutexGuard<'_, HashMap<i64, String>>, AppError> {
+        self.thumb_cache
+            .lock()
+            .map_err(|_| AppError::LockPoisoned("thumb_cache"))
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

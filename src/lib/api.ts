@@ -1,5 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 export type ClipType = "text" | "link" | "code" | "image" | "files";
 
@@ -118,19 +117,12 @@ export function importBackup(password?: string): Promise<ImportSummary> {
   return invoke<ImportSummary>("import_backup", { password: password || null });
 }
 
-export async function openSettings(): Promise<void> {
-  const win = new WebviewWindow("settings", {
-    url: "index.html",
-    title: "Configurações — FPaste",
-    width: 760,
-    height: 560,
-    minWidth: 640,
-    minHeight: 480,
-    resizable: false,
-    center: true,
-  });
-
-  win.once("tauri://error", (e) => {
-    console.error("Erro ao criar janela de configurações:", e);
-  });
+/**
+ * Abre (ou traz ao foco) a janela de configurações. Delega ao comando Rust
+ * `open_settings`, que cria a WebviewWindow na thread principal e injeta o
+ * marcador `__FPASTE_WINDOW__` antes do React rodar — evitando o deadlock/tela
+ * branca no WebView2 que ocorria ao criar a janela direto pelo frontend.
+ */
+export function openSettings(): Promise<void> {
+  return invoke("open_settings");
 }

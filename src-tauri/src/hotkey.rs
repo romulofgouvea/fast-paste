@@ -1,6 +1,7 @@
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
+use crate::error::AppError;
 use crate::AppState;
 
 /// Handle da janela que estava em primeiro plano antes do FPaste abrir —
@@ -82,16 +83,16 @@ pub fn default_hotkey() -> String {
 
 /// Valida e registra uma nova hotkey global, removendo a anterior.
 /// Retorna erro legível se a combinação for inválida ou rejeitada pelo SO.
-pub fn swap_hotkey(app: &AppHandle, new: &str, previous: Option<&str>) -> Result<(), String> {
+pub fn swap_hotkey(app: &AppHandle, new: &str, previous: Option<&str>) -> Result<(), AppError> {
     let shortcut: Shortcut = new
         .parse()
-        .map_err(|_| format!("Atalho inválido: {new}"))?;
+        .map_err(|_| AppError::msg(format!("Atalho inválido: {new}")))?;
     if let Some(prev) = previous {
         unregister(app, prev);
     }
     app.global_shortcut()
         .register(shortcut)
-        .map_err(|e| format!("O sistema recusou o atalho: {e}"))
+        .map_err(|e| AppError::msg(format!("O sistema recusou o atalho: {e}")))
 }
 
 /// Remove o registro de uma hotkey, se válida. Usado para "silenciar"

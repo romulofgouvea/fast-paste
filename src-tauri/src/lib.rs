@@ -156,11 +156,12 @@ pub fn run() {
 
             Ok(())
         })
-        // FPaste é um app residente na bandeja: fechar a janela principal
-        // (Alt+F4, X) só deve escondê-la, nunca destruí-la — do contrário a
-        // próxima hotkey não encontraria mais a janela para reabrir.
+        // FPaste é um app residente na bandeja: fechar a janela principal ou
+        // a de configurações (Alt+F4, X) só deve escondê-la, nunca destruí-la
+        // — ambas são declaradas estaticamente e reabertas mostrando de novo;
+        // destruí-las quebraria a próxima hotkey / o próximo "abrir settings".
         .on_window_event(|window, event| {
-            if window.label() == "main" {
+            if window.label() == "main" || window.label() == "settings" {
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
                     let _ = window.hide();

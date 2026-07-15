@@ -119,9 +119,9 @@ export function importBackup(password?: string): Promise<ImportSummary> {
 
 /**
  * Abre (ou traz ao foco) a janela de configurações. Delega ao comando Rust
- * `open_settings`, que cria a WebviewWindow na thread principal e injeta o
- * marcador `__FPASTE_WINDOW__` antes do React rodar — evitando o deadlock/tela
- * branca no WebView2 que ocorria ao criar a janela direto pelo frontend.
+ * `open_settings`, que apenas mostra a janela `settings` — declarada
+ * estaticamente em tauri.conf.json e escondida na inicialização. Não há mais
+ * criação dinâmica de WebviewWindow (causa da tela branca em runtime).
  */
 export function openSettings(): Promise<void> {
   return invoke("open_settings");

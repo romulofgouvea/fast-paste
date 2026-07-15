@@ -25,6 +25,17 @@
         "alwaysOnTop": true,
         "visible": false,
         "shadow": false
+      },
+      {
+        "label": "settings",
+        "title": "Configurações — FPaste",
+        "width": 760,
+        "height": 560,
+        "minWidth": 640,
+        "minHeight": 480,
+        "resizable": false,
+        "center": true,
+        "visible": false
       }
     ],
     "security": {

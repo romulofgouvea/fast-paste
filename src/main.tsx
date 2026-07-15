@@ -6,19 +6,11 @@ import Settings from "./windows/Settings";
 import "./index.css";
 import "highlight.js/styles/atom-one-dark.css";
 
-// Detecção do tipo de janela:
-// 1º: __FPASTE_WINDOW__ injetado via initialization_script do Rust
-//     (mais confiável — roda antes de qualquer JS no WebView2)
-// 2º: fallback pelo label de getCurrentWindow()
-declare global {
-  interface Window {
-    __FPASTE_WINDOW__?: string;
-  }
-}
-
-const isSettings =
-  window.__FPASTE_WINDOW__ === "settings" ||
-  getCurrentWindow().label === "settings";
+// Ambas as janelas ("main" e "settings") são declaradas estaticamente em
+// tauri.conf.json e carregam este mesmo index.html; o label identifica qual
+// renderizar. Confiável no load porque o Tauri injeta os metadados da janela
+// antes de qualquer script rodar.
+const isSettings = getCurrentWindow().label === "settings";
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },

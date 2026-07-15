@@ -10,45 +10,20 @@ pub fn hide_window(app: AppHandle) {
 }
 
 /// Abre (ou traz ao foco) a janela de configurações.
-/// Usa `run_on_main_thread` porque a criação de WebviewWindow deve ocorrer
-/// na thread principal no Windows/macOS. O comando retorna imediatamente
-/// (fire-and-forget) para não bloquear o invoke do frontend, evitando o
-/// deadlock que causava tela em branco no WebView2.
+///
+/// A janela `settings` é declarada estaticamente em `tauri.conf.json`
+/// (invisível na inicialização) e o fechamento apenas a esconde — como a
+/// `main`. Assim ela já está carregada e basta mostrá-la, evitando a criação
+/// dinâmica de WebviewWindow em runtime, que era a causa da tela em branco
+/// (o segundo webview não carregava a página de forma confiável, sobretudo no
+/// WebKitGTK do Linux).
 #[tauri::command]
 pub fn open_settings(app: AppHandle) -> Result<(), AppError> {
-    if let Some(window) = app.get_webview_window("settings") {
-        let _ = window.unminimize();
-        let _ = window.show();
-        let _ = window.set_focus();
-        return Ok(());
-    }
-
-    let app_clone = app.clone();
-    app.run_on_main_thread(move || {
-        // URL vazia = raiz do dev server (http://localhost:1420/) ou
-        // do frontendDist em produção. "index.html" falhava no Vite.
-        let result = tauri::WebviewWindowBuilder::new(
-            &app_clone,
-            "settings",
-            tauri::WebviewUrl::default(),
-        )
-        .title("Configurações — FPaste")
-        .inner_size(760.0, 560.0)
-        .min_inner_size(640.0, 480.0)
-        .resizable(false)
-        .center()
-        // Injeta antes do React rodar — garante detecção do tipo de janela
-        // independente de timing do getCurrentWindow() no WebView2.
-        .initialization_script("window.__FPASTE_WINDOW__ = 'settings';")
-        .build();
-
-        if let Ok(window) = &result {
-            let _ = window.show();
-            let _ = window.set_focus();
-        }
-        if let Err(e) = result {
-            eprintln!("fpaste: falha ao abrir configurações: {e}");
-        }
-    })
-    .map_err(AppError::msg)
+    let window = app
+        .get_webview_window("settings")
+        .ok_or(AppError::Message("janela 'settings' não encontrada".into()))?;
+    let _ = window.unminimize();
+    let _ = window.show();
+    let _ = window.set_focus();
+    Ok(())
 }

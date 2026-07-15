@@ -1,8 +1,9 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useHistory } from "../stores/history";
 import { useUi } from "../stores/ui";
 import { dragRegionProps } from "../lib/dragRegion";
 import { listGroups, type Group } from "../lib/api";
+import { Chip } from "./ui/Chip";
 
 export function GroupBar() {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -29,21 +30,5 @@ export function GroupBar() {
         </Chip>
       ))}
     </div>
-  );
-}
-
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`shrink-0 text-[11px] px-2.5 py-1 rounded-full transition-colors whitespace-nowrap ${
-        active
-          ? "text-white"
-          : "bg-black/5 dark:bg-white/10 text-zinc-600 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/15"
-      }`}
-      style={active ? { backgroundColor: "var(--accent-color)" } : undefined}
-    >
-      {children}
-    </button>
   );
 }

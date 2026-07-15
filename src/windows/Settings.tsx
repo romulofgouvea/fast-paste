@@ -20,6 +20,7 @@ import {
   eventToShortcut,
   isModifierKey,
 } from "../lib/shortcut";
+import { AccentButton } from "../components/ui/AccentButton";
 
 type Tab = "appearance" | "shortcuts" | "storage" | "backup";
 
@@ -390,14 +391,9 @@ function BackupTab() {
       </div>
 
       <div className="flex gap-3">
-        <button
-          disabled={busy}
-          onClick={doExport}
-          className="px-4 py-2 rounded-lg text-white text-sm disabled:opacity-50"
-          style={{ backgroundColor: "var(--accent-color)" }}
-        >
+        <AccentButton disabled={busy} onClick={doExport}>
           Gerar Backup
-        </button>
+        </AccentButton>
         <button
           disabled={busy}
           onClick={doImport}

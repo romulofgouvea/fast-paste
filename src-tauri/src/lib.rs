@@ -7,11 +7,12 @@ mod media;
 mod settings;
 mod watcher;
 
-use std::collections::HashMap;
+use std::num::NonZeroUsize;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex, MutexGuard};
 
+use lru::LruCache;
 use rusqlite::Connection;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
@@ -20,14 +21,18 @@ use tauri_plugin_global_shortcut::ShortcutState;
 
 use crate::error::AppError;
 
+/// Capacidade do cache LRU de miniaturas decifradas.
+const THUMB_CACHE_CAP: usize = 64;
+
 pub struct AppState {
     pub db: Arc<Mutex<Connection>>,
     pub suppress_capture: Arc<AtomicBool>,
     pub master_key: [u8; 32],
     pub data_dir: PathBuf,
     pub current_hotkey: Mutex<String>,
-    /// Cache simples de miniaturas já decifradas (id → data URI).
-    pub thumb_cache: Mutex<HashMap<i64, String>>,
+    /// Cache LRU de miniaturas já decifradas (id → data URI): descarta a menos
+    /// usada ao encher, em vez de zerar tudo.
+    pub thumb_cache: Mutex<LruCache<i64, String>>,
     /// Janela em primeiro plano antes do FPaste abrir (para o auto-paste).
     pub last_focus: Mutex<Option<isize>>,
     pub auto_paste: Mutex<bool>,
@@ -52,7 +57,7 @@ impl AppState {
             .map_err(|_| AppError::LockPoisoned("auto_paste"))
     }
 
-    pub fn thumb_cache(&self) -> Result<MutexGuard<'_, HashMap<i64, String>>, AppError> {
+    pub fn thumb_cache(&self) -> Result<MutexGuard<'_, LruCache<i64, String>>, AppError> {
         self.thumb_cache
             .lock()
             .map_err(|_| AppError::LockPoisoned("thumb_cache"))
@@ -107,7 +112,9 @@ pub fn run() {
                 master_key,
                 data_dir,
                 current_hotkey: Mutex::new(stored_hotkey),
-                thumb_cache: Mutex::new(std::collections::HashMap::new()),
+                thumb_cache: Mutex::new(LruCache::new(
+                    NonZeroUsize::new(THUMB_CACHE_CAP).expect("cache cap > 0"),
+                )),
                 last_focus: Mutex::new(None),
                 auto_paste: Mutex::new(
                     settings::get_bool(app.handle(), settings::KEY_AUTO_PASTE).unwrap_or(false),

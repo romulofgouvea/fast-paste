@@ -13,6 +13,7 @@ import { TYPE_LABEL, faviconOf, relativeTime, titleOf } from "../lib/clipItem";
 import { ContextMenu, type MenuAction } from "./ContextMenu";
 import { PreviewTooltip } from "./itemCard/PreviewTooltip";
 import { LeftPanel } from "./itemCard/LeftPanel";
+import { Badge } from "./ui/Badge";
 
 interface Props {
   item: ClipItem;
@@ -126,12 +127,7 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
 
           {/* Linha 2: badge tipo + subtítulo */}
           <div className="flex items-center gap-1.5 min-w-0">
-            <span
-              className="shrink-0 px-1.5 py-px rounded-full text-white text-[9px] font-semibold uppercase tracking-wide"
-              style={{ backgroundColor: "var(--accent-color)" }}
-            >
-              {TYPE_LABEL[item.type] ?? item.type}
-            </span>
+            <Badge>{TYPE_LABEL[item.type] ?? item.type}</Badge>
             {subtitle && (
               <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">{subtitle}</span>
             )}

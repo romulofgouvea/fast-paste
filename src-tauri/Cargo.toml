@@ -29,6 +29,7 @@ sha2 = "0.10"
 rand = "0.8"
 uuid = { version = "1", features = ["v4"] }
 base64 = "0.22"
+lru = "0.12"
 thiserror = "2"
 zip = { version = "2", default-features = false, features = ["deflate", "aes-crypto"] }
 enigo = "0.3"

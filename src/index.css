@@ -58,26 +58,29 @@ body {
 .fpaste-scroll::-webkit-scrollbar-track { background: transparent; }
 
 /* ── Tema claro: cores mais definidas ───────────────────────────────────────── */
-.fpaste-shell .text-zinc-500,
-.fpaste-surface .text-zinc-500 {
+/* Escopadas a html:not(.dark): o variant dark do Tailwind v4 usa :where() (0 de
+   especificidade), então sem o :not(.dark) estes overrides (2 classes) venceriam
+   o dark:text-* e forçariam texto quase-preto também no modo escuro. */
+html:not(.dark) .fpaste-shell .text-zinc-500,
+html:not(.dark) .fpaste-surface .text-zinc-500 {
   color: #6b7280;
 }
-.fpaste-shell .text-zinc-800,
-.fpaste-surface .text-zinc-800 {
+html:not(.dark) .fpaste-shell .text-zinc-800,
+html:not(.dark) .fpaste-surface .text-zinc-800 {
   color: #1c1c1e;
 }
-.fpaste-shell .text-zinc-400,
-.fpaste-surface .text-zinc-400 {
+html:not(.dark) .fpaste-shell .text-zinc-400,
+html:not(.dark) .fpaste-surface .text-zinc-400 {
   color: #9ca3af;
 }
 
 /* ── SearchBar no claro ─────────────────────────────────────────────────────── */
-.fpaste-shell input,
-.fpaste-surface input {
+html:not(.dark) .fpaste-shell input,
+html:not(.dark) .fpaste-surface input {
   background: rgba(255, 255, 255, 0.60);
   color: #1c1c1e;
 }
-.fpaste-shell input::placeholder,
-.fpaste-surface input::placeholder {
+html:not(.dark) .fpaste-shell input::placeholder,
+html:not(.dark) .fpaste-surface input::placeholder {
   color: #a1a1aa;
 }

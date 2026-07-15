@@ -1,4 +1,6 @@
 mod commands;
+#[cfg(test)]
+mod contract;
 mod crypto;
 mod db;
 mod error;

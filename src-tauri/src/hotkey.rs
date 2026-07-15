@@ -74,7 +74,9 @@ fn apostrophe_code() -> &'static str {
 
 #[cfg(not(target_os = "windows"))]
 fn apostrophe_code() -> &'static str {
-    "Quote"
+    // No Linux/macOS com teclado ABNT2, a tecla (') fica no Backquote.
+    // Como não temos VkKeyScanW aqui, assumimos Backquote como padrão mais provável para usuários BR.
+    "Backquote"
 }
 
 pub fn default_hotkey() -> String {

@@ -3,7 +3,8 @@ import { listen } from "@tauri-apps/api/event";
 import { useHistory } from "./stores/history";
 import { useUi } from "./stores/ui";
 import { useTheme } from "./hooks/useTheme";
-import { hideWindow, openSettings, selectItem } from "./lib/api";
+import { hideWindow, selectItem } from "./lib/api";
+import { registerBlurSuppressor } from "./lib/settingsWindow";
 import { Header } from "./components/Header";
 import { GroupBar } from "./components/GroupBar";
 import { SearchBar } from "./components/SearchBar";
@@ -19,6 +20,7 @@ export default function App() {
   useEffect(() => {
     const { refresh, setQuery } = useHistory.getState();
     void refresh();
+    void useUi.getState().hydrate();
 
     // Novo item capturado pelo watcher Rust → recarrega a primeira página.
     const unNewItem = listen("clipboard://new-item", () => {
@@ -78,22 +80,18 @@ export default function App() {
       if (Date.now() - openedAt.current > 400) void hideWindow();
     };
 
-    // Expõe um helper global para suprimir o blur ao abrir settings
-    (window as unknown as Record<string, unknown>).__fpasteOpenSettings = async () => {
+    // Registra como suprimir o blur enquanto a janela de settings abre — evita
+    // que a janela principal se feche ao perder o foco nesse intervalo.
+    const unregisterSuppressor = registerBlurSuppressor((ms) => {
       suppressBlur.current = true;
-      // Dá um respiro para o event loop do frontend/WebView2 não congelar a
-      // criação da nova janela que será despachada via IPC.
-      setTimeout(() => {
-        void openSettings();
-      }, 50);
-      // Restaura o blur após o foco mudar para a janela de settings
-      setTimeout(() => { suppressBlur.current = false; }, 800);
-    };
+      setTimeout(() => { suppressBlur.current = false; }, ms);
+    });
     window.addEventListener("blur", onBlur);
 
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("blur", onBlur);
+      unregisterSuppressor();
       void unNewItem.then((fn) => fn());
       void unOpened.then((fn) => fn());
     };

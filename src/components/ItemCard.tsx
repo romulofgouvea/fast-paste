@@ -1,8 +1,7 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import hljs from "highlight.js/lib/common";
 import {
-  getThumbnail,
   listGroups,
   pasteText,
   setItemGroup,
@@ -10,189 +9,10 @@ import {
   type Group,
 } from "../lib/api";
 import { asPlainText, invertCase, removeLineBreaks } from "../lib/transform";
+import { TYPE_LABEL, faviconOf, relativeTime, titleOf } from "../lib/clipItem";
 import { ContextMenu, type MenuAction } from "./ContextMenu";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const TYPE_LABEL: Record<string, string> = {
-  text: "Texto",
-  link: "URL",
-  code: "Código",
-  image: "Imagem",
-  files: "Arquivo",
-};
-
-function relativeTime(ts: number): string {
-  const diff = Date.now() - ts;
-  const min = Math.floor(diff / 60_000);
-  if (min < 1) return "agora";
-  if (min < 60) return `${min} min`;
-  const hours = Math.floor(min / 60);
-  if (hours < 24) return `${hours} h`;
-  return `${Math.floor(hours / 24)} d`;
-}
-
-function domainOf(url: string): string {
-  try {
-    return new URL(url.startsWith("www.") ? `https://${url}` : url).hostname.replace("www.", "");
-  } catch {
-    return url.slice(0, 32);
-  }
-}
-
-function faviconOf(url: string): string {
-  try {
-    const domain = new URL(url.startsWith("www.") ? `https://${url}` : url).hostname;
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-  } catch {
-    return "";
-  }
-}
-
-/** Derivar um "título" curto do conteúdo */
-function titleOf(item: ClipItem, fullText: string): string {
-  if (item.type === "link") return domainOf(fullText);
-  if (item.type === "image") return "Imagem";
-  if (item.type === "files") return "Arquivo";
-  // text / code — primeira linha não vazia
-  const first = fullText.split("\n").find((l) => l.trim().length > 0) ?? fullText;
-  return first.length > 48 ? first.slice(0, 48) + "…" : first;
-}
-
-// ─── Tooltip de preview ───────────────────────────────────────────────────────
-
-interface TooltipProps {
-  anchorRect: DOMRect;
-  item: ClipItem;
-  fullText: string;
-  highlighted: string | null;
-  thumbSrc: string | null;
-}
-
-function PreviewTooltip({ anchorRect, item, fullText, highlighted, thumbSrc }: TooltipProps) {
-  const W = 300;
-  const MAX_H = 380;
-  const GAP = 12;
-
-  // A janela Tauri corta o que está fora dela.
-  // Portanto, renderizamos o tooltip flutuando *dentro* da janela, encostado na direita.
-  const left = window.innerWidth - W - GAP;
-  
-  // Centraliza verticalmente em relação ao item, mantendo dentro da tela
-  let top = anchorRect.top + anchorRect.height / 2 - MAX_H / 2;
-  top = Math.max(8, Math.min(top, window.innerHeight - MAX_H - 8));
-
-  return createPortal(
-    <div
-      onClick={(e) => e.stopPropagation()}
-      style={{ position: "fixed", left, top, width: W, maxHeight: MAX_H, zIndex: 9999 }}
-      className="rounded-xl shadow-2xl overflow-hidden border border-black/10 dark:border-white/10
-                 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl animate-[fpaste-in_100ms_ease-out] cursor-default"
-    >
-      {item.type === "image" ? (
-        <div className="flex items-center justify-center p-3 bg-black/5">
-          {thumbSrc
-            ? <img src={thumbSrc} alt="" className="max-w-full max-h-[340px] object-contain rounded-lg" />
-            : <span className="text-4xl opacity-40">🖼️</span>
-          }
-        </div>
-      ) : item.type === "code" ? (
-        <pre className="text-xs p-3 overflow-auto fpaste-scroll bg-zinc-950 text-zinc-100 leading-snug" style={{ maxHeight: MAX_H }}>
-          {highlighted
-            ? <code dangerouslySetInnerHTML={{ __html: highlighted }} />
-            : <code>{fullText}</code>
-          }
-        </pre>
-      ) : (
-        <p className="text-sm p-4 text-zinc-800 dark:text-zinc-100 whitespace-pre-wrap break-words overflow-auto fpaste-scroll leading-relaxed" style={{ maxHeight: MAX_H }}>
-          {fullText}
-        </p>
-      )}
-    </div>,
-    document.body,
-  );
-}
-
-// ─── Thumbnail lazy ───────────────────────────────────────────────────────────
-
-function LazyThumb({ id, onLoad }: { id: number; onLoad?: (src: string) => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [src, setSrc] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        obs.disconnect();
-        getThumbnail(id).then((s) => { setSrc(s); onLoad?.(s); }).catch(() => setFailed(true));
-      }
-    });
-    obs.observe(el);
-    return () => obs.disconnect();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  return (
-    <div ref={ref} className="w-full h-full flex items-center justify-center">
-      {src
-        ? <img src={src} alt="" className="max-h-full max-w-full object-cover" />
-        : <span className="text-xl opacity-30">{failed ? "⚠️" : "🖼️"}</span>
-      }
-    </div>
-  );
-}
-
-// ─── Painel esquerdo ──────────────────────────────────────────────────────────
-
-function LeftPanel({ item, fullText, highlighted, onThumb }: {
-  item: ClipItem;
-  fullText: string;
-  highlighted: string | null;
-  onThumb: (src: string) => void;
-}) {
-  if (item.type === "image") {
-    return (
-      <div className="w-20 shrink-0 bg-black/5 dark:bg-white/5 flex items-center justify-center overflow-hidden">
-        <LazyThumb id={item.id} onLoad={onThumb} />
-      </div>
-    );
-  }
-  if (item.type === "code") {
-    return (
-      <div className="w-20 shrink-0 bg-zinc-900 overflow-hidden flex items-start p-1.5">
-        <pre className="text-[8px] leading-[1.3] text-zinc-300 overflow-hidden select-none w-full">
-          {highlighted
-            ? <code dangerouslySetInnerHTML={{ __html: highlighted }} />
-            : <code>{fullText.slice(0, 200)}</code>
-          }
-        </pre>
-      </div>
-    );
-  }
-  if (item.type === "link") {
-    const favicon = faviconOf(fullText);
-    return (
-      <div className="w-20 shrink-0 bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center overflow-hidden">
-        {favicon
-          ? <img src={favicon} alt="" className="w-8 h-8 rounded-md" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-          : <span className="text-2xl opacity-40">🔗</span>
-        }
-      </div>
-    );
-  }
-  // text / files — primeiras linhas do conteúdo
-  return (
-    <div className="w-20 shrink-0 bg-zinc-100 dark:bg-white/5 overflow-hidden flex items-start p-1.5">
-      <p className="text-[8px] leading-[1.4] text-zinc-500 dark:text-zinc-400 break-words select-none w-full">
-        {fullText.slice(0, 150)}
-      </p>
-    </div>
-  );
-}
-
-// ─── ItemCard ─────────────────────────────────────────────────────────────────
+import { PreviewTooltip } from "./itemCard/PreviewTooltip";
+import { LeftPanel } from "./itemCard/LeftPanel";
 
 interface Props {
   item: ClipItem;
@@ -206,6 +26,7 @@ interface Props {
 export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHover, onDelete, onTogglePin }: Props) {
   const fullText = item.content ?? item.preview ?? "";
   const title = titleOf(item, fullText);
+  const favicon = useMemo(() => (item.type === "link" ? faviconOf(fullText) : ""), [item.type, fullText]);
 
   const highlighted = useMemo(() => {
     if (item.type !== "code") return null;
@@ -267,8 +88,6 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
   // Linha de subtítulo abaixo do badge (ex: domínio para links)
   const subtitle = item.type === "link" ? fullText.slice(0, 60) : null;
 
-
-
   return (
     <>
       <button
@@ -295,9 +114,9 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
             <span className="flex-1 min-w-0 text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 truncate leading-tight">
               {title}
             </span>
-            {item.type === "link" && faviconOf(fullText) && (
+            {favicon && (
               <img
-                src={faviconOf(fullText)}
+                src={favicon}
                 alt=""
                 className="shrink-0 w-4 h-4 rounded-sm mt-px"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
@@ -317,8 +136,6 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
               <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">{subtitle}</span>
             )}
           </div>
-
-
         </div>
 
         {/* Hora — bottom-right fixo */}

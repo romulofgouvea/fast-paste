@@ -1,6 +1,12 @@
 import { create } from "zustand";
-import { getHistory, deleteItem, togglePin, type ClipItem } from "../lib/api";
+import { getHistory, deleteItem, togglePin, type ClipItem, type HistoryPage } from "../lib/api";
 import { parseQuery } from "../lib/parseQuery";
+
+/** Busca uma página aplicando os filtros atuais (busca livre + tipo + grupo). */
+function fetchPage(rawQuery: string, groupFilter: number | null, page: number): Promise<HistoryPage> {
+  const { search, typeFilter } = parseQuery(rawQuery);
+  return getHistory(page, search, typeFilter, groupFilter ?? undefined);
+}
 
 interface HistoryState {
   items: ClipItem[];
@@ -42,10 +48,9 @@ export const useHistory = create<HistoryState>((set, get) => ({
 
   refresh: async () => {
     const { rawQuery, groupFilter } = get();
-    const { search, typeFilter } = parseQuery(rawQuery);
     set({ isLoading: true });
     try {
-      const result = await getHistory(0, search, typeFilter, groupFilter ?? undefined);
+      const result = await fetchPage(rawQuery, groupFilter, 0);
       set({ items: result.items, page: 1, hasMore: result.hasMore, selectedIndex: 0 });
     } finally {
       set({ isLoading: false });
@@ -56,10 +61,9 @@ export const useHistory = create<HistoryState>((set, get) => ({
   loadMore: async () => {
     const { isLoading, hasMore, page, rawQuery, groupFilter } = get();
     if (isLoading || !hasMore) return;
-    const { search, typeFilter } = parseQuery(rawQuery);
     set({ isLoading: true });
     try {
-      const result = await getHistory(page, search, typeFilter, groupFilter ?? undefined);
+      const result = await fetchPage(rawQuery, groupFilter, page);
       set((state) => ({
         items: [...state.items, ...result.items],
         page: state.page + 1,

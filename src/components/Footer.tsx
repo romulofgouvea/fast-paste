@@ -1,15 +1,7 @@
 import { useHistory } from "../stores/history";
 import { useUi } from "../stores/ui";
 import { dragRegionProps } from "../lib/dragRegion";
-
-function handleOpenSettings() {
-  // Usa o helper do App.tsx que suprime o blur antes de abrir settings,
-  // evitando que a janela principal feche ao perder o foco.
-  const helper = (window as unknown as Record<string, unknown>).__fpasteOpenSettings;
-  if (typeof helper === "function") {
-    void (helper as () => Promise<void>)();
-  }
-}
+import { openSettingsWindow } from "../lib/settingsWindow";
 
 export function Footer() {
   const groupFilter = useHistory((s) => s.groupFilter);
@@ -34,7 +26,7 @@ export function Footer() {
 
       {/* Botão Configurações — mesmo estilo texto do Modo 1/2 */}
       <button
-        onClick={handleOpenSettings}
+        onClick={() => void openSettingsWindow()}
         title="Configurações"
         className="px-2 py-0.5 rounded-md text-[11px] font-medium border transition-colors
                    border-transparent text-zinc-500 dark:text-zinc-400

@@ -41,8 +41,11 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
   const [thumbSrc, setThumbSrc] = useState<string | null>(null);
   const cardRef = useRef<HTMLButtonElement>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tooltipScrollRef = useRef<HTMLElement>(null);
 
   const handleMouseEnter = useCallback(() => {
+    if (leaveTimer.current) clearTimeout(leaveTimer.current);
     // Timer do tooltip — independente do onHover para não ser cancelado por re-renders
     hoverTimer.current = setTimeout(() => {
       if (cardRef.current) {
@@ -54,8 +57,22 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
 
   const handleMouseLeave = useCallback(() => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    setHovered(false);
+    leaveTimer.current = setTimeout(() => {
+      setHovered(false);
+    }, 300);
   }, []);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (hovered && tooltipScrollRef.current) {
+      const el = tooltipScrollRef.current;
+      // Se houver conteúdo para rolar no tooltip, repassa o scroll para ele
+      if (el.scrollHeight > el.clientHeight) {
+        el.scrollTop += e.deltaY;
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+  }, [hovered]);
 
   const handleDragStart = useCallback((e: React.DragEvent) => {
     if (item.type === "text" || item.type === "code") {
@@ -99,7 +116,8 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
         onContextMenu={openMenu}
         onMouseEnter={() => { onHover?.(); handleMouseEnter(); }}
         onMouseLeave={handleMouseLeave}
-        className={`group relative w-full text-left rounded-xl border transition-all cursor-pointer overflow-hidden flex items-stretch h-[72px] ${
+        onWheel={handleWheel}
+        className={`group relative w-full text-left rounded-xl border transition-all cursor-pointer overflow-hidden flex items-stretch h-[60px] ${
           selected
             ? "bg-white dark:bg-white/[0.10] border-[var(--accent-color)] ring-1 ring-[var(--accent-color)] shadow-sm"
             : "bg-white/70 dark:bg-white/[0.05] hover:bg-white dark:hover:bg-white/[0.10] border-black/[0.06] dark:border-white/[0.08] hover:border-black/[0.12] dark:hover:border-white/[0.15] hover:shadow-sm"
@@ -176,6 +194,9 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
           fullText={fullText}
           highlighted={highlighted}
           thumbSrc={thumbSrc}
+          scrollRef={tooltipScrollRef}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         />
       )}
 

@@ -43,7 +43,7 @@ export function ItemGrid() {
   return (
     <div
       ref={scrollRef}
-      className="fpaste-scroll grow overflow-y-auto px-3 pb-2 space-y-2"
+      className="fpaste-scroll grow overflow-y-auto px-5 pb-2 space-y-1.5"
       {...dragRegionProps(isModo2)}
     >
       {items.length === 0 && !isLoading && (

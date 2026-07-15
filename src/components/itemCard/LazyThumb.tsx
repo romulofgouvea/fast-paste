@@ -27,7 +27,7 @@ export function LazyThumb({ id, onLoad }: { id: number; onLoad?: (src: string) =
   return (
     <div ref={ref} className="w-full h-full flex items-center justify-center">
       {src
-        ? <img src={src} alt="" className="max-h-full max-w-full object-cover" />
+        ? <img src={src} alt="" className="w-full h-full object-cover" />
         : <span className="text-xl opacity-30">{failed ? "⚠️" : "🖼️"}</span>
       }
     </div>

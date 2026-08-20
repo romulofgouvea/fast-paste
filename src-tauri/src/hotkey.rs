@@ -139,10 +139,11 @@ pub fn toggle_main_window(app: &AppHandle) {
         if let (Ok(Some(monitor)), Some(size)) =
             (app.monitor_from_point(cursor.x, cursor.y), win_size)
         {
-            // Centraliza a janela horizontalmente em relação ao cursor
+            // Centraliza a janela em relação ao cursor (horizontal e vertical),
+            // com um leve deslocamento para baixo para o cursor ficar um
+            // pouco acima do centro
             x -= size.width as f64 / 2.0;
-            // Sobe a janela um pouco para o cursor ficar mais no meio do header (aprox 20px)
-            y -= 20.0;
+            y -= size.height as f64 / 2.0 - 70.0;
 
             let mpos = monitor.position();
             let msize = monitor.size();

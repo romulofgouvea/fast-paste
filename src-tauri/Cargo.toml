@@ -1,6 +1,6 @@
 [package]
 name = "fpaste"
-version = "0.1.3"
+version = "0.1.4"
 description = "FPaste — next-generation clipboard manager"
 authors = ["FPaste contributors"]
 license = "MIT"

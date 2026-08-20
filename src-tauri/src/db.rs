@@ -146,6 +146,15 @@ pub fn touch_by_hash(conn: &Connection, hash: &str) -> Result<Option<i64>, AppEr
     Ok(existing)
 }
 
+/// Promove o item para o topo da lista ao selecioná-lo
+pub fn touch_by_id(conn: &Connection, id: i64) -> Result<(), AppError> {
+    conn.execute(
+        "UPDATE clipboard_history SET timestamp = ?1 WHERE id = ?2",
+        rusqlite::params![now_ms(), id],
+    )?;
+    Ok(())
+}
+
 /// Insere um item novo; se o hash já existe, apenas promove o item existente.
 /// Retorna (id, criado_agora).
 pub fn insert_or_touch(conn: &Connection, item: &NewItem) -> Result<(i64, bool), AppError> {

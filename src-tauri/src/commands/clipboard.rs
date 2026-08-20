@@ -56,6 +56,7 @@ fn maybe_auto_paste(state: &State<'_, AppState>) {
 pub fn select_item(app: AppHandle, state: State<'_, AppState>, id: i64) -> Result<(), AppError> {
     let (content, media_path) = {
         let conn = state.db()?;
+        db::touch_by_id(&conn, id)?;
         (db::get_content(&conn, id)?, db::get_media_path(&conn, id)?)
     };
 

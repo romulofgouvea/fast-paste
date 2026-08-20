@@ -17,9 +17,10 @@ export function PreviewTooltip({ anchorRect, item, fullText, highlighted, thumbS
   const MAX_H = 380;
   const GAP = 12;
 
-  // Centraliza o tooltip horizontalmente em relação ao item
-  let left = anchorRect.left + anchorRect.width / 2 - W / 2;
-  left = Math.max(GAP, Math.min(left, window.innerWidth - W - GAP));
+  // Alinha o tooltip para começar após o painel de preview esquerdo (80px),
+  // garantindo que ele não cubra o espaço à esquerda de cada item.
+  let left = anchorRect.left + 80 + GAP;
+  left = Math.min(left, window.innerWidth - W - GAP);
 
   // Decide a posição vertical: mostra abaixo do cartão se houver espaço, senão acima.
   const GAP_Y = 6;

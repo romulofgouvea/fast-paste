@@ -52,7 +52,7 @@ export const ItemCard = memo(function ItemCard({ item, selected, onSelect, onHov
         setAnchorRect(cardRef.current.getBoundingClientRect());
         setHovered(true);
       }
-    }, 400);
+    }, 1000);
   }, []);
 
   const handleMouseLeave = useCallback(() => {

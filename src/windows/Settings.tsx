@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { load } from "@tauri-apps/plugin-store";
+import { enable, disable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { emit } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { ACCENT_PRESETS, useTheme, type ThemeMode } from "../hooks/useTheme";
@@ -26,7 +27,7 @@ type Tab = "appearance" | "shortcuts" | "storage" | "backup";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "appearance", label: "Aparência", icon: "🎨" },
-  { id: "shortcuts", label: "Atalhos", icon: "⌨️" },
+  { id: "shortcuts", label: "Geral", icon: "⚙️" },
   { id: "storage", label: "Armazenamento", icon: "💾" },
   { id: "backup", label: "Backup", icon: "🗄️" },
 ];
@@ -153,10 +154,12 @@ function ShortcutsTab() {
   const [partial, setPartial] = useState("");
   const [error, setError] = useState("");
   const [autoPaste, setAutoPasteState] = useState(false);
+  const [autostart, setAutostart] = useState(false);
 
   useEffect(() => {
     void getHotkey().then(setShortcut).catch(() => {});
     void getAutoPaste().then(setAutoPasteState).catch(() => {});
+    void isEnabled().then(setAutostart).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -261,6 +264,29 @@ function ShortcutsTab() {
             onChange={(e) => {
               setAutoPasteState(e.target.checked);
               void setAutoPaste(e.target.checked);
+            }}
+            className="shrink-0 w-4 h-4 accent-[var(--accent-color)]"
+          />
+        </label>
+      </section>
+      <section className="space-y-2">
+        <h2 className="text-base font-semibold">Iniciar com o Sistema</h2>
+        <label className="flex items-center justify-between gap-4 rounded-xl border border-black/10 dark:border-white/15 px-4 py-3 cursor-pointer">
+          <span className="text-sm text-zinc-600 dark:text-zinc-300">
+            Abre o FPaste em segundo plano quando você iniciar o computador,
+            deixando-o pronto para uso imediatamente.
+          </span>
+          <input
+            type="checkbox"
+            checked={autostart}
+            onChange={async (e) => {
+              const checked = e.target.checked;
+              setAutostart(checked);
+              if (checked) {
+                await enable();
+              } else {
+                await disable();
+              }
             }}
             className="shrink-0 w-4 h-4 accent-[var(--accent-color)]"
           />

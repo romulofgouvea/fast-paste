@@ -13,6 +13,8 @@ import {
   setAutoPaste,
   setHotkey,
   suspendHotkey,
+  openLinuxKeyboardSettings,
+  hideSettings,
   type ImportSummary,
 } from "../lib/api";
 import {
@@ -43,10 +45,28 @@ export default function Settings() {
   useTheme();
   const [tab, setTab] = useState<Tab>("appearance");
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        void hideSettings();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   return (
-    <div className="h-full flex bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100">
-      <aside className="w-48 shrink-0 border-r border-black/10 dark:border-white/10 p-3 space-y-1">
-        <h1 className="px-2 py-2 text-sm font-semibold tracking-wide">FPaste</h1>
+    <div className="h-full flex fpaste-shell text-zinc-800 dark:text-zinc-100 relative rounded-2xl overflow-hidden" data-tauri-drag-region>
+      <button
+        onClick={() => void hideSettings()}
+        title="Fechar"
+        className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-md text-zinc-400 hover:bg-red-500 hover:!text-white transition-colors text-xs leading-none font-bold z-50 cursor-pointer"
+      >
+        ✕
+      </button>
+      <aside className="w-48 shrink-0 border-r border-black/10 dark:border-white/10 p-3 space-y-1 z-10" data-tauri-drag-region>
+        <h1 className="px-2 py-2 text-sm font-semibold tracking-wide" data-tauri-drag-region>FPaste</h1>
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -76,12 +96,12 @@ export default function Settings() {
 
 function AppearanceTab() {
   const [theme, setThemeState] = useState<ThemeMode>("system");
-  const [accent, setAccentState] = useState(ACCENT_PRESETS["Azul Clássico"]);
+  const [accent, setAccentState] = useState(ACCENT_PRESETS["GNOME (Adwaita)"]);
 
   useEffect(() => {
     void load("settings.json").then(async (store) => {
       setThemeState(((await store.get<string>("theme")) as ThemeMode) || "system");
-      setAccentState((await store.get<string>("accent")) || ACCENT_PRESETS["Azul Clássico"]);
+      setAccentState((await store.get<string>("accent")) || ACCENT_PRESETS["GNOME (Adwaita)"]);
     });
   }, []);
 
@@ -127,7 +147,7 @@ function AppearanceTab() {
 
       <section>
         <h2 className="text-base font-semibold mb-3">Cor de Destaque</h2>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {Object.entries(ACCENT_PRESETS).map(([name, color]) => (
             <button
               key={name}
@@ -155,11 +175,15 @@ function ShortcutsTab() {
   const [error, setError] = useState("");
   const [autoPaste, setAutoPasteState] = useState(false);
   const [autostart, setAutostart] = useState(false);
+  const [openCentered, setOpenCentered] = useState(false);
 
   useEffect(() => {
     void getHotkey().then(setShortcut).catch(() => {});
     void getAutoPaste().then(setAutoPasteState).catch(() => {});
     void isEnabled().then(setAutostart).catch(() => {});
+    void load("settings.json").then(async (store) => {
+      setOpenCentered(await store.get<boolean>("openCentered") || false);
+    });
   }, []);
 
   useEffect(() => {
@@ -178,6 +202,7 @@ function ShortcutsTab() {
     const onKeyDown = (e: KeyboardEvent) => {
       e.preventDefault();
       if (e.key === "Escape") {
+        e.stopPropagation();
         void resumeHotkey();
         finishRecording();
         return;
@@ -249,6 +274,20 @@ function ShortcutsTab() {
               : "…"}
         </button>
         {error && <p className="text-sm text-red-500">{error}</p>}
+        {navigator.userAgent.toLowerCase().includes("linux") && !navigator.userAgent.toLowerCase().includes("android") && (
+          <div className="mt-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+            <p className="text-sm text-blue-600 dark:text-blue-400 mb-2">
+              No Linux (especialmente Wayland), atalhos globais podem não funcionar. 
+              Configure um atalho nativo do sistema executando o comando <code>fpaste</code>.
+            </p>
+            <button
+              onClick={() => void openLinuxKeyboardSettings()}
+              className="text-sm px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Abrir Configurações de Teclado
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="space-y-2">
@@ -287,6 +326,28 @@ function ShortcutsTab() {
               } else {
                 await disable();
               }
+            }}
+            className="shrink-0 w-4 h-4 accent-[var(--accent-color)]"
+          />
+        </label>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-base font-semibold">Abrir Centralizado</h2>
+        <label className="flex items-center justify-between gap-4 rounded-xl border border-black/10 dark:border-white/15 px-4 py-3 cursor-pointer">
+          <span className="text-sm text-zinc-600 dark:text-zinc-300">
+            Abre a janela do FPaste centralizada na tela em vez de perto do cursor do mouse.
+          </span>
+          <input
+            type="checkbox"
+            checked={openCentered}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setOpenCentered(checked);
+              void load("settings.json").then(async (store) => {
+                await store.set("openCentered", checked);
+                await store.save();
+              });
             }}
             className="shrink-0 w-4 h-4 accent-[var(--accent-color)]"
           />

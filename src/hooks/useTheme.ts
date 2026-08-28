@@ -5,16 +5,19 @@ import { listen } from "@tauri-apps/api/event";
 export type ThemeMode = "light" | "dark" | "system";
 
 export const ACCENT_PRESETS: Record<string, string> = {
-  "Azul Clássico": "#3b82f6",
-  "Roxo Moderno": "#8b5cf6",
-  "Verde Esmeralda": "#10b981",
+  "Debian Red": "#d70a53",
+  "Rosa": "#ec4899",
   "Laranja Cítrico": "#f97316",
+  "Verde Esmeralda": "#10b981",
+  "Ciano": "#06b6d4",
+  "GNOME (Adwaita)": "#3584e4",
+  "Roxo Moderno": "#8b5cf6"
 };
 
 async function readSettings(): Promise<{ theme: ThemeMode; accent: string }> {
   const store = await load("settings.json");
   const theme = ((await store.get<string>("theme")) as ThemeMode) || "system";
-  const accent = (await store.get<string>("accent")) || ACCENT_PRESETS["Azul Clássico"];
+  const accent = (await store.get<string>("accent")) || ACCENT_PRESETS["GNOME (Adwaita)"];
   return { theme, accent };
 }
 
@@ -33,7 +36,7 @@ function applyTheme(theme: ThemeMode, accent: string) {
 export function useTheme() {
   useEffect(() => {
     let mode: ThemeMode = "system";
-    let accent = ACCENT_PRESETS["Azul Clássico"];
+    let accent = ACCENT_PRESETS["GNOME (Adwaita)"];
 
     const sync = () => applyTheme(mode, accent);
     const reload = () =>

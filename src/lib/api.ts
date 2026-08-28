@@ -126,3 +126,11 @@ export function importBackup(password?: string): Promise<ImportSummary> {
 export function openSettings(): Promise<void> {
   return invoke("open_settings");
 }
+
+export function openLinuxKeyboardSettings(): Promise<void> {
+  return invoke("open_linux_keyboard_settings");
+}
+
+export function hideSettings(): Promise<void> {
+  return invoke("hide_settings");
+}

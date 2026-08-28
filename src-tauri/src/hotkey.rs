@@ -133,7 +133,10 @@ pub fn toggle_main_window(app: &AppHandle) {
         return;
     }
 
-    if let Ok(cursor) = app.cursor_position() {
+    let open_centered = crate::settings::get_bool(app, "openCentered").unwrap_or(false);
+    if open_centered {
+        let _ = window.center();
+    } else if let Ok(cursor) = app.cursor_position() {
         let (mut x, mut y) = (cursor.x, cursor.y);
         let win_size = window.outer_size().ok();
         if let (Ok(Some(monitor)), Some(size)) =

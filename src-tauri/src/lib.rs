@@ -184,6 +184,7 @@ pub fn run() {
             commands::get_storage_info,
             commands::clear_history,
             commands::open_settings,
+            commands::hide_settings,
             commands::get_thumbnail,
             commands::toggle_pin,
             commands::list_groups,
@@ -195,14 +196,10 @@ pub fn run() {
             commands::get_auto_paste,
             commands::export_backup,
             commands::import_backup,
+            commands::open_linux_keyboard_settings,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        // Defesa extra: mesmo que todas as janelas fechem, o FPaste continua
-        // vivo na bandeja — só "Sair" no menu do tray encerra o processo.
-        .run(|_app_handle, event| {
-            if let tauri::RunEvent::ExitRequested { api, .. } = event {
-                api.prevent_exit();
-            }
+        .run(|_app_handle, _event| {
         });
 }

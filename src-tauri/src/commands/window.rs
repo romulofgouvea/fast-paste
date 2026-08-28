@@ -27,3 +27,10 @@ pub fn open_settings(app: AppHandle) -> Result<(), AppError> {
     let _ = window.set_focus();
     Ok(())
 }
+
+#[tauri::command]
+pub fn hide_settings(app: AppHandle) {
+    if let Some(window) = app.get_webview_window("settings") {
+        let _ = window.hide();
+    }
+}

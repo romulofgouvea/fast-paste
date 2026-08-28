@@ -19,3 +19,14 @@ pub fn set_auto_paste(
 pub fn get_auto_paste(state: State<'_, AppState>) -> Result<bool, AppError> {
     Ok(*state.auto_paste()?)
 }
+
+#[tauri::command]
+pub fn open_linux_keyboard_settings() -> Result<(), AppError> {
+    #[cfg(target_os = "linux")]
+    {
+        let _ = std::process::Command::new("gnome-control-center")
+            .arg("keyboard")
+            .spawn();
+    }
+    Ok(())
+}

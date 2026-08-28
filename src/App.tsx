@@ -57,17 +57,6 @@ export default function App() {
         }
         return;
       }
-      // Teclas 1–9 colam o n-ésimo item quando a busca está vazia (spec §7).
-      if (/^[1-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        const searchEmpty = !searchRef.current?.value;
-        if (searchEmpty) {
-          const item = useHistory.getState().items[Number(e.key) - 1];
-          if (item) {
-            e.preventDefault();
-            void selectItem(item.id);
-          }
-        }
-      }
     };
     window.addEventListener("keydown", onKeyDown);
 

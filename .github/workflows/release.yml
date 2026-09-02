@@ -1,8 +1,13 @@
 name: Release
 
-# Dispara ao empurrar uma tag "v*" (ex.: v0.1.0). Builda o app nas três
-# plataformas e publica os instaladores (.msi/.exe, .dmg, .deb/.rpm/.AppImage)
-# como assets de uma release do GitHub criada automaticamente a partir da tag.
+# Dispara ao empurrar uma tag "v*" (ex.: v0.1.6). Confere se a versão bate com a
+# tag, builda o app nas três plataformas e publica os instaladores
+# (.msi/.exe, .dmg, .deb/.rpm/.AppImage) como assets de uma release do GitHub
+# criada automaticamente a partir da tag.
+#
+# Você NÃO cria a Release à mão — o push da tag v* faz tudo:
+#   npm version patch   # ou: edite package.json, src-tauri/tauri.conf.json e Cargo.toml
+#   git push && git push --tags
 on:
   push:
     tags:
@@ -12,7 +17,29 @@ permissions:
   contents: write
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir versão x tag
+        run: |
+          TAG=${GITHUB_REF_NAME#v}
+          PKG=$(node -p "require('./package.json').version")
+          CONF=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          CARGO=$(grep -m1 '^version = ' src-tauri/Cargo.toml | sed -E 's/version = "(.*)"/\1/')
+          fail=0
+          for pair in "package.json:$PKG" "tauri.conf.json:$CONF" "Cargo.toml:$CARGO"; do
+            name=${pair%%:*}; ver=${pair#*:}
+            if [ "$ver" != "$TAG" ]; then
+              echo "::error::$name ($ver) não bate com a tag ($TAG). Alinhe a versão antes de publicar."
+              fail=1
+            fi
+          done
+          [ "$fail" = 0 ]
+
   release:
+    needs: check
     strategy:
       fail-fast: false
       matrix:
@@ -44,7 +71,8 @@ jobs:
             libxdo-dev \
             libssl-dev \
             libclang-dev \
-            perl
+            perl \
+            xz-utils
 
       - name: Node.js
         uses: actions/setup-node@v4
@@ -71,7 +99,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "FPaste ${{ github.ref_name }}"
-          releaseBody: "Build automático gerado pela tag ${{ github.ref_name }}. Baixe o instalador correspondente ao seu sistema abaixo."
+          releaseBody: "Build automático gerado pela tag ${{ github.ref_name }}. Baixe o instalador correspondente ao seu sistema abaixo. Veja o CHANGELOG.md para as mudanças desta versão."
           releaseDraft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
           args: ${{ matrix.args }}

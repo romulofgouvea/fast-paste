@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.1.6] - 2026-09-01
+
+### Corrigido
+- **Lightshot / Captura de Tela no Windows**: Corrigido um problema onde cópias de imagens feitas por utilitários como o Lightshot eram ignoradas em decorrência de bloqueio temporário (lock) na área de transferência. Adicionado mecanismo de tolerância e _retry_ para suportar estes utilitários.
 ## [0.1.5] - 2026-08-28
 
 ### Adicionado

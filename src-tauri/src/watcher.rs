@@ -103,8 +103,17 @@ struct Monitor {
 
 impl Monitor {
     fn capture_text(&self) -> Result<bool, AppError> {
-        let Ok(text) = self.ctx.get_text() else {
-            return Ok(false);
+        let mut text_opt = None;
+        for _ in 0..5 {
+            if let Ok(t) = self.ctx.get_text() {
+                text_opt = Some(t);
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        let text = match text_opt {
+            Some(t) => t,
+            None => return Ok(false),
         };
         if text.trim().is_empty() {
             return Ok(false);
@@ -125,8 +134,17 @@ impl Monitor {
     /// Imagens nunca vão para dentro do banco: são cifradas em disco e o
     /// registro guarda apenas o caminho + hash SHA-256 (spec §5.4).
     fn capture_image(&self) -> Result<bool, AppError> {
-        let Ok(image) = self.ctx.get_image() else {
-            return Ok(false);
+        let mut image_opt = None;
+        for _ in 0..5 {
+            if let Ok(img) = self.ctx.get_image() {
+                image_opt = Some(img);
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        let image = match image_opt {
+            Some(img) => img,
+            None => return Ok(false),
         };
         let png = image.to_png().map_err(AppError::msg)?;
         let bytes = png.get_bytes();

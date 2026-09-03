@@ -131,6 +131,16 @@ export function openLinuxKeyboardSettings(): Promise<void> {
   return invoke("open_linux_keyboard_settings");
 }
 
+/** `true` se o FPaste tem permissão de Acessibilidade (só relevante no macOS;
+ *  nas outras plataformas o comando sempre devolve `true`). */
+export function macosAccessibilityTrusted(): Promise<boolean> {
+  return invoke<boolean>("macos_accessibility_trusted");
+}
+
+export function openMacosAccessibilitySettings(): Promise<void> {
+  return invoke("open_macos_accessibility_settings");
+}
+
 export function hideSettings(): Promise<void> {
   return invoke("hide_settings");
 }

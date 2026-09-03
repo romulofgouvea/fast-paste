@@ -14,6 +14,8 @@ import {
   setHotkey,
   suspendHotkey,
   openLinuxKeyboardSettings,
+  macosAccessibilityTrusted,
+  openMacosAccessibilitySettings,
   hideSettings,
   type ImportSummary,
 } from "../lib/api";
@@ -176,6 +178,9 @@ function ShortcutsTab() {
   const [autoPaste, setAutoPasteState] = useState(false);
   const [autostart, setAutostart] = useState(false);
   const [openCentered, setOpenCentered] = useState(false);
+  const [axTrusted, setAxTrusted] = useState(true);
+
+  const isMac = navigator.userAgent.toLowerCase().includes("macintosh");
 
   useEffect(() => {
     void getHotkey().then(setShortcut).catch(() => {});
@@ -185,6 +190,17 @@ function ShortcutsTab() {
       setOpenCentered(await store.get<boolean>("openCentered") || false);
     });
   }, []);
+
+  // macOS: reconfere a permissão de Acessibilidade ao montar e sempre que a
+  // janela reganha o foco (ex.: usuário voltou dos Ajustes do sistema).
+  useEffect(() => {
+    if (!isMac) return;
+    const check = () =>
+      void macosAccessibilityTrusted().then(setAxTrusted).catch(() => {});
+    check();
+    window.addEventListener("focus", check);
+    return () => window.removeEventListener("focus", check);
+  }, [isMac]);
 
   useEffect(() => {
     if (!recording) return;
@@ -295,7 +311,9 @@ function ShortcutsTab() {
         <label className="flex items-center justify-between gap-4 rounded-xl border border-black/10 dark:border-white/15 px-4 py-3 cursor-pointer">
           <span className="text-sm text-zinc-600 dark:text-zinc-300">
             Após selecionar um item, cola direto na janela que estava em uso
-            (equivalente a um Ctrl+V automático). Disponível apenas no Windows.
+            (equivalente a um Ctrl+V / Cmd+V automático). Disponível no Windows e
+            no macOS — no macOS é preciso conceder ao FPaste a permissão de
+            Acessibilidade (Ajustes → Privacidade e Segurança → Acessibilidade).
           </span>
           <input
             type="checkbox"
@@ -303,10 +321,28 @@ function ShortcutsTab() {
             onChange={(e) => {
               setAutoPasteState(e.target.checked);
               void setAutoPaste(e.target.checked);
+              if (e.target.checked && isMac) {
+                void macosAccessibilityTrusted().then(setAxTrusted).catch(() => {});
+              }
             }}
             className="shrink-0 w-4 h-4 accent-[var(--accent-color)]"
           />
         </label>
+        {isMac && autoPaste && !axTrusted && (
+          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <p className="text-sm text-amber-600 dark:text-amber-400 mb-2">
+              O FPaste ainda não tem permissão de <strong>Acessibilidade</strong> —
+              sem ela o colar automático não consegue simular o Cmd+V. Marque o
+              FPaste na lista (pode ser necessário reabrir o app depois).
+            </p>
+            <button
+              onClick={() => void openMacosAccessibilitySettings()}
+              className="text-sm px-3 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+            >
+              Abrir Ajustes de Acessibilidade
+            </button>
+          </div>
+        )}
       </section>
       <section className="space-y-2">
         <h2 className="text-base font-semibold">Iniciar com o Sistema</h2>

@@ -26,6 +26,53 @@ use crate::error::AppError;
 /// Capacidade do cache LRU de miniaturas decifradas.
 const THUMB_CACHE_CAP: usize = 64;
 
+/// Arredonda os cantos da janela no macOS sem depender da `macOSPrivateApi`
+/// do Tauri (que usa API privada e barra o app na Mac App Store).
+///
+/// Sem essa flag o `WKWebView` não fica transparente no macOS — mas não é o
+/// que precisamos: deixamos o webview opaco e mascaramos a **camada nativa**
+/// do `contentView` num retângulo arredondado (`cornerRadius` + `masksToBounds`,
+/// tudo API pública). O fundo da janela vira transparente para os cantos
+/// mostrarem o desktop e a sombra nativa acompanhar o retângulo arredondado.
+///
+/// O raio (16px) casa com o `rounded-2xl` do shell no front-end.
+#[cfg(target_os = "macos")]
+fn style_macos_window(window: &tauri::WebviewWindow) {
+    use objc2::runtime::AnyObject;
+    use objc2::{class, msg_send};
+
+    let Ok(ptr) = window.ns_window() else {
+        return;
+    };
+    let ns_window = ptr as *mut AnyObject;
+    if ns_window.is_null() {
+        return;
+    }
+
+    // SAFETY: `ns_window` é um `NSWindow` válido — as janelas são estáticas e
+    // nunca destruídas. `contentView`/`layer` podem ser nil e são checados
+    // antes de qualquer mensagem de retorno `()`. Roda na thread principal
+    // (dentro do `setup`).
+    unsafe {
+        let _: () = msg_send![ns_window, setOpaque: false];
+        let clear_color: *mut AnyObject = msg_send![class!(NSColor), clearColor];
+        let _: () = msg_send![ns_window, setBackgroundColor: clear_color];
+        let _: () = msg_send![ns_window, setHasShadow: true];
+
+        let content_view: *mut AnyObject = msg_send![ns_window, contentView];
+        if content_view.is_null() {
+            return;
+        }
+        let _: () = msg_send![content_view, setWantsLayer: true];
+        let layer: *mut AnyObject = msg_send![content_view, layer];
+        if layer.is_null() {
+            return;
+        }
+        let _: () = msg_send![layer, setCornerRadius: 16.0f64];
+        let _: () = msg_send![layer, setMasksToBounds: true];
+    }
+}
+
 pub struct AppState {
     pub db: Arc<Mutex<Connection>>,
     pub suppress_capture: Arc<AtomicBool>,
@@ -86,6 +133,16 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
+            // macOS: cantos arredondados + sombra nativa nas janelas estáticas.
+            #[cfg(target_os = "macos")]
+            {
+                for label in ["main", "settings"] {
+                    if let Some(window) = app.get_webview_window(label) {
+                        style_macos_window(&window);
+                    }
+                }
+            }
+
             let master_key =
                 crypto::get_or_create_master_key().map_err(|e| format!("master key: {e}"))?;
 
@@ -197,6 +254,8 @@ pub fn run() {
             commands::export_backup,
             commands::import_backup,
             commands::open_linux_keyboard_settings,
+            commands::macos_accessibility_trusted,
+            commands::open_macos_accessibility_settings,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

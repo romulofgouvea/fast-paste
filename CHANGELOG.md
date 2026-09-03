@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.8] - 2026-09-03
+
+### Corrigido
+- **Cantos no macOS**: A janela renderizava um fundo branco fora dos cantos arredondados no macOS. Agora os cantos e a sombra são feitos pela camada nativa da janela (`cornerRadius`/`masksToBounds` + `NSColor.clearColor`), usando só API pública — sem a `macOSPrivateApi` do Tauri, que barra o app na Mac App Store.
+
+### Adicionado
+- **Colar Automaticamente no macOS**: O "Colar Automaticamente" agora funciona no macOS (Cmd+V) além do Windows — o FPaste reativa o app que estava em uso e injeta o atalho de colar. Requer conceder a permissão de Acessibilidade ao FPaste.
+- **Aviso de permissão (macOS)**: Quando o colar automático está ligado mas o FPaste não tem a permissão de Acessibilidade, as configurações mostram um aviso com um botão que abre direto o painel Ajustes → Privacidade e Segurança → Acessibilidade. O aviso some sozinho assim que a permissão é concedida.
+
 ## [0.1.6] - 2026-09-01
 
 ### Corrigido

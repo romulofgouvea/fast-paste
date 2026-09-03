@@ -1279,7 +1279,7 @@ dependencies = [
 
 [[package]]
 name = "fpaste"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "aes-gcm",
  "base64 0.22.1",
@@ -1287,6 +1287,8 @@ dependencies = [
  "enigo",
  "keyring",
  "lru",
+ "objc2 0.6.4",
+ "objc2-app-kit 0.3.2",
  "rand",
  "rusqlite",
  "serde",

@@ -15,15 +15,34 @@ pub fn foreground_window() -> isize {
     unsafe { GetForegroundWindow() }
 }
 
-#[cfg(not(target_os = "windows"))]
+/// No macOS, "janela em foco" é o app frontal: guardamos o PID do app que
+/// estava ativo antes do FPaste roubar o foco, para reativá-lo e colar nele.
+///
+/// O `unsafe` é defensivo: dependendo da versão do `objc2-app-kit` esses
+/// acessos podem ou não estar marcados como `unsafe` (`unused_unsafe` silenciado).
+#[cfg(target_os = "macos")]
+#[allow(unused_unsafe)]
+pub fn foreground_window() -> isize {
+    use objc2_app_kit::NSWorkspace;
+
+    unsafe {
+        let workspace = NSWorkspace::sharedWorkspace();
+        match workspace.frontmostApplication() {
+            Some(app) => app.processIdentifier() as isize,
+            None => 0,
+        }
+    }
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub fn foreground_window() -> isize {
     0
 }
 
-/// Devolve o foco à janela que estava ativa antes do FPaste abrir e simula
-/// Ctrl+V nela. Só implementado no Windows por enquanto — no macOS isso
-/// exigiria permissão de Acessibilidade e no Linux depende do compositor
-/// (X11 vs. Wayland), então lá o auto-paste fica desativado por ora.
+/// Devolve o foco à janela/app que estava ativo antes do FPaste abrir e simula
+/// o atalho de colar nele. Implementado no Windows (Ctrl+V) e no macOS (Cmd+V,
+/// exige permissão de Acessibilidade). No Linux depende do compositor
+/// (X11 vs. Wayland), então lá o auto-paste continua desativado por ora.
 #[cfg(target_os = "windows")]
 pub fn paste_into(hwnd: isize) {
     use enigo::{Direction, Enigo, Key, Keyboard, Settings};
@@ -46,7 +65,37 @@ pub fn paste_into(hwnd: isize) {
     }
 }
 
-#[cfg(not(target_os = "windows"))]
+/// macOS: reativa o app que estava frontal (via PID) e dispara Cmd+V.
+/// Requer que o FPaste tenha permissão de Acessibilidade — sem ela o
+/// `enigo` não consegue injetar os eventos de teclado.
+#[cfg(target_os = "macos")]
+#[allow(unused_unsafe)]
+pub fn paste_into(pid: isize) {
+    use enigo::{Direction, Enigo, Key, Keyboard, Settings};
+    use objc2_app_kit::{NSApplicationActivationOptions, NSRunningApplication};
+
+    if pid > 0 {
+        unsafe {
+            if let Some(app) =
+                NSRunningApplication::runningApplicationWithProcessIdentifier(pid as i32)
+            {
+                let _ = app.activateWithOptions(
+                    NSApplicationActivationOptions::ActivateIgnoringOtherApps
+                        | NSApplicationActivationOptions::ActivateAllWindows,
+                );
+            }
+        }
+    }
+    // Dá tempo de o app-alvo voltar ao primeiro plano antes de injetar o atalho.
+    std::thread::sleep(std::time::Duration::from_millis(120));
+    if let Ok(mut enigo) = Enigo::new(&Settings::default()) {
+        let _ = enigo.key(Key::Meta, Direction::Press);
+        let _ = enigo.key(Key::Unicode('v'), Direction::Click);
+        let _ = enigo.key(Key::Meta, Direction::Release);
+    }
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub fn paste_into(_hwnd: isize) {}
 
 /// Em layouts não-US (ex.: ABNT2 brasileiro), a tecla física do apóstrofo
